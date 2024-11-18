@@ -9,6 +9,7 @@ if(CXX)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+# list(APPEND CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR})
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
@@ -24,13 +25,18 @@ endif()
 
 # search for gurobi
 find_package(GUROBI REQUIRED)
-message(${GUROBI_INCLUDE_DIRS})
+include_directories(${GUROBI_INCLUDE_DIRS})
+
+# message(${GUROBI_INCLUDE_DIRS})
 
 
 # search for eigen
-add_subdirectory(thirdparty/eigen)
-# find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
+message(${PROJECT_SOURCE_DIR}/thirdparty/eigen)
+message(${CMAKE_PREFIX_PATH})
+list(APPEND CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/thirdparty/eigen/cmake)
+message(${CMAKE_PREFIX_PATH})
+# add_subdirectory(thirdparty/eigen)
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 add_executable("eigen_test" eigen_test.cpp)
 
 # list source files here
