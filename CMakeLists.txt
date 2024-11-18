@@ -22,10 +22,16 @@ if(MSVC AND MT)
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
 endif()
 
+# search for gurobi
 find_package(GUROBI REQUIRED)
-
-include_directories(${GUROBI_INCLUDE_DIRS})
 message(${GUROBI_INCLUDE_DIRS})
+
+
+# search for eigen
+add_subdirectory(thirdparty/eigen)
+# find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+
+add_executable("eigen_test" eigen_test.cpp)
 
 # list source files here
 set(sources mip1_c++.cpp)
@@ -39,6 +45,8 @@ if(CXX)
 endif()
 
 target_link_libraries(${CMAKE_PROJECT_NAME} ${GUROBI_LIBRARY})
+target_link_libraries("eigen_test" Eigen3::Eigen)
+
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
   include(FeatureSummary)
