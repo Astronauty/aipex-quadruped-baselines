@@ -8,4 +8,6 @@ Include the following cmake templates: https://support.gurobi.com/hc/en-us/artic
 
 
 ### Install Other Packages via Git Submodule
-- Install eigen
+'''
+git submodule add git@gitlab.com:libeigen/eigen.git thirdparty/eigen
+'''
