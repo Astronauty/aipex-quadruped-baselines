@@ -31,12 +31,10 @@ include_directories(${GUROBI_INCLUDE_DIRS})
 
 
 # search for eigen
-message(${PROJECT_SOURCE_DIR}/thirdparty/eigen)
-message(${CMAKE_PREFIX_PATH})
-list(APPEND CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/thirdparty/eigen/cmake)
-message(${CMAKE_PREFIX_PATH})
-# add_subdirectory(thirdparty/eigen)
+# list(APPEND CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/thirdparty/eigen/cmake) 
+
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+include_directories(${PROJECT_SOURCE_DIR}/thirdparty/eigen)
 add_executable("eigen_test" eigen_test.cpp)
 
 # list source files here
