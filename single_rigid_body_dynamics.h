@@ -2,10 +2,10 @@
 #include<Eigen/Dense>
 using namespace Eigen;
 
-struct{
+struct inertialParamsSRB {
     float mass;
     Matrix3f inertiaTensor;
-} inertialParamsSRB;
+};
 
 class SRBDynamics
 {
@@ -14,16 +14,15 @@ class SRBDynamics
         ~SRBDynamics();
     
     private:
-        Eigen::Vector3d point;
-        Eigen::Vector3d normal;
-        
-        float width;
-        float height;
-        
+        // Matrix<float, 18, 1> x;
+        // Matrix<float, 4, 3> u;
+        // Matrix<float, 4, 3> p_f;
+        // Matrix<float, 12, 1> x_dot;
 
-        Eigen::Matrix<double, 6, 3> A;
-            
-    
+        Matrix<float, 3, 4> r_i; // Foot positions relative to COM
 
+        inertialParams params;
+
+        void srb_dynamics(inertialParamsSRB params, Matrix<float, 18, 1> x, Matrix<float, 4, 3> u), Matrix<float, 4, 3> p_f);
 };
 
