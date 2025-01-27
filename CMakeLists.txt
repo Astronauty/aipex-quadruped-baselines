@@ -27,61 +27,49 @@ endif()
 find_package(GUROBI REQUIRED)
 include_directories(${GUROBI_INCLUDE_DIRS})
 
-# message(${GUROBI_INCLUDE_DIRS})
-
-# search for drake
-list(APPEND CMAKE_PREFIX_PATH /home/workstation4/daniel/aipex-quadruped-baselines/thirdparty/drake/tools/install/libdrake)
-set(DRAKE_PREFIX "${PROJECT_BINARY_DIR}/drake-prefix")
-
-
-
-
-
 # search for eigen
-# list(APPEND CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/thirdparty/eigen/cmake) 
-
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/eigen)
+include_directories(${EIGEN3_INCLUDE_DIR})
 
-ExternalProject_Add(drake
-  DEPENDS eigen fmt spdlog
-  URL https://github.com/RobotLocomotion/drake/archive/master.tar.gz
-  # Or from a commit (download and use "shashum -a 256 'xxx.tar.gz'" on it to
-  # get the URL_HASH.
-  # URL https://github.com/RobotLocomotion/drake/archive/65c4366ea2b63278a286b1e22b8d464d50fbe365.tar.gz
-  # URL_HASH SHA256=899d98485522a7cd5251e50a7a6b8a64e40aff2a3af4951a3f0857fd938cafca
-  TLS_VERIFY ON
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILEER}
-    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
-    -DCMAKE_VERBOSE_MAKEFILE:BOOL=${CMAKE_VERBOSE_MAKEFILE}
-    -DPYTHON_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
-    -DWITH_USER_EIGEN:BOOLEAN=ON
-    -DWITH_USER_FMT:BOOLEAN=ON
-    -DWITH_USER_SPDLOG:BOOLEAN=ON
-  PREFIX "${DRAKE_PREFIX}"
-  BINARY_DIR "${PROJECT_BINARY_DIR}/thirdparty/drake"
-  BUILD_ALWAYS ON
-)
-add_executable("eigen_test" eigen_test.cpp)
+# # search for drake
+# list(APPEND CMAKE_PREFIX_PATH /home/workstation4/daniel/aipex-quadruped-baselines/thirdparty/drake/tools/install/libdrake)
+# set(DRAKE_PREFIX "${PROJECT_BINARY_DIR}/drake-prefix")
 
-# list source files here
-set(sources mip1_c++.cpp)
-
-add_executable(${CMAKE_PROJECT_NAME} ${sources})
 
 if(CXX)
   set(CMAKE_CXX_STANDARD 11)
-  target_link_libraries(${CMAKE_PROJECT_NAME} optimized ${GUROBI_CXX_LIBRARY} drake::drake
-                        debug ${GUROBI_CXX_DEBUG_LIBRARY})
 endif()
 
-target_link_libraries(${CMAKE_PROJECT_NAME} ${GUROBI_LIBRARY})
-target_link_libraries("eigen_test" Eigen3::Eigen)
+# Add executable for gc_funcnonlinear
+add_executable(gc_funcnonlinear examples/gc_funcnonlinear.cpp)
+target_link_libraries(gc_funcnonlinear optimized ${GUROBI_CXX_LIBRARY} debug ${GUROBI_CXX_DEBUG_LIBRARY})
+target_link_libraries(gc_funcnonlinear ${GUROBI_LIBRARY} Eigen3::Eigen)
 
+# Add executable for eigen_test
+add_executable(eigen_test examples/eigen_test.cpp)
+target_link_libraries(eigen_test Eigen3::Eigen)
+
+# Add executable for mip1_c++
+add_executable(mip1_c++ examples/mip1_c++.cpp)
+target_link_libraries(mip1_c++ ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+
+
+# Add executable for nl_mpc_controller
+add_executable(nl_mpc nl_mpc_controller/nl_mpc.cpp)
+target_link_libraries(nl_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+
+
+
+# add_executable("mip1_c++" examples/mip1_c++.cpp)
+# if(CXX)
+#   set(CMAKE_CXX_STANDARD 11)
+#   # target_link_libraries(mip1_c++ optimized ${GUROBI_CXX_LIBRARY}
+#   #                       debug ${GUROBI_CXX_DEBUG_LIBRARY})
+# endif()
+
+if(CXX)
+  set(CMAKE_CXX_STANDARD 11)
+endif()
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
   include(FeatureSummary)
