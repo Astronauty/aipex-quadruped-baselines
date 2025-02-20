@@ -55,9 +55,14 @@ target_link_libraries(mip1_c++ ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 
 
 # Add executable for nl_mpc_controller
-add_executable(nl_mpc nl_mpc_controller/nl_mpc.cpp)
-target_link_libraries(nl_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+# add_executable(nl_mpc nl_mpc_controller/nl_mpc.cpp)
+# target_link_libraries(nl_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 
+add_executable(quad_dynamics 
+  simplified_quad_dynamics.cpp 
+  state_space.cpp
+  transforms.cpp)
+target_link_libraries(quad_dynamics Eigen3::Eigen)
 
 
 # add_executable("mip1_c++" examples/mip1_c++.cpp)
