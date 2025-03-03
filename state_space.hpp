@@ -10,6 +10,8 @@ struct StateSpace
     MatrixXf C;
     MatrixXf D;
 
+    // float dt;
+
     StateSpace(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D)
         : A(A), B(B), C(C), D(D) {}
     ~StateSpace() {}
