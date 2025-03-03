@@ -32,8 +32,6 @@ StateSpace quadruped_state_space_continuous(const float& yaw, Matrix<float, 4, 3
     A(11, 12) = -1; // Gravity influence on accel
     A(12, 12) = 1; // Gravity state
 
-
-
     // Matrix<float, 13, 13> B;
     MatrixXf B(13, 13);
     B.setZero();
@@ -82,7 +80,10 @@ int main(int, char**)
     std::cout << "\nC:\n" << discrete_ss.C << std::endl;
     std::cout << "\nD:\n" << discrete_ss.D << std::endl;
 
+    Vector<float, 13> x1 = discrete_ss.A*x0 + discrete_ss.B*u;
+    std::cout << "\nNext state:\n" << x1 << std::endl;
 
-
+    Vector<float, 13> x2 = discrete_ss.A*x1 + discrete_ss.B*u;
+    std::cout << "\nNext state:\n" << x2 << std::endl;
     return 0;
 }
