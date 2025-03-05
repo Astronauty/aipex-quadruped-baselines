@@ -28,7 +28,11 @@ find_package(GUROBI REQUIRED)
 include_directories(${GUROBI_INCLUDE_DIRS})
 
 # search for eigen
-find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+# list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0")
+# set(Eigen3_DIR "${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0/share/eigen3/cmake")
+# set(Eigen3_DIR "${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0")
+INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0")
+# find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 # # search for drake
@@ -43,11 +47,11 @@ endif()
 # Add executable for gc_funcnonlinear
 add_executable(gc_funcnonlinear examples/gc_funcnonlinear.cpp)
 target_link_libraries(gc_funcnonlinear optimized ${GUROBI_CXX_LIBRARY} debug ${GUROBI_CXX_DEBUG_LIBRARY})
-target_link_libraries(gc_funcnonlinear ${GUROBI_LIBRARY} Eigen3::Eigen)
+target_link_libraries(gc_funcnonlinear ${GUROBI_LIBRARY})
 
 # Add executable for eigen_test
 add_executable(eigen_test examples/eigen_test.cpp)
-target_link_libraries(eigen_test Eigen3::Eigen)
+target_link_libraries(eigen_test)
 
 # Add executable for mip1_c++
 add_executable(mip1_c++ examples/mip1_c++.cpp)
@@ -62,12 +66,12 @@ add_executable(quad_dynamics
   simplified_quad_dynamics.cpp 
   state_space.cpp
   transforms.cpp)
-target_link_libraries(quad_dynamics Eigen3::Eigen)
+# target_link_libraries(quad_dynamics Eigen3::Eigen)
 
 add_executable(eigen_to_GRB_test
   tests/eigen_to_GRB_test.cpp
   gurobi_utils.cpp)
-target_link_libraries(eigen_to_GRB_test Eigen3::Eigen ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})  
+target_link_libraries(eigen_to_GRB_test ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})  
 
 # add_executable("mip1_c++" examples/mip1_c++.cpp)
 # if(CXX)
