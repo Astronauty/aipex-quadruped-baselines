@@ -4,3 +4,6 @@
 [submodule "thirdparty/drake"]
 	path = thirdparty/drake
 	url = https://github.com/RobotLocomotion/drake.git
+[submodule "unitree_mujoco"]
+	path = unitree_mujoco
+	url = https://github.com/unitreerobotics/unitree_mujoco.git
