@@ -1,28 +1,31 @@
+#pragma once
+
 #include <Eigen/Dense>
 #include <iostream>
 #include "gurobi_c++.h"
 #include "state_space.hpp"
 #include "gurobi_utils.hpp"
-
-#pragma once
+#include "mpc_params.hpp"
+#include "quad_params.hpp"
 
 using namespace std;
 using namespace Eigen;
-using namespace GRB
+// using namespace GRB;
 
 class ConvexMPC
 {
     public:
-        ConvexMPC();
+        ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params);
         ~ConvexMPC();
 
         
         void update();
     private:
-        GRBModel model;
-        GRBEnv env;
+        // GRBModel model;
+        // GRBEnv env;
+        MPCParams mpc_params;
+        QuadrupedParams quad_params;
 
-        tuple<MatrixXd, MatrixXd> create_state_space_prediciton_matrices(const& StateSpace quad_dss, int& N_MPC);
+        tuple<MatrixXd, MatrixXd> create_state_space_prediction_matrices(StateSpace const& quad_dss, int& N_MPC);
 
-
-}
+};

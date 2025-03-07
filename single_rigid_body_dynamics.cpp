@@ -1,68 +1,95 @@
-#include "single_rigid_body_dynamics.h"
 #include <Eigen/Dense>
 #include <iostream>
-#using namespace Eigen;
+#include "simplified_quad_dynamics.hpp"
+#include "transforms.hpp"
+#include "state_space.hpp"
 
+using namespace Eigen;
 
-SRBDynamics::SRBDynamics(params)
-{
-    // Constructor
-    this->params = params;
-}
-
-SRBDynamics::~SRBDynamics()
-{
-    // Destructor
-}
-
-
-
-/*
-Computes the state derivative x_dot = f(x, u) for a 3D single rigid body. https://arxiv.org/pdf/2012.10002
-The state is defined as x = [p p_dot theta w_b], where p is the position, p_dot is the velocity, theta are extrinsic rpy angles, and w_b is the angular velocity in the body frame.
+/* 
+Simplified state space quadruped dynamics based on https://dspace.mit.edu/bitstream/handle/1721.1/138000/convex_mpc_2fix.pdf
+x = [theta, p, omega, p_dot, g]
 */
-void srb_dynamics(Eigen::Matrix<float, 12, 1> x, Eigen::Matrix<float, 12, 1> u, Eigen::Matrix<float, 3, 4> p_f)
+StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 4, 3>& foot_positions)
+{   
+    // Define relevant transforms and inertial properties
+    Matrix3d R_z = eul2rotm(0, 0, yaw);
+    double m = 1;
+    Matrix3d I_b = Matrix3d::Identity(); // TODO: DEFINE GO2 INERTIA HERE
+    Matrix3d I_w = R_z*I_b*R_z.transpose(); // Inertia tensor in world body frame for small angles 
+    Matrix3d I_w_inv = I_w.inverse(); // Inverse of inertia tensor in world body frame
+    // Vector3f g;
+    // g << 0, 0, -9.81; // Gravity vector
+    double g;
+    g = 9.81;
+
+    // Define the continuous state space model for a simplified quadruped
+    MatrixXd A(13,13);
+    A.setZero();
+    A.block<3, 3>(0, 6) = R_z;
+    A.block<3, 3>(3, 9) = Matrix3d::Identity();
+    // A.block<3, 1>(9, 0) = Matrix3d::iden
+    A(11, 12) = -1; // Gravity influence on accel
+    A(12, 12) = 1; // Gravity state
+
+    // Matrix<double, 13, 13> B;
+    MatrixXd B(13, 13);
+    B.setZero();
+    for (int foot_index = 0; foot_index < 4; foot_index++)
+    {
+        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.row(foot_index).transpose());
+        B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/m;
+    }
+    
+    Matrix<double, 12, 13> C = Matrix<double, 12, 13>::Identity(); // Full state feedback, not including gravity state
+    // Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Identity();
+    Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Zero();
+
+    return StateSpace(A,B,C,D);
+};
+
+StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 4, 3>& foot_positions, const double& dt)
 {
-    I = params.inertiaTensor;
-    m = params.mass;
-
-    // Extract state variables
-    Eigen::Vector3f p = x.block<3, 1>(0, 0);
-    Eigen::Vector3f p_dot = x.block<3, 1>(3, 0);
-    Eigen::Matrix3f theta = x.block<3, 1>(6, 0);
-    Eigen::Vector3f w_b = x.block<3, 1>(9, 0);
-
-    Eigen::Matrix3f R = eul2rotm(theta(0), theta(1), theta(2));
-
-    // Compute foot positions relative to COM
-    // Eigen::Matrix<float, 4, 3> p_f; // Rows are foot positions, cols are foot indices
-    for (int i=0; i < 4; i++)
-    {
-        r_i.col(i) = p_f.col(i) - p;
-    }
-
-    // Compute applied external wrench
-    Eigen::Matrix<float, 6, 1> f_ext;
-    for (int i=0; i < 4; i++) // Iterate through the force from each foot
-    {
-        f_ext.block<3, 1>(0, 0) += u.block<3, 1>(i, 0); // Force on rigid body
-        f_ext.block<3, 1>(3, 0) += r_i.col(i).cross(u.block<3, 1>(i, 0)); // Torque on rigid body
-    }
-
-
-    // Extract control variables
-    Eigen::Vector3f f = u.block<3, 1>(0, 0);
-    Eigen::Vector3f tau = u.block<3, 1>(3, 0);
-
-    // Compute the state derivative
-    Eigen::Matrix<float, 12, 1> x_dot;
-
-    x_dot.block<3, 1>(0, 0) = p_dot;
-    x_dot.block<3, 1>(3, 0) = (1 / params.mass) * f + params.g;
-    // x_dot.block<3, 3>(6, 0) = R * skew(w_b);
-    xdot.block<3, 1> = w_b;
-    x_dot.block<3, 1>(9, 0) = params.inertiaTensor.inverse() * (R.transpose()*tau - hatMap(w_b)*params.inertiaTensor*w_b);
-
-    return x_dot;
+    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions);
+    return c2d(ss, dt);
 }
 
+
+int main(int, char**)
+{
+    Matrix<double, 4, 3> foot_positions;
+    foot_positions << 0.1, 0.1, 0,
+                      0.1, -0.1, 0,
+                      -0.1, 0.1, 0,
+                      -0.1, -0.1, 0;
+    std::cout << "Foot positions:\n" << foot_positions << std::endl;
+
+    Vector<double, 13> x0 = Vector<double, 13>::Zero();
+    x0(12) = 9.81; // Set gravity state to 1
+    Vector<double, 12> u = Vector<double, 12>::Zero();
+
+    double yaw = 0.0f;
+    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions);
+
+    std::cout << "Continuous SS\n" << std::endl;
+    std::cout << "--------------\n" << std::endl;
+    std::cout << "A:\n" << ss.A << std::endl;
+    std::cout << "\nB:\n" << ss.B << std::endl;
+    std::cout << "\nC:\n" << ss.C << std::endl;
+    std::cout << "\nD:\n" << ss.D << std::endl;
+
+    StateSpace discrete_ss = c2d(ss, 0.01);
+    std::cout << "\nDiscrete SS using ZOH\n" << std::endl;
+    std::cout << "--------------\n" << std::endl;
+    std::cout << "A:\n" << discrete_ss.A << std::endl;
+    std::cout << "\nB:\n" << discrete_ss.B << std::endl;
+    std::cout << "\nC:\n" << discrete_ss.C << std::endl;
+    std::cout << "\nD:\n" << discrete_ss.D << std::endl;
+
+    Vector<double, 13> x1 = discrete_ss.A*x0 + discrete_ss.B*u;
+    std::cout << "\nNext state:\n" << x1 << std::endl;
+
+    Vector<double, 13> x2 = discrete_ss.A*x1 + discrete_ss.B*u;
+    std::cout << "\nNext state:\n" << x2 << std::endl;
+    return 0;
+}

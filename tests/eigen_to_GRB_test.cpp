@@ -87,8 +87,8 @@ int main(int argc, char* argv[])
     p << 1, 5, -3;
 
 
-    GRBQuadExpr quad_obj = createQuadObj(x, Q, 3);
-    GRBLinExpr lin_obj = createLinObj(x, p, 3);
+    GRBQuadExpr quad_obj = create_quad_obj(x, Q, 3);
+    GRBLinExpr lin_obj = create_lin_obj(x, p, 3);
 
     // GRBQuadExpr obj = quad_obj + lin_obj;
 
