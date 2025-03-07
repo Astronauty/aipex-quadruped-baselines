@@ -66,12 +66,19 @@ add_executable(quad_dynamics
   simplified_quad_dynamics.cpp 
   state_space.cpp
   transforms.cpp)
-# target_link_libraries(quad_dynamics Eigen3::Eigen)
 
 add_executable(eigen_to_GRB_test
   tests/eigen_to_GRB_test.cpp
   gurobi_utils.cpp)
 target_link_libraries(eigen_to_GRB_test ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})  
+
+
+add_executable(convex_mpc 
+  convex_mpc.cpp)
+
+target_link_libraries(convex_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})  
+
+
 
 # add_executable("mip1_c++" examples/mip1_c++.cpp)
 # if(CXX)

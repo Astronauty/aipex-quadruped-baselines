@@ -63,15 +63,16 @@ GRBLinExpr create_lin_obj(const GRBVar* x, const VectorXd& p, int n)
  * @brief Create a Gurobi linear equality constraint in the form:
  Ax = b;
  */
-void add_lin_eq_constr(GRBModel model, const GRBCar* x, const MatrixXd& A, const VectorXd b)
+void add_lin_eq_constr(GRBModel model, const GRBVar* x, const MatrixXd& A, const VectorXd b)
 {
-    if (A.rows() != b.size()) {
-        throw invalid_argument("The number of rows in A must equal the length of b.");
-    }
+    // int n = static_cast<int>(b.size());
+    // if (A.rows() != b.size()) {
+    //     throw invalid_argument("The number of rows in A must equal the length of b.");
+    // }
 
-    if (A.cols() != n) {
-        throw invalid_argument("The number of columns in A must equal the length of x.");
-    }
+    // if (A.cols() != n) {
+    //     throw invalid_argument("The number of columns in A must equal the length of x.");
+    // }
 
     GRBLinExpr lhs;
     for (int i = 0; i < A.rows(); i++) {
