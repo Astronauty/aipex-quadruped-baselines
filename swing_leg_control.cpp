@@ -8,7 +8,7 @@ double Kd;
 using namespace std;
 using namespace eigen;
 
-Matrix<float, 3, 4> compute_joint_torques(vector<Vector3d>& p_ref, vector<Vector3d>& v_ref, vector<Vector3d>& p, vector<Vector3d>& v)
+Matrix<double, 3, 4> compute_joint_torques(vector<Vector3d>& p_ref, vector<Vector3d>& v_ref, vector<Vector3d>& p, vector<Vector3d>& v)
 {
 
     % Compute feed forward torques

@@ -6,6 +6,7 @@
 #include "state_space.hpp"
 #include "gurobi_utils.hpp"
 #include "mpc_params.hpp"
+#include "simplified_quad_dynamics.hpp"
 #include "quad_params.hpp"
 
 using namespace std;
@@ -18,6 +19,12 @@ class ConvexMPC
         ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params);
         ~ConvexMPC();
 
+        tuple<MatrixXd, MatrixXd> create_state_space_prediction_matrices(const StateSpace& quad_dss);
+        VectorXd predict_states(MatrixXd A_qp, MatrixXd B_qp);
+
+
+        StateSpace get_default_dss_model();
+
         
         void update();
     private:
@@ -25,7 +32,14 @@ class ConvexMPC
         // GRBEnv env;
         MPCParams mpc_params;
         QuadrupedParams quad_params;
+        
+        Vector<double, 13> x0;
+        Vector<double, 12> u;
 
-        tuple<MatrixXd, MatrixXd> create_state_space_prediction_matrices(StateSpace const& quad_dss, int& N_MPC);
+        MatrixXd A_qp;
+        MatrixXd B_qp;
+
+        StateSpace quad_dss;
+        Vector3d foot_positions[4];
 
 };

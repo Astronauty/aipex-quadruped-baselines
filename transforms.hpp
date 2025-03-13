@@ -2,5 +2,5 @@
 #include <Eigen/Dense>
 using namespace Eigen;
 
-Matrix3f eul2rotm(double roll, double pitch, double yaw);
-Matrix3f hatMap(const Eigen::Vector3f& a);
+Matrix3d eul2rotm(double roll, double pitch, double yaw);
+Matrix3d hatMap(const Eigen::Vector3d& a);

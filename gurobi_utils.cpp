@@ -11,7 +11,7 @@ using namespace std;
  * @param Q Quadratic cost matrix, expressed as a Eigen MatrixXd.
  * @param x Reference state vector, expressed as a std::vector<double> of gurobi variables.
  */
-GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& Q, int n)
+GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& Q, int n) // Necessary to specify the number of variables since GRBVar is passed by pointer
 {
     GRBQuadExpr obj = 0.0;
     // int n = static_cast<int>(Q.rows());
