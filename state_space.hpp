@@ -5,14 +5,14 @@ using namespace Eigen;
 
 struct StateSpace
 {
-    MatrixXf A;
-    MatrixXf B;
-    MatrixXf C;
-    MatrixXf D;
+    MatrixXd A;
+    MatrixXd B;
+    MatrixXd C;
+    MatrixXd D;
 
-    // float dt;
+    // double dt;
 
-    StateSpace(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D)
+    StateSpace(Eigen::MatrixXd A, Eigen::MatrixXd B, Eigen::MatrixXd C, Eigen::MatrixXd D)
         : A(A), B(B), C(C), D(D) {}
     ~StateSpace() {}
 };
@@ -20,4 +20,4 @@ struct StateSpace
 /*
 Discretization via ZOH
 */
-StateSpace c2d(const StateSpace& ss, float dt);
+StateSpace c2d(const StateSpace& ss, double dt);

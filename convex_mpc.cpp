@@ -3,6 +3,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include "convex_mpc.hpp"
 
+
 using namespace std;
 using namespace Eigen;
 
@@ -17,10 +18,24 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         env.set("LogFile", "convex_mpc.log");
         env.start();
 
-        // Create an empty model
+        // Create an empty Gurobi model
         GRBModel model = GRBModel(env);
         // env = GRBEnv();
         // model = GRBModel(env);
+
+        // Initialize robot state
+        x0 = Vector<double, 13>::Zero();
+        u = Vector<double, 12>::Zero();
+        quad_dss = get_default_dss_model(); // TODO: proper initialization
+        tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
+
+        // Formulate the QP 
+        GRBVar *U = model.addVars(mpc_params.N_CONTROLS, GRB_CONTINUOUS);
+        model.setObjective(create_quad_obj(U, mpc_params.Q , mpc_params.N_STATES) 
+            + create_quad_obj(U, mpc_params.R, mpc_params.N_STATES));
+    
+
+
     } 
     catch(GRBException e) 
     {
@@ -30,6 +45,9 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
 
 }
 
+ConvexMPC::~ConvexMPC(){
+
+}
 
 /**
  * @brief Creates state evolution matrices for the Convex Model Predictive Control (MPC).
@@ -44,31 +62,61 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
  * @return A tuple containing two Eigen::MatrixXd objects representing the state evolution matrices.
  */
 
-tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(StateSpace const& quad_dss, int& N_MPC)
+tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(const StateSpace& quad_dss)
 {
-    const int& N_STATES = mpc_params.N_STATES;
-    const int& N_CONTROLS = mpc_params.N_CONTROLS;
+    const int& N_STATES = this->mpc_params.N_STATES;
+    const int& N_CONTROLS = this->mpc_params.N_CONTROLS;
+    const int& N_MPC = this->mpc_params.N_MPC;
 
     MatrixXd A_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * N_MPC);
-    MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * N_MPC); // Example of another matrix
+    MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * N_MPC); 
 
     for (int i = 0; i < mpc_params.N_MPC; ++i) {
         for (int j = 0; j <= i; ++j) {
             A_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = quad_dss.A.pow(i - j) * quad_dss.B;
         }
-        B_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1); // Example of another matrix
+        B_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1); 
     }
 
     return std::make_tuple(A_qp, B_qp);
 }
 
+StateSpace ConvexMPC::get_default_dss_model()
+{
+    Matrix<double, 4, 3> foot_positions;
+    foot_positions << 0.1, 0.1, 0,
+                      0.1, -0.1, 0,
+                      -0.1, 0.1, 0,
+                      -0.1, -0.1, 0;
+
+    double yaw = 0.0f;
+    StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, this->mpc_params.dt);
+
+    return quad_dss;
+}
+
+
+void update()
+{
+    // TODO:
+    /*
+    1) Get updated joint angles/velocities from unitree ros topic
+        a) Update rigid body robot state (using estimator?)
+        b) Compute foot positions with FK
+    2) Recompute quad_dss with new foot positions and yaw
+    */
+
+}
+
 int main(int, char**)
 {
     // Define the parameters for the MPC and the quadruped
-    int N_MPC = 10;
-    double dt = 0.1;
+    int N_MPC = 3;
+    double dt = 0.01;
     int N_STATES = 13;
     int N_CONTROLS = 4;
+
+    // MPC Params
     MatrixXd Q = MatrixXd::Identity(N_STATES, N_STATES);
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -1.0);
@@ -76,13 +124,26 @@ int main(int, char**)
     MPCParams mpc_params = MPCParams(N_MPC, N_CONTROLS, N_STATES,
          dt, Q, R, u_lower, u_upper);
 
-
-
+    // Quadruped Params
     Matrix3d inertiaTensor = Eigen::Matrix3d::Identity();
     double mass = 1.0;
     double gravity = 9.81;
     QuadrupedParams quadruped_params = QuadrupedParams(inertiaTensor, mass, gravity);
-    
+
+    // Initialize the ConvexMPC object
+    ConvexMPC convex_mpc = ConvexMPC(mpc_params, quadruped_params);
+
+    // Example of creating state space prediction matrices
+    StateSpace quad_dss = convex_mpc.get_default_dss_model(); // TODO: Implement actual updates to the dss based on yaw and foot position
+
+    auto [A_qp, B_qp] = convex_mpc.create_state_space_prediction_matrices(quad_dss, N_MPC);
+
+    // Print the matrices to verify
+
+    cout << "A_qp: \n" << A_qp << endl;
+    cout << "B_qp: \n" << B_qp << endl;
+    // cout << "Size of A_qp: " << A_qp.rows() << " x " << A_qp.cols() << endl;
+    // cout << "Size of B_qp: " << B_qp.rows() << " x " << B_qp.cols() << endl;
 
     return 0;
 }

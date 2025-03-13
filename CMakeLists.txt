@@ -27,21 +27,17 @@ endif()
 find_package(GUROBI REQUIRED)
 include_directories(${GUROBI_INCLUDE_DIRS})
 
-# search for eigen
-# list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0")
-# set(Eigen3_DIR "${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0/share/eigen3/cmake")
-# set(Eigen3_DIR "${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0")
+# include eigen headers
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/third_party/eigen-3.4.0")
 # find_package(Eigen3 3.4 REQUIRED NO_MODULE)
-include_directories(${EIGEN3_INCLUDE_DIR})
+# set(EIGEN3_INCLUDE_DIR "/opt/homebrew/opt/eigen")
 
 # # search for drake
 # list(APPEND CMAKE_PREFIX_PATH /home/workstation4/daniel/aipex-quadruped-baselines/thirdparty/drake/tools/install/libdrake)
 # set(DRAKE_PREFIX "${PROJECT_BINARY_DIR}/drake-prefix")
 
-
 if(CXX)
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 # Add executable for gc_funcnonlinear
@@ -62,10 +58,10 @@ target_link_libraries(mip1_c++ ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 # add_executable(nl_mpc nl_mpc_controller/nl_mpc.cpp)
 # target_link_libraries(nl_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 
-add_executable(quad_dynamics 
-  simplified_quad_dynamics.cpp 
-  state_space.cpp
-  transforms.cpp)
+# add_executable(quad_dynamics 
+#   simplified_quad_dynamics.cpp 
+#   state_space.cpp
+#   transforms.cpp)
 
 add_executable(eigen_to_GRB_test
   tests/eigen_to_GRB_test.cpp
@@ -74,7 +70,10 @@ target_link_libraries(eigen_to_GRB_test ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 
 
 add_executable(convex_mpc 
-  convex_mpc.cpp)
+  convex_mpc.cpp
+  simplified_quad_dynamics.cpp 
+  state_space.cpp
+  transforms.cpp)
 
 target_link_libraries(convex_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})  
 
@@ -88,7 +87,7 @@ target_link_libraries(convex_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 # endif()
 
 if(CXX)
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})

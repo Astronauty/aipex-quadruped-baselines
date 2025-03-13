@@ -8,7 +8,6 @@ find_library(GUROBI_LIBRARY
     HINTS ${GUROBI_DIR} $ENV{GUROBI_HOME}
     PATH_SUFFIXES lib)
 
-
 if(CXX)
     if(MSVC)
         set(MSVC_YEAR "2017")
@@ -38,3 +37,4 @@ endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(GUROBI DEFAULT_MSG GUROBI_LIBRARY)
+

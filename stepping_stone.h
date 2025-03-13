@@ -6,7 +6,7 @@
 class SteppingStone
 {
     public:
-        SteppingStone(drake::math, float width, float height);
+        SteppingStone(drake::math, double width, double height);
         ~SteppingStone();
 
 
@@ -16,8 +16,8 @@ class SteppingStone
     private:
         Eigen::Vector3d point;
         Eigen::Vector3d normal;
-        float width;
-        float height;
+        double width;
+        double height;
         
 
         Eigen::Matrix<double, 6, 3> A;

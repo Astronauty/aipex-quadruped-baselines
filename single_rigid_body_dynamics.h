@@ -3,9 +3,9 @@
 using namespace Eigen;
 
 struct inertialParamsSRB {
-    float mass;
-    Matrix3f
-    Matrix3f inertiaTensor;
+    double mass;
+    Matrix3d
+    Matrix3d inertiaTensor;
 };
 
 class SRBDynamics
@@ -18,15 +18,15 @@ class SRBDynamics
         Eigen::Matrix3d hatMap(const Eigen::Vector3d& a);
     
     private:
-        // Matrix<float, 18, 1> x;
-        // Matrix<float, 4, 3> u;
-        // Matrix<float, 4, 3> p_f;
-        // Matrix<float, 12, 1> x_dot;
+        // Matrix<double, 18, 1> x;
+        // Matrix<double, 4, 3> u;
+        // Matrix<double, 4, 3> p_f;
+        // Matrix<double, 12, 1> x_dot;
 
-        Matrix<float, 3, 4> r_i; // Foot positions relative to COM
+        Matrix<double, 3, 4> r_i; // Foot positions relative to COM
 
         inertialParams params;
 
-        void srb_dynamics(inertialParamsSRB params, Matrix<float, 18, 1> x, Matrix<float, 4, 3> u, Matrix<float, 4, 3> p_f);
+        void srb_dynamics(inertialParamsSRB params, Matrix<double, 18, 1> x, Matrix<double, 4, 3> u, Matrix<double, 4, 3> p_f);
 };
 
