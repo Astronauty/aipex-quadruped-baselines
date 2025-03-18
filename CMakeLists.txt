@@ -73,7 +73,8 @@ add_executable(convex_mpc
   convex_mpc.cpp
   simplified_quad_dynamics.cpp 
   state_space.cpp
-  transforms.cpp)
+  transforms.cpp
+  gurobi_utils.cpp)
 
 target_link_libraries(convex_mpc ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})  
 

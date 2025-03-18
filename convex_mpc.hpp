@@ -39,7 +39,15 @@ class ConvexMPC
         MatrixXd A_qp;
         MatrixXd B_qp;
 
-        StateSpace quad_dss;
         Vector3d foot_positions[4];
+
+
+        MatrixXd R_bar;
+        MatrixXd Q_bar;
+        MatrixXd compute_R_bar();
+        MatrixXd compute_Q_bar();
+        MatrixXd blkdiag(const vector<MatrixXd>& matrices);
+
+        MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
 
 };
