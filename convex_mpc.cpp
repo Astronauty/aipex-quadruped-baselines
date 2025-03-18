@@ -7,6 +7,11 @@
 using namespace std;
 using namespace Eigen;
 
+/*
+QP Form:
+min 0.5 x^T P x + q^T x
+
+*/
 
 ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
     : mpc_params(mpc_params), quad_params(quad_params)
@@ -20,20 +25,32 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
 
         // Create an empty Gurobi model
         GRBModel model = GRBModel(env);
+
+
         // env = GRBEnv();
         // model = GRBModel(env);
 
         // Initialize robot state
         x0 = Vector<double, 13>::Zero();
         u = Vector<double, 12>::Zero();
-        quad_dss = get_default_dss_model(); // TODO: proper initialization
+        StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
         // Formulate the QP 
         GRBVar *U = model.addVars(mpc_params.N_CONTROLS, GRB_CONTINUOUS);
-        model.setObjective(create_quad_obj(U, mpc_params.Q , mpc_params.N_STATES) 
+        model.setObjective(create_quad_obj(U, mpc_params.Q , mpc_params.N_CONTROLS) 
             + create_quad_obj(U, mpc_params.R, mpc_params.N_STATES));
-    
+
+
+        model.setObjective(create_quad_obj(U, A_qp ))
+
+        model.optimize();
+
+        std::cout << "Optimized variables:" << std::endl;
+        for (int i = 0; i < mpc_params.N_MPC; ++i) {
+            double x_value = U[i].get(GRB_DoubleAttr_X);
+            std::cout << "x[" << i << "] = " << x_value << std::endl;
+        }
 
 
     } 
@@ -95,6 +112,67 @@ StateSpace ConvexMPC::get_default_dss_model()
     return quad_dss;
 }
 
+MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
+    // Calculate the total size of the block diagonal matrix
+    int totalRows = 0, totalCols = 0;
+    for (const auto& mat : matrices) {
+        totalRows += mat.rows();
+        totalCols += mat.cols();
+    }
+
+    // Create the block diagonal matrix
+    MatrixXd blockDiagonal = MatrixXd::Zero(totalRows, totalCols);
+
+    // Place each matrix along the diagonal
+    int currentRow = 0, currentCol = 0;
+    for (const auto& mat : matrices) {
+        blockDiagonal.block(currentRow, currentCol, mat.rows(), mat.cols()) = mat;
+        currentRow += mat.rows();
+        currentCol += mat.cols();
+    }
+
+    return blockDiagonal;
+}
+
+MatrixXd ConvexMPC::compute_R_bar()
+{
+    MatrixXd R = mpc_params.R;
+    int N_CONTROLS = mpc_params.N_CONTROLS;
+    int N_MPC = mpc_params.N_MPC;
+
+    std::vector<MatrixXd> R_vec(N_MPC, R);
+    MatrixXd R_bar = blkdiag(R_vec);
+    return R_bar;
+}
+
+MatrixXd ConvexMPC::compute_Q_bar()
+{
+    MatrixXd Q = mpc_params.Q;
+    int N_CONTROLS = mpc_params.N_CONTROLS;
+    int N_MPC = mpc_params.N_MPC;
+
+    std::vector<MatrixXd> Q_vec(N_MPC,Q);
+    MatrixXd R_bar = blkdiag(Q_vec);
+    return Q_bar;
+}
+
+
+/*
+Computes the quadratic cost fo the unconstrained linear mpc problem
+
+P = 2*R_bar + 2*A_qp'*Q_bar*A_qp
+*/
+MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
+{
+    MatrixXd P = 2*R_bar + 2*A_qp.transpose() * Q_bar * A_qp;
+    return P;   
+}
+
+VectorXd ConvexMPC::compute_q(VectorXd Q_bar, B_qp, x0)
+{
+    VectorXd q = 2*
+}
+
 
 void update()
 {
@@ -136,7 +214,7 @@ int main(int, char**)
     // Example of creating state space prediction matrices
     StateSpace quad_dss = convex_mpc.get_default_dss_model(); // TODO: Implement actual updates to the dss based on yaw and foot position
 
-    auto [A_qp, B_qp] = convex_mpc.create_state_space_prediction_matrices(quad_dss, N_MPC);
+    auto [A_qp, B_qp] = convex_mpc.create_state_space_prediction_matrices(quad_dss);
 
     // Print the matrices to verify
 
