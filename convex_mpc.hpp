@@ -17,7 +17,7 @@ class ConvexMPC
 {
     public:
         ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params);
-        ~ConvexMPC();
+        // ~ConvexMPC();
 
         tuple<MatrixXd, MatrixXd> create_state_space_prediction_matrices(const StateSpace& quad_dss);
         VectorXd predict_states(MatrixXd A_qp, MatrixXd B_qp);
@@ -30,6 +30,8 @@ class ConvexMPC
     private:
         // GRBModel model;
         // GRBEnv env;
+        GRBVar* U;
+
         MPCParams mpc_params;
         QuadrupedParams quad_params;
         
@@ -46,8 +48,9 @@ class ConvexMPC
         MatrixXd Q_bar;
         MatrixXd compute_R_bar();
         MatrixXd compute_Q_bar();
-        MatrixXd blkdiag(const vector<MatrixXd>& matrices);
+        // MatrixXd blkdiag(const vector<MatrixXd>& matrices);
 
-        MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
+        MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp);
+        VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0);
 
 };
