@@ -26,32 +26,50 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         // Create an empty Gurobi model
         GRBModel model = GRBModel(env);
 
-
-        // env = GRBEnv();
-        // model = GRBModel(env);
-
         // Initialize robot state
-        x0 = Vector<double, 13>::Zero();
+        // x0 = Vector<double, 13>::Zero();
+        x0 = Vector<double, 13>::Ones();
         u = Vector<double, 12>::Zero();
         StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization
+
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
         // Formulate the QP 
-        GRBVar *U = model.addVars(mpc_params.N_CONTROLS, GRB_CONTINUOUS);
-        model.setObjective(create_quad_obj(U, mpc_params.Q , mpc_params.N_CONTROLS) 
-            + create_quad_obj(U, mpc_params.R, mpc_params.N_STATES));
+        U = model.addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
+        cout << "Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
 
 
-        model.setObjective(create_quad_obj(U, A_qp ))
+        MatrixXd Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
+        // cout << "Size of Q_bar: " << Q_bar.rows() << " x " << Q_bar.cols() << endl;
 
+        R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
+        // cout << "Size of R_bar: " << R_bar.rows() << " x " << R_bar.cols() << endl;
+
+        MatrixXd P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
+        // cout << "Size of P: " << P.rows() << " x " << P.cols() << endl;
+
+        MatrixXd q = compute_q(Q_bar, A_qp, B_qp, x0);
+        // cout << "Size of q: " << q.rows() << " x " << q.cols() << endl;
+
+
+        GRBQuadExpr quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
+        GRBLinExpr lin_expr = create_lin_obj(U, q, mpc_params.N_STATES);
+
+        // GRBLinExpr test_expr = U[1];
+        // model.setObjective(create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)) 
+            // + create_lin_obj(U, q, mpc_params.N_STATES));
+        model.setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
+        // model.setObjective(test_expr, GRB_MINIMIZE);
+
+        // cout << "Objective Function: " << model.getObjective() << endl;
         model.optimize();
 
+        
         std::cout << "Optimized variables:" << std::endl;
-        for (int i = 0; i < mpc_params.N_MPC; ++i) {
+        for (int i = 0; i < mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1); ++i) {
             double x_value = U[i].get(GRB_DoubleAttr_X);
             std::cout << "x[" << i << "] = " << x_value << std::endl;
         }
-
 
     } 
     catch(GRBException e) 
@@ -62,12 +80,17 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
 
 }
 
-ConvexMPC::~ConvexMPC(){
 
-}
+// ConvexMPC::~ConvexMPC() {
+//     if (U != nullptr) {
+//         delete[] U; // Free the memory allocated for U
+//         U = nullptr; // Avoid dangling pointer
+//     }
+// }
+
 
 /**
- * @brief Creates state evolution matrices for the Convex Model Predictive Control (MPC).
+ * @brief Creates state prediction matrices for the Convex Model Predictive Control (MPC).
  * 
  * This function generates the state prediction matrices A_qp and B_qp based on the given discrete state space 
  * representation of the quadruped and the specified MPC horizon length. These can be used to generate a vector of 
@@ -85,15 +108,27 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
     const int& N_CONTROLS = this->mpc_params.N_CONTROLS;
     const int& N_MPC = this->mpc_params.N_MPC;
 
-    MatrixXd A_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * N_MPC);
-    MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * N_MPC); 
+    MatrixXd A_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * (N_MPC-1));
+    MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_STATES); 
 
-    for (int i = 0; i < mpc_params.N_MPC; ++i) {
-        for (int j = 0; j <= i; ++j) {
+    for (int i = 0; i < mpc_params.N_MPC; i++) 
+    {
+        for (int j = 0; j < i; j++) 
+        {
+            cout << i << " x " << j << endl;
             A_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = quad_dss.A.pow(i - j) * quad_dss.B;
+            // cout << "A_qp accessing: " << i * N_STATES << "x" << j * N_CONTROLS << endl;
+            // cout << "A_qp block size: " << N_STATES << "x" << N_CONTROLS << endl;
+            // cout << "A_qp End: " << (i+1)*N_STATES << "x" << (j+1)*N_CONTROLS << endl;
+            // cout << "\n" << endl;
         }
+        // cout << "pog2 " << i << endl;
+        // cout << "\n" << quad_dss.A.pow(0) << endl;
         B_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1); 
     }
+
+    // cout << "state space predict success " << endl;
+    // cout << "\n" << endl;
 
     return std::make_tuple(A_qp, B_qp);
 }
@@ -106,8 +141,13 @@ StateSpace ConvexMPC::get_default_dss_model()
                       -0.1, 0.1, 0,
                       -0.1, -0.1, 0;
 
+
     double yaw = 0.0f;
     StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, this->mpc_params.dt);
+    
+    cout << "A Size:  " << quad_dss.A.rows() << "x" << quad_dss.A.cols() << endl;
+    cout << "B Size:  " << quad_dss.B.rows() << "x" << quad_dss.B.cols() << endl;
+
 
     return quad_dss;
 }
@@ -116,10 +156,12 @@ MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
     // Calculate the total size of the block diagonal matrix
     int totalRows = 0, totalCols = 0;
     for (const auto& mat : matrices) {
+        cout << "Matrix dimensions: " << mat.rows() << " x " << mat.cols() << endl;
         totalRows += mat.rows();
         totalCols += mat.cols();
     }
-
+    // cout << "Total Rows " << totalRows << endl;
+    // cout << "Total Cols " << totalCols << endl;
     // Create the block diagonal matrix
     MatrixXd blockDiagonal = MatrixXd::Zero(totalRows, totalCols);
 
@@ -130,8 +172,9 @@ MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
         currentRow += mat.rows();
         currentCol += mat.cols();
     }
-
-    return blockDiagonal;
+    cout << "Block diagonal matrix dimensions: " << blockDiagonal.rows() << " x " << blockDiagonal.cols() << endl;
+    // return blockDiagonal;
+    return MatrixXd::Identity(totalRows, totalCols);
 }
 
 MatrixXd ConvexMPC::compute_R_bar()
@@ -140,7 +183,7 @@ MatrixXd ConvexMPC::compute_R_bar()
     int N_CONTROLS = mpc_params.N_CONTROLS;
     int N_MPC = mpc_params.N_MPC;
 
-    std::vector<MatrixXd> R_vec(N_MPC, R);
+    std::vector<MatrixXd> R_vec(N_MPC-1, R);
     MatrixXd R_bar = blkdiag(R_vec);
     return R_bar;
 }
@@ -151,8 +194,14 @@ MatrixXd ConvexMPC::compute_Q_bar()
     int N_CONTROLS = mpc_params.N_CONTROLS;
     int N_MPC = mpc_params.N_MPC;
 
-    std::vector<MatrixXd> Q_vec(N_MPC,Q);
-    MatrixXd R_bar = blkdiag(Q_vec);
+    cout << "here 3" << endl;
+    cout << "Size of Q: " << Q.rows() << " x " << Q.cols() << endl;
+    cout << "mpc_params.Q:\n" << Q << endl;
+    cout << "N_MPC: " << N_MPC << endl;
+    std::vector<MatrixXd> Q_vec(N_MPC, Q);
+    cout << "here 4" << endl;
+    MatrixXd Q_bar = blkdiag(Q_vec);
+    cout << "here 5" << endl;
     return Q_bar;
 }
 
@@ -164,13 +213,18 @@ P = 2*R_bar + 2*A_qp'*Q_bar*A_qp
 */
 MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
 {
+    assert(R_bar.rows() == R_bar.cols() && "R_bar must be square.");
+    assert(Q_bar.rows() == Q_bar.cols() && "Q_bar must be square.");
+    assert(A_qp.cols() == R_bar.rows() && "A_qp and R_bar dimensions must match.");
+    
     MatrixXd P = 2*R_bar + 2*A_qp.transpose() * Q_bar * A_qp;
     return P;   
 }
 
-VectorXd ConvexMPC::compute_q(VectorXd Q_bar, B_qp, x0)
+VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0)
 {
-    VectorXd q = 2*
+    VectorXd q = 2*x0.transpose() * B_qp * Q_bar.transpose() * A_qp;
+    return q;
 }
 
 
@@ -192,9 +246,9 @@ int main(int, char**)
     int N_MPC = 3;
     double dt = 0.01;
     int N_STATES = 13;
-    int N_CONTROLS = 4;
+    int N_CONTROLS = 12;
 
-    // MPC Params
+    // Define MPC Params
     MatrixXd Q = MatrixXd::Identity(N_STATES, N_STATES);
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -1.0);
@@ -202,7 +256,7 @@ int main(int, char**)
     MPCParams mpc_params = MPCParams(N_MPC, N_CONTROLS, N_STATES,
          dt, Q, R, u_lower, u_upper);
 
-    // Quadruped Params
+    // Define Quadruped Params
     Matrix3d inertiaTensor = Eigen::Matrix3d::Identity();
     double mass = 1.0;
     double gravity = 9.81;
@@ -212,14 +266,13 @@ int main(int, char**)
     ConvexMPC convex_mpc = ConvexMPC(mpc_params, quadruped_params);
 
     // Example of creating state space prediction matrices
-    StateSpace quad_dss = convex_mpc.get_default_dss_model(); // TODO: Implement actual updates to the dss based on yaw and foot position
+    // StateSpace quad_dss = convex_mpc.get_default_dss_model(); // TODO: Implement actual updates to the dss based on yaw and foot position
+    // auto [A_qp, B_qp] = convex_mpc.create_state_space_prediction_matrices(quad_dss);
 
-    auto [A_qp, B_qp] = convex_mpc.create_state_space_prediction_matrices(quad_dss);
+    // // Print the matrices to verify
 
-    // Print the matrices to verify
-
-    cout << "A_qp: \n" << A_qp << endl;
-    cout << "B_qp: \n" << B_qp << endl;
+    // cout << "A_qp: \n" << A_qp << endl;
+    // cout << "B_qp: \n" << B_qp << endl;
     // cout << "Size of A_qp: " << A_qp.rows() << " x " << A_qp.cols() << endl;
     // cout << "Size of B_qp: " << B_qp.rows() << " x " << B_qp.cols() << endl;
 

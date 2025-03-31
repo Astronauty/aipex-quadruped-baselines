@@ -7,32 +7,34 @@ using namespace Eigen;
 using namespace std;
 
 /**
- * @brief Create a quadratic objective function for gurobi of the form J = x'Qx.
+ * @brief Create a quadratic objective function for gurobi of the form J = x'Px.
  * @param Q Quadratic cost matrix, expressed as a Eigen MatrixXd.
  * @param x Reference state vector, expressed as a std::vector<double> of gurobi variables.
  */
-GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& Q, int n) // Necessary to specify the number of variables since GRBVar is passed by pointer
+GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& P, int n) // Necessary to specify the number of variables since GRBVar is passed by pointer
 {
     GRBQuadExpr obj = 0.0;
     // int n = static_cast<int>(Q.rows());
 
     // Dimension checks
     // if (Q.rows() != x.size()) {
-    if (Q.rows() != n){
-        throw invalid_argument("The number of rows in Q must equal the length of x.");
+    if (P.rows() != n){
+        cout << "Size of P: " << P.rows() << "x" << P.cols() << endl;
+        cout << "Value of n: " << n << endl;
+        throw invalid_argument("gurobi_utils.cpp : The number of rows in Q must equal the length of x.");
     }
 
-    if (Q.rows() != Q.cols()) {
-        throw invalid_argument("Q must be a square matrix.");
+    if (P.rows() != P.cols()) {
+        throw invalid_argument("gurobi_utils.cpp : Q must be a square matrix.");
     }
-
+    
     // Sum the quadratic costs
     for(int i = 0; i < n; i++)
     {
         for (int j = 0; j < n; j++)
         {
             // obj += Q(i, j) * (x_ref[i] - x[i]) * (x_ref[j] - x[j]);
-            obj += Q(i, j) * x[i] * x[j];
+            obj += P(i, j) * x[i] * x[j];
 
         }
     }

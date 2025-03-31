@@ -91,8 +91,12 @@ int main(int argc, char* argv[])
     GRBLinExpr lin_obj = create_lin_obj(x, p, 3);
 
     // GRBQuadExpr obj = quad_obj + lin_obj;
+    // GRBQuadExpr obj = x[1]*x[1] + x[2]*x[1]+5;
+    // model.setObjective(obj);
+
 
     model.setObjective(quad_obj + lin_obj, GRB_MINIMIZE);
+    std::cout << "Objective function: " << model.getObjective() << std::endl;
     model.optimize();
 
     std::cout << "Optimized variables:" << std::endl;

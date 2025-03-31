@@ -33,14 +33,15 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 4,
     A(12, 12) = 1; // Gravity state
 
     // Matrix<double, 13, 13> B;
-    MatrixXd B(13, 13);
+    MatrixXd B(13, 12);
+    std::cout << "B matrix size: " << B.rows() << "x" << B.cols() << std::endl;
     B.setZero();
     for (int foot_index = 0; foot_index < 4; foot_index++)
     {
         B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.row(foot_index).transpose());
         B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/m;
-    }
-    
+    }    
+
     Matrix<double, 12, 13> C = Matrix<double, 12, 13>::Identity(); // Full state feedback, not including gravity state
     // Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Identity();
     Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Zero();
@@ -51,45 +52,46 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 4,
 StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 4, 3>& foot_positions, const double& dt)
 {
     StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions);
+
     return c2d(ss, dt);
 }
 
 
-int main(int, char**)
-{
-    Matrix<double, 4, 3> foot_positions;
-    foot_positions << 0.1, 0.1, 0,
-                      0.1, -0.1, 0,
-                      -0.1, 0.1, 0,
-                      -0.1, -0.1, 0;
-    std::cout << "Foot positions:\n" << foot_positions << std::endl;
+// int main(int, char**)
+// {
+//     Matrix<double, 4, 3> foot_positions;
+//     foot_positions << 0.1, 0.1, 0,
+//                       0.1, -0.1, 0,
+//                       -0.1, 0.1, 0,
+//                       -0.1, -0.1, 0;
+//     std::cout << "Foot positions:\n" << foot_positions << std::endl;
 
-    Vector<double, 13> x0 = Vector<double, 13>::Zero();
-    x0(12) = 9.81; // Set gravity state to 1
-    Vector<double, 12> u = Vector<double, 12>::Zero();
+//     Vector<double, 13> x0 = Vector<double, 13>::Zero();
+//     x0(12) = 9.81; // Set gravity state to 1
+//     Vector<double, 12> u = Vector<double, 12>::Zero();
 
-    double yaw = 0.0f;
-    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions);
+//     double yaw = 0.0f;
+//     StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions);
 
-    std::cout << "Continuous SS\n" << std::endl;
-    std::cout << "--------------\n" << std::endl;
-    std::cout << "A:\n" << ss.A << std::endl;
-    std::cout << "\nB:\n" << ss.B << std::endl;
-    std::cout << "\nC:\n" << ss.C << std::endl;
-    std::cout << "\nD:\n" << ss.D << std::endl;
+//     std::cout << "Continuous SS\n" << std::endl;
+//     std::cout << "--------------\n" << std::endl;
+//     std::cout << "A:\n" << ss.A << std::endl;
+//     std::cout << "\nB:\n" << ss.B << std::endl;
+//     std::cout << "\nC:\n" << ss.C << std::endl;
+//     std::cout << "\nD:\n" << ss.D << std::endl;
 
-    StateSpace discrete_ss = c2d(ss, 0.01);
-    std::cout << "\nDiscrete SS using ZOH\n" << std::endl;
-    std::cout << "--------------\n" << std::endl;
-    std::cout << "A:\n" << discrete_ss.A << std::endl;
-    std::cout << "\nB:\n" << discrete_ss.B << std::endl;
-    std::cout << "\nC:\n" << discrete_ss.C << std::endl;
-    std::cout << "\nD:\n" << discrete_ss.D << std::endl;
+//     StateSpace discrete_ss = c2d(ss, 0.01);
+//     std::cout << "\nDiscrete SS using ZOH\n" << std::endl;
+//     std::cout << "--------------\n" << std::endl;
+//     std::cout << "A:\n" << discrete_ss.A << std::endl;
+//     std::cout << "\nB:\n" << discrete_ss.B << std::endl;
+//     std::cout << "\nC:\n" << discrete_ss.C << std::endl;
+//     std::cout << "\nD:\n" << discrete_ss.D << std::endl;
 
-    Vector<double, 13> x1 = discrete_ss.A*x0 + discrete_ss.B*u;
-    std::cout << "\nNext state:\n" << x1 << std::endl;
+//     Vector<double, 13> x1 = discrete_ss.A*x0 + discrete_ss.B*u;
+//     std::cout << "\nNext state:\n" << x1 << std::endl;
 
-    Vector<double, 13> x2 = discrete_ss.A*x1 + discrete_ss.B*u;
-    std::cout << "\nNext state:\n" << x2 << std::endl;
-    return 0;
-}
+//     Vector<double, 13> x2 = discrete_ss.A*x1 + discrete_ss.B*u;
+//     std::cout << "\nNext state:\n" << x2 << std::endl;
+//     return 0;
+// }

@@ -33,7 +33,7 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 4,
     A(12, 12) = 1; // Gravity state
 
     // Matrix<double, 13, 13> B;
-    MatrixXd B(13, 13);
+    MatrixXd B(13, 12);
     B.setZero();
     for (int foot_index = 0; foot_index < 4; foot_index++)
     {

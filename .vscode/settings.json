@@ -107,6 +107,8 @@
         "locale": "cpp",
         "print": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "*.expression": "cpp",
+        "alignedvector3": "cpp"
     }
 }
