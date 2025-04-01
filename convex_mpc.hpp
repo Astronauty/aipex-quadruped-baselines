@@ -37,6 +37,7 @@ class ConvexMPC
         
         Vector<double, 13> x0;
         Vector<double, 12> u;
+        VectorXd x_ref;
 
         MatrixXd A_qp;
         MatrixXd B_qp;
@@ -51,6 +52,6 @@ class ConvexMPC
         // MatrixXd blkdiag(const vector<MatrixXd>& matrices);
 
         MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp);
-        VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0);
+        VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd x_ref);
 
 };
