@@ -7,9 +7,9 @@ using namespace Eigen;
 using namespace std;
 
 /**
- * @brief Create a quadratic objective function for gurobi of the form J = x'Px.
+ * @brief Create a quadratic objective function for gurobi of the form J = (x-x_ref)'P(x-x_ref).
  * @param Q Quadratic cost matrix, expressed as a Eigen MatrixXd.
- * @param x Reference state vector, expressed as a std::vector<double> of gurobi variables.
+ * @param x Decision variable, expressed as a pointer to a GRBVar vector.
  */
 GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& P, int n) // Necessary to specify the number of variables since GRBVar is passed by pointer
 {
@@ -27,7 +27,7 @@ GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& P, int n) // Necess
     if (P.rows() != P.cols()) {
         throw invalid_argument("gurobi_utils.cpp : Q must be a square matrix.");
     }
-    
+
     // Sum the quadratic costs
     for(int i = 0; i < n; i++)
     {

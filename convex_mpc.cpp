@@ -28,8 +28,11 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
 
         // Initialize robot state
         // x0 = Vector<double, 13>::Zero();
-        x0 = Vector<double, 13>::Ones();
+        x0 = Vector<double, 13>::Zero();
         u = Vector<double, 12>::Zero();
+        
+        x_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC);
+
         StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization
 
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
@@ -48,7 +51,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         MatrixXd P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
         // cout << "Size of P: " << P.rows() << " x " << P.cols() << endl;
 
-        MatrixXd q = compute_q(Q_bar, A_qp, B_qp, x0);
+        MatrixXd q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
         // cout << "Size of q: " << q.rows() << " x " << q.cols() << endl;
 
 
@@ -67,10 +70,9 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         
         std::cout << "Optimized variables:" << std::endl;
         for (int i = 0; i < mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1); ++i) {
-            double x_value = U[i].get(GRB_DoubleAttr_X);
-            std::cout << "x[" << i << "] = " << x_value << std::endl;
+            double u_value = U[i].get(GRB_DoubleAttr_X);
+            std::cout << "U[" << i << "] = " << u_value << std::endl;
         }
-
     } 
     catch(GRBException e) 
     {
@@ -221,9 +223,10 @@ MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
     return P;   
 }
 
-VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0)
+VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd x_ref)
 {
-    VectorXd q = 2*x0.transpose() * B_qp * Q_bar.transpose() * A_qp;
+    // VectorXd q = 2*x0.transpose() * B_qp * Q_bar.transpose() * A_qp; // Zero reference linear cost
+    VectorXd q = 2*(x0.transpose() * B_qp.transpose() * Q_bar * A_qp - x_ref.transpose() * Q_bar * A_qp);
     return q;
 }
 
@@ -243,7 +246,7 @@ void update()
 int main(int, char**)
 {
     // Define the parameters for the MPC and the quadruped
-    int N_MPC = 3;
+    int N_MPC = 5;
     double dt = 0.01;
     int N_STATES = 13;
     int N_CONTROLS = 12;
