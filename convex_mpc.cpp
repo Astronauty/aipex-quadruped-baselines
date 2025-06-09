@@ -92,7 +92,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
 
 
 /**
- * @brief Creates state prediction matrices for the Convex Model Predictive Control (MPC).
+ * @brief Creates state prediction matrices for Convex MPC.
  * 
  * This function generates the state prediction matrices A_qp and B_qp based on the given discrete state space 
  * representation of the quadruped and the specified MPC horizon length. These can be used to generate a vector of 
