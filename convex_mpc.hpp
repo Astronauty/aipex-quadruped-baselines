@@ -13,6 +13,15 @@ using namespace std;
 using namespace Eigen;
 // using namespace GRB;
 
+// Enum for measurement mode
+enum class StateMeasurementMode {
+    LOWLEVEL_EKF,
+    SPORTMODE,
+    MOCAP
+};
+
+
+
 class ConvexMPC
 {
     public:
@@ -28,9 +37,11 @@ class ConvexMPC
         
         void update();
     private:
-        // GRBModel model;
-        // GRBEnv env;
+        GRBModel model;
+        GRBEnv env;
         GRBVar* U;
+        GRBQuadExpr quad_expr;
+        GRBLinExpr lin_expr;
 
         MPCParams mpc_params;
         QuadrupedParams quad_params;
@@ -41,6 +52,12 @@ class ConvexMPC
 
         MatrixXd A_qp;
         MatrixXd B_qp;
+
+        MatrixXd Q_bar; // Diagonal block matrix of quadratic state cost for N_MPC steps
+        MatrixXd R_bar; // Diagonal block matrix of quadratic control cost for N_MPC-1 steps
+
+        MatrixXd P; // Quadratic cost of MPC
+        MatrixXd q; // Linear cost of MPC
 
         Vector3d foot_positions[4];
 
@@ -53,5 +70,7 @@ class ConvexMPC
 
         MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp);
         VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd x_ref);
+
+        void update_x0(Vector<double, 13> x0);
 
 };
