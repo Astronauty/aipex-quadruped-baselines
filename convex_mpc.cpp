@@ -33,7 +33,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         
         x_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC);
 
-        StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization
+        StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
 
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
@@ -42,21 +42,21 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         cout << "Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
 
 
-        MatrixXd Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
+        Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
         // cout << "Size of Q_bar: " << Q_bar.rows() << " x " << Q_bar.cols() << endl;
 
         R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
         // cout << "Size of R_bar: " << R_bar.rows() << " x " << R_bar.cols() << endl;
 
-        MatrixXd P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
+        P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
         // cout << "Size of P: " << P.rows() << " x " << P.cols() << endl;
 
-        MatrixXd q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
+        q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
         // cout << "Size of q: " << q.rows() << " x " << q.cols() << endl;
 
 
-        GRBQuadExpr quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
-        GRBLinExpr lin_expr = create_lin_obj(U, q, mpc_params.N_STATES);
+        quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
+        lin_expr = create_lin_obj(U, q, mpc_params.N_STATES);
 
         // GRBLinExpr test_expr = U[1];
         // model.setObjective(create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)) 
@@ -230,18 +230,17 @@ VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, Vect
     return q;
 }
 
-
-void update()
+void ConvexMPC::update_x0(Vector<double, 13> x0)
 {
-    // TODO:
-    /*
-    1) Get updated joint angles/velocities from unitree ros topic
-        a) Update rigid body robot state (using estimator?)
-        b) Compute foot positions with FK
-    2) Recompute quad_dss with new foot positions and yaw
-    */
+    // Update the initial state vector x0
+    this->x0 = x0;
+    this->q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
+
+    lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
+    this->model.setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
 
 }
+
 
 int main(int, char**)
 {
