@@ -1,0 +1,21 @@
+[ 14%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[ 28%] [32m[1mLinking CXX executable convex_mpc_controller[0m
+[100%] Built target convex_mpc_controller
+-- Install configuration: ""
+-- Execute custom install script
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/lib/convex_mpc/convex_mpc_controller
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/package_run_dependencies/convex_mpc
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/parent_prefix_path/convex_mpc
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.sh
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.dsv
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.sh
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.dsv
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.bash
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.sh
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.zsh
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.dsv
+-- Symlinking: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.dsv
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/packages/convex_mpc
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig.cmake
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig-version.cmake
+-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.xml

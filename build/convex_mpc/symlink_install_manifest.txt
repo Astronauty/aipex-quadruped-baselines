@@ -1,3 +1,4 @@
+/home/daniel/aipex-quadruped-baselines/install/convex_mpc/lib/convex_mpc/convex_mpc_controller
 /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/package_run_dependencies/convex_mpc
 /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/parent_prefix_path/convex_mpc
 /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.sh

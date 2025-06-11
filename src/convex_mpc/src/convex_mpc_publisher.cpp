@@ -282,8 +282,11 @@ class QuadConvexMPCNode : public rclcpp::Node
 
 int main(int argc, char * argv[])
 {
+    std::cout << "Main started" << std::endl;
+
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<QuadConvexMPCNode>());
+    auto node = std::make_shared<QuadConvexMPCNode>();
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }

@@ -1,0 +1,58 @@
+[0.008s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/daniel/aipex-quadruped-baselines/src/convex_mpc -DCMAKE_INSTALL_PREFIX=/home/daniel/aipex-quadruped-baselines/install/convex_mpc
+[0.020s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.153s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[0.159s] -- Found rclcpp: 28.1.9 (/opt/ros/jazzy/share/rclcpp/cmake)
+[0.180s] -- Found rosidl_generator_c: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[0.188s] -- Found rosidl_generator_cpp: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[0.196s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.205s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.252s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[0.253s] -- Found rmw_cyclonedds_cpp: 2.2.3 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/share/rmw_cyclonedds_cpp/cmake)
+[0.269s] -- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+[0.318s] -- Found std_msgs: 5.3.6 (/opt/ros/jazzy/share/std_msgs/cmake)
+[0.328s] -- Found unitree_go: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/share/unitree_go/cmake)
+[0.354s] -- Found unitree_api: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/share/unitree_api/cmake)
+[0.366s] -- Found unitree_hg: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/share/unitree_hg/cmake)
+[0.377s] -- GUROBI_INCLUDE_DIRS: /opt/gurobi1202/linux64/include
+[0.378s] -- GUROBI_LIBRARY: /opt/gurobi1202/linux64/lib/libgurobi120.so
+[0.378s] -- GUROBI_CXX_LIBRARY: /opt/gurobi1202/linux64/lib/libgurobi_c++.a
+[0.378s] -- Found ament_lint_auto: 0.17.2 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[0.443s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[0.443s] -- Configured cppcheck include dirs: /home/daniel/aipex-quadruped-baselines/src/convex_mpc/include
+[0.443s] -- Configured cppcheck exclude dirs and/or files: 
+[0.443s] -- Added test 'lint_cmake' to check CMake code style
+[0.445s] -- Added test 'uncrustify' to check C / C++ code style
+[0.445s] -- Configured uncrustify additional arguments: 
+[0.445s] -- Added test 'xmllint' to check XML markup files
+[0.446s] -- Configuring done (0.4s)
+[0.456s] -- Generating done (0.0s)
+[0.459s] -- Build files have been written to: /home/daniel/aipex-quadruped-baselines/build/convex_mpc
+[0.465s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/daniel/aipex-quadruped-baselines/src/convex_mpc -DCMAKE_INSTALL_PREFIX=/home/daniel/aipex-quadruped-baselines/install/convex_mpc
+[0.466s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.532s] [ 14%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/simplified_quad_dynamics.cpp.o[0m
+[1.272s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/simplified_quad_dynamics.cpp:[m[K In function ‘[01m[KStateSpace[01;32m[K quadruped_state_space_continuous[m[K(const double&, Eigen::Matrix<double, 4, 3>&)[m[K’:
+[1.272s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/simplified_quad_dynamics.cpp:23:12:[m[K [01;35m[Kwarning: [m[Kvariable ‘[01m[Kg[m[K’ set but not used [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-but-set-variable-Wunused-but-set-variable]8;;[m[K]
+[1.272s]    23 |     double [01;35m[Kg[m[K;
+[1.272s]       |            [01;35m[K^[m[K
+[1.812s] [ 28%] [32m[1mLinking CXX executable convex_mpc_controller[0m
+[2.266s] [100%] Built target convex_mpc_controller
+[2.277s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[2.285s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/daniel/aipex-quadruped-baselines/build/convex_mpc
+[2.291s] -- Install configuration: ""
+[2.291s] -- Execute custom install script
+[2.291s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/package_run_dependencies/convex_mpc
+[2.291s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/parent_prefix_path/convex_mpc
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.sh
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.dsv
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.sh
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.dsv
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.bash
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.sh
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.zsh
+[2.292s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.dsv
+[2.292s] -- Symlinking: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.dsv
+[2.299s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/packages/convex_mpc
+[2.299s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig.cmake
+[2.299s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig-version.cmake
+[2.299s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.xml
+[2.301s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/daniel/aipex-quadruped-baselines/build/convex_mpc
