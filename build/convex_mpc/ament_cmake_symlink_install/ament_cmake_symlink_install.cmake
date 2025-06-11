@@ -310,6 +310,9 @@ message(STATUS "Execute custom install script")
 
 # begin of custom install code
 
+# install("TARGETS" "convex_mpc_controller" "DESTINATION" "lib/convex_mpc")
+include("/home/daniel/aipex-quadruped-baselines/build/convex_mpc/ament_cmake_symlink_install_targets_0_${CMAKE_INSTALL_CONFIG_NAME}.cmake")
+
 # install(FILES "/home/daniel/aipex-quadruped-baselines/build/convex_mpc/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/convex_mpc" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")
 ament_cmake_symlink_install_files("/home/daniel/aipex-quadruped-baselines/src/convex_mpc" FILES "/home/daniel/aipex-quadruped-baselines/build/convex_mpc/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/convex_mpc" "DESTINATION" "share/ament_index/resource_index/package_run_dependencies")
 

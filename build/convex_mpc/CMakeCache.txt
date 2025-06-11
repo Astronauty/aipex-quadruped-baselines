@@ -755,7 +755,7 @@ _Python3_INTERPRETER_SIGNATURE:INTERNAL=1ba075c1b6b0957ceb280cc64d29b569
 //NumPy reason failure
 _Python3_NumPy_REASON_FAILURE:INTERNAL=
 //Index for unique symlink install targets
-__AMENT_CMAKE_SYMLINK_INSTALL_TARGETS_INDEX:INTERNAL=0
+__AMENT_CMAKE_SYMLINK_INSTALL_TARGETS_INDEX:INTERNAL=1
 __pkg_config_arguments__OPENSSL:INTERNAL=QUIET;openssl
 __pkg_config_checked__OPENSSL:INTERNAL=1
 //ADVANCED property for variable: pkgcfg_lib__OPENSSL_crypto

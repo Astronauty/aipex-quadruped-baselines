@@ -84,6 +84,11 @@ target_link_libraries(convex_mpc_controller
 
 ament_target_dependencies(convex_mpc_controller ${DEPENDENCY_LIST})
 
+install(TARGETS
+  convex_mpc_controller
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ### Link Libraries for all executables ###
 # foreach(exec ${MY_EXECUTABLES})
 #   target_link_libraries(${exec}

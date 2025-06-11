@@ -1,8 +1,6 @@
-// #pragma once
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 #include "convex_mpc/convex_mpc.hpp"
-
 
 using namespace std;
 using namespace Eigen;
@@ -19,6 +17,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
     env(true),
     model(env)
 {
+    std::cout << "ConvexMPC constructor started" << std::endl;
     try
     {
         // Create an environment
