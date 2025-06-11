@@ -1,0 +1,30 @@
+[0.007s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.053s] [ 33%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[0.053s] [ 33%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[0.053s] [ 50%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/simplified_quad_dynamics.cpp.o[0m
+[0.054s] [ 66%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/state_space.cpp.o[0m
+[0.061s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/state_space.cpp:1:10:[m[K [01;31m[Kfatal error: [m[K/convex_mpc/state_space.hpp: No such file or directory
+[0.061s]     1 | #include [01;31m[K"/convex_mpc/state_space.hpp"[m[K
+[0.061s]       |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[0.061s] compilation terminated.
+[0.061s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:132: CMakeFiles/convex_mpc_controller.dir/src/state_space.cpp.o] Error 1
+[0.061s] gmake[2]: *** Waiting for unfinished jobs....
+[0.186s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/simplified_quad_dynamics.cpp:3:10:[m[K [01;31m[Kfatal error: [m[Ksimplified_quad_dynamics.hpp: No such file or directory
+[0.186s]     3 | #include [01;31m[K"simplified_quad_dynamics.hpp"[m[K
+[0.186s]       |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[0.186s] compilation terminated.
+[0.192s] In file included from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:4[m[K:
+[0.192s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:8:10:[m[K [01;31m[Kfatal error: [m[Kconvex_mpc/mpc_params.hpp: No such file or directory
+[0.192s]     8 | #include [01;31m[K"convex_mpc/mpc_params.hpp"[m[K
+[0.192s]       |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[0.192s] compilation terminated.
+[0.196s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1
+[0.196s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:118: CMakeFiles/convex_mpc_controller.dir/src/simplified_quad_dynamics.cpp.o] Error 1
+[0.248s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:10:10:[m[K [01;31m[Kfatal error: [m[Kunitree_hg/msg/low_cmd.hpp: No such file or directory
+[0.248s]    10 | #include [01;31m[K"unitree_hg/msg/low_cmd.hpp"[m[K
+[0.248s]       |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[0.248s] compilation terminated.
+[0.251s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1
+[0.251s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[0.251s] gmake: *** [Makefile:146: all] Error 2
+[0.254s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

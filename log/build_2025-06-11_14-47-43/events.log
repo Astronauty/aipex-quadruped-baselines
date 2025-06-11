@@ -1,0 +1,364 @@
+[0.000000] (-) TimerEvent: {}
+[0.000133] (convex_mpc) JobQueued: {'identifier': 'convex_mpc', 'dependencies': OrderedDict()}
+[0.000166] (convex_mpc) JobStarted: {'identifier': 'convex_mpc'}
+[0.005452] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'cmake'}
+[0.005844] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'build'}
+[0.006230] (convex_mpc) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', '--', '-j16', '-l16'], 'cwd': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'env': OrderedDict({'GJS_DEBUG_TOPICS': 'JS ERROR;JS LOG', 'XDG_ACTIVATION_TOKEN': 'gnome-shell/Terminator/3685-4-daniel-home-ubuntu_TIME3965746', 'LESSOPEN': '| /usr/bin/lesspipe %s', 'CONDA_PROMPT_MODIFIER': '(base)', 'USER': 'daniel', 'XDG_SESSION_TYPE': 'x11', 'CLUTTER_DISABLE_MIPMAPPED_TEXT': '1', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/opt/gurobi1201/linux64/lib:/opt/gurobi1202/linux64/lib', 'HOME': '/home/daniel', 'CONDA_SHLVL': '1', 'CYCLONEDDS_URI': '<CycloneDDS><Domain><General><Interfaces>\n                            <NetworkInterface name="lo" priority="default" multicast="default" />\n                        </Interfaces></General></Domain></CycloneDDS>', 'OLDPWD': '/home/daniel/aipex-quadruped-baselines/install', 'DESKTOP_SESSION': 'ubuntu', 'GIO_LAUNCHED_DESKTOP_FILE': '/usr/share/applications/terminator.desktop', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'MANAGERPID': '3256', 'SYSTEMD_EXEC_PID': '3685', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'TERMINATOR_DBUS_NAME': 'net.tenshu.Terminator23558193cd9818af7fe4d2c2f5bd9d00f', 'GIO_LAUNCHED_DESKTOP_FILE_PID': '27246', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'COLCON_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install:/home/daniel/aipex-quadruped-baselines/install', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'daniel', 'JOURNAL_STREAM': '9:29891', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/x86_64-linux-gnu/pkgconfig:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/pkgconfig', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.Shell@x11.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'daniel', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/bin:/opt/ros/jazzy/bin:/home/daniel/.local/bin:/home/daniel/.local/bin:/home/daniel/miniconda3/bin:/home/daniel/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/gurobi1202/linux64/bin', 'SESSION_MANAGER': 'local/daniel-home-ubuntu:@/tmp/.ICE-unix/3641,unix/daniel-home-ubuntu:/tmp/.ICE-unix/3641', 'INVOCATION_ID': '6ceb3a01491340c99665138d9763c257', 'XDG_MENU_PREFIX': 'gnome-', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'TERMINATOR_DBUS_PATH': '/net/tenshu/Terminator2', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'RMW_IMPLEMENTATION': 'rmw_cyclonedds_cpp', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/ros/jazzy', 'CONDA_PYTHON_EXE': '/home/daniel/miniconda3/bin/python', 'SHELL': '/bin/bash', 'TERMINATOR_UUID': 'urn:uuid:902d3cba-e8be-427f-82d9-76b8c9e56698', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'CONDA_DEFAULT_ENV': 'base', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'GJS_DEBUG_OUTPUT': 'stderr', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'CONDA_EXE': '/home/daniel/miniconda3/bin/conda', 'GUROBI_HOME': '/opt/gurobi1202/linux64', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'CONDA_PREFIX': '/home/daniel/miniconda3', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[0.061778] (convex_mpc) StdoutLine: {'line': b'[ 16%] \x1b[32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o\x1b[0m\n'}
+[0.063427] (convex_mpc) StdoutLine: {'line': b'[ 33%] \x1b[32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o\x1b[0m\n'}
+[0.099514] (-) TimerEvent: {}
+[0.199740] (-) TimerEvent: {}
+[0.299988] (-) TimerEvent: {}
+[0.400235] (-) TimerEvent: {}
+[0.500477] (-) TimerEvent: {}
+[0.600750] (-) TimerEvent: {}
+[0.700988] (-) TimerEvent: {}
+[0.775859] (convex_mpc) StderrLine: {'line': b'In file included from \x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:4\x1b[m\x1b[K:\n'}
+[0.776268] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:65:18:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kredeclaration of \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::R_bar\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.776340] (convex_mpc) StderrLine: {'line': b'   65 |         MatrixXd \x1b[01;31m\x1b[KR_bar\x1b[m\x1b[K;\n'}
+[0.776400] (convex_mpc) StderrLine: {'line': b'      |                  \x1b[01;31m\x1b[K^~~~~\x1b[m\x1b[K\n'}
+[0.776456] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:57:18:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kprevious declaration \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::R_bar\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.776514] (convex_mpc) StderrLine: {'line': b'   57 |         MatrixXd \x1b[01;36m\x1b[KR_bar\x1b[m\x1b[K; // Diagonal block matrix of quadratic control cost for N_MPC-1 steps\n'}
+[0.776570] (convex_mpc) StderrLine: {'line': b'      |                  \x1b[01;36m\x1b[K^~~~~\x1b[m\x1b[K\n'}
+[0.776623] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:66:18:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kredeclaration of \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::Q_bar\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.776675] (convex_mpc) StderrLine: {'line': b'   66 |         MatrixXd \x1b[01;31m\x1b[KQ_bar\x1b[m\x1b[K;\n'}
+[0.776742] (convex_mpc) StderrLine: {'line': b'      |                  \x1b[01;31m\x1b[K^~~~~\x1b[m\x1b[K\n'}
+[0.776802] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:56:18:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kprevious declaration \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::Q_bar\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.776858] (convex_mpc) StderrLine: {'line': b'   56 |         MatrixXd \x1b[01;36m\x1b[KQ_bar\x1b[m\x1b[K; // Diagonal block matrix of quadratic state cost for N_MPC steps\n'}
+[0.776912] (convex_mpc) StderrLine: {'line': b'      |                  \x1b[01;36m\x1b[K^~~~~\x1b[m\x1b[K\n'}
+[0.776964] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:\x1b[m\x1b[K In constructor \xe2\x80\x98\x1b[01m\x1b[KConvexMPC::\x1b[01;32m\x1b[KConvexMPC\x1b[m\x1b[K(MPCParams, QuadrupedParams)\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[0.777017] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:17:54:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kno matching function for call to \xe2\x80\x98\x1b[01m\x1b[KGRBModel::GRBModel()\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.777069] (convex_mpc) StderrLine: {'line': b'   17 |     : mpc_params(mpc_params), quad_params(quad_params\x1b[01;31m\x1b[K)\x1b[m\x1b[K\n'}
+[0.777122] (convex_mpc) StderrLine: {'line': b'      |                                                      \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[0.777198] (convex_mpc) StderrLine: {'line': b'In file included from \x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:5\x1b[m\x1b[K:\n'}
+[0.777259] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:544:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel&, const GRBEnv&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.777371] (convex_mpc) StderrLine: {'line': b'  544 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel& xmodel, const GRBEnv& targetenv);\n'}
+[0.777424] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.777475] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:544:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 2 arguments, 0 provided\n'}
+[0.777526] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:543:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.777576] (convex_mpc) StderrLine: {'line': b'  543 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel& xmodel);\n'}
+[0.777626] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.777674] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:543:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 0 provided\n'}
+[0.777738] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:542:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv&, const std::string&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.777792] (convex_mpc) StderrLine: {'line': b'  542 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv& env, const std::string& filename);\n'}
+[0.777841] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.777889] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:542:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 2 arguments, 0 provided\n'}
+[0.777946] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:541:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv*, const std::string&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.777999] (convex_mpc) StderrLine: {'line': b'  541 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv* env, const std::string& filename);\n'}
+[0.778048] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.778095] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:541:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 2 arguments, 0 provided\n'}
+[0.778143] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:540:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.778199] (convex_mpc) StderrLine: {'line': b'  540 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv& env);\n'}
+[0.778255] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.778303] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:540:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 0 provided\n'}
+[0.778351] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:539:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv*)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.778401] (convex_mpc) StderrLine: {'line': b'  539 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv* env);\n'}
+[0.778449] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.778505] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:539:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 0 provided\n'}
+[0.801077] (-) TimerEvent: {}
+[0.844196] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::\x1b[01;32m\x1b[Kcompute_R_bar\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[0.844366] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:185:9:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[KN_CONTROLS\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[0.844434] (convex_mpc) StderrLine: {'line': b'  185 |     int \x1b[01;35m\x1b[KN_CONTROLS\x1b[m\x1b[K = mpc_params.N_CONTROLS;\n'}
+[0.844492] (convex_mpc) StderrLine: {'line': b'      |         \x1b[01;35m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[0.845005] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::\x1b[01;32m\x1b[Kcompute_Q_bar\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[0.845075] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:196:9:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[KN_CONTROLS\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[0.845130] (convex_mpc) StderrLine: {'line': b'  196 |     int \x1b[01;35m\x1b[KN_CONTROLS\x1b[m\x1b[K = mpc_params.N_CONTROLS;\n'}
+[0.845182] (convex_mpc) StderrLine: {'line': b'      |         \x1b[01;35m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[0.901175] (-) TimerEvent: {}
+[1.001445] (-) TimerEvent: {}
+[1.101769] (-) TimerEvent: {}
+[1.202053] (-) TimerEvent: {}
+[1.302345] (-) TimerEvent: {}
+[1.402612] (-) TimerEvent: {}
+[1.502893] (-) TimerEvent: {}
+[1.603184] (-) TimerEvent: {}
+[1.629941] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:17:17:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree\x1b[m\x1b[K\xe2\x80\x99 has not been declared\n'}
+[1.630159] (convex_mpc) StderrLine: {'line': b'   17 | using namespace \x1b[01;31m\x1b[Kunitree\x1b[m\x1b[K::common;\n'}
+[1.630257] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;31m\x1b[K^~~~~~~\x1b[m\x1b[K\n'}
+[1.630348] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:17:26:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kcommon\x1b[m\x1b[K\xe2\x80\x99 is not a namespace-name\n'}
+[1.630432] (convex_mpc) StderrLine: {'line': b'   17 | using namespace unitree::\x1b[01;31m\x1b[Kcommon\x1b[m\x1b[K;\n'}
+[1.630510] (convex_mpc) StderrLine: {'line': b'      |                          \x1b[01;31m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[1.630585] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:18:17:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree\x1b[m\x1b[K\xe2\x80\x99 has not been declared\n'}
+[1.630642] (convex_mpc) StderrLine: {'line': b'   18 | using namespace \x1b[01;31m\x1b[Kunitree\x1b[m\x1b[K::robot;\n'}
+[1.630695] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;31m\x1b[K^~~~~~~\x1b[m\x1b[K\n'}
+[1.630766] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:18:26:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Krobot\x1b[m\x1b[K\xe2\x80\x99 is not a namespace-name\n'}
+[1.630834] (convex_mpc) StderrLine: {'line': b'   18 | using namespace unitree::\x1b[01;31m\x1b[Krobot\x1b[m\x1b[K;\n'}
+[1.630886] (convex_mpc) StderrLine: {'line': b'      |                          \x1b[01;31m\x1b[K^~~~~\x1b[m\x1b[K\n'}
+[1.631613] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:28:1:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KMeasurementMode\x1b[m\x1b[K\xe2\x80\x99 does not name a type; did you mean \xe2\x80\x98\x1b[01m\x1b[KStateMeasurementMode\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.631722] (convex_mpc) StderrLine: {'line': b'   28 | \x1b[01;31m\x1b[KMeasurementMode\x1b[m\x1b[K measurement_mode_from_string(const std::string& mode_str) {\n'}
+[1.631800] (convex_mpc) StderrLine: {'line': b'      | \x1b[01;31m\x1b[K^~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.631856] (convex_mpc) StderrLine: {'line': b'      | \x1b[32m\x1b[KStateMeasurementMode\x1b[m\x1b[K\n'}
+[1.636592] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:30:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree_go\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kunitree_hg\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.636670] (convex_mpc) StderrLine: {'line': b'  115 |         rclcpp::Subscription<\x1b[01;31m\x1b[Kunitree_go\x1b[m\x1b[K::msg::SportModeState>::SharedPtr sport_mode_sub_;\n'}
+[1.636735] (convex_mpc) StderrLine: {'line': b'      |                              \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.636798] (convex_mpc) StderrLine: {'line': b'      |                              \x1b[32m\x1b[Kunitree_hg\x1b[m\x1b[K\n'}
+[1.636848] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 1 is invalid\n'}
+[1.636907] (convex_mpc) StderrLine: {'line': b'  115 |         rclcpp::Subscription<unitree_go::msg::SportModeState\x1b[01;31m\x1b[K>\x1b[m\x1b[K::SharedPtr sport_mode_sub_;\n'}
+[1.636964] (convex_mpc) StderrLine: {'line': b'      |                                                             \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[1.637015] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 3 is invalid\n'}
+[1.637064] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 4 is invalid\n'}
+[1.637112] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 5 is invalid\n'}
+[1.637160] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:64:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected \xe2\x80\x98\x1b[01m\x1b[K;\x1b[m\x1b[K\xe2\x80\x99 at end of member declaration\n'}
+[1.637211] (convex_mpc) StderrLine: {'line': b'  115 |         rclcpp::Subscription<unitree_go::msg::SportModeState>::\x1b[01;31m\x1b[KSharedPtr\x1b[m\x1b[K sport_mode_sub_;\n'}
+[1.637259] (convex_mpc) StderrLine: {'line': b'      |                                                                \x1b[01;31m\x1b[K^~~~~~~~~\x1b[m\x1b[K\n'}
+[1.637307] (convex_mpc) StderrLine: {'line': b'      |                                                                         \x1b[32m\x1b[K;\x1b[m\x1b[K\n'}
+[1.638425] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:74:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Ksport_mode_sub_\x1b[m\x1b[K\xe2\x80\x99 does not name a type\n'}
+[1.638504] (convex_mpc) StderrLine: {'line': b'  115 |         rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr \x1b[01;31m\x1b[Ksport_mode_sub_\x1b[m\x1b[K;\n'}
+[1.638555] (convex_mpc) StderrLine: {'line': b'      |                                                                          \x1b[01;31m\x1b[K^~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.642341] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:30:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree_go\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kunitree_hg\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.642407] (convex_mpc) StderrLine: {'line': b'  120 |         rclcpp::Subscription<\x1b[01;31m\x1b[Kunitree_go\x1b[m\x1b[K::msg::LowState>::SharedPtr low_state_sub_;\n'}
+[1.642464] (convex_mpc) StderrLine: {'line': b'      |                              \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.642512] (convex_mpc) StderrLine: {'line': b'      |                              \x1b[32m\x1b[Kunitree_hg\x1b[m\x1b[K\n'}
+[1.642560] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 1 is invalid\n'}
+[1.642608] (convex_mpc) StderrLine: {'line': b'  120 |         rclcpp::Subscription<unitree_go::msg::LowState\x1b[01;31m\x1b[K>\x1b[m\x1b[K::SharedPtr low_state_sub_;\n'}
+[1.642657] (convex_mpc) StderrLine: {'line': b'      |                                                       \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[1.642710] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 3 is invalid\n'}
+[1.642767] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 4 is invalid\n'}
+[1.642815] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 5 is invalid\n'}
+[1.642870] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:58:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected \xe2\x80\x98\x1b[01m\x1b[K;\x1b[m\x1b[K\xe2\x80\x99 at end of member declaration\n'}
+[1.642920] (convex_mpc) StderrLine: {'line': b'  120 |         rclcpp::Subscription<unitree_go::msg::LowState>::\x1b[01;31m\x1b[KSharedPtr\x1b[m\x1b[K low_state_sub_;\n'}
+[1.642967] (convex_mpc) StderrLine: {'line': b'      |                                                          \x1b[01;31m\x1b[K^~~~~~~~~\x1b[m\x1b[K\n'}
+[1.643014] (convex_mpc) StderrLine: {'line': b'      |                                                                   \x1b[32m\x1b[K;\x1b[m\x1b[K\n'}
+[1.643061] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:58:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kredeclaration of \xe2\x80\x98\x1b[01m\x1b[Kint QuadConvexMPCNode::SharedPtr\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.643109] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:64:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kprevious declaration \xe2\x80\x98\x1b[01m\x1b[Kint QuadConvexMPCNode::SharedPtr\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.643156] (convex_mpc) StderrLine: {'line': b'  115 |         rclcpp::Subscription<unitree_go::msg::SportModeState>::\x1b[01;36m\x1b[KSharedPtr\x1b[m\x1b[K sport_mode_sub_;\n'}
+[1.643211] (convex_mpc) StderrLine: {'line': b'      |                                                                \x1b[01;36m\x1b[K^~~~~~~~~\x1b[m\x1b[K\n'}
+[1.643843] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:68:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Klow_state_sub_\x1b[m\x1b[K\xe2\x80\x99 does not name a type\n'}
+[1.643914] (convex_mpc) StderrLine: {'line': b'  120 |         rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr \x1b[01;31m\x1b[Klow_state_sub_\x1b[m\x1b[K;\n'}
+[1.643979] (convex_mpc) StderrLine: {'line': b'      |                                                                    \x1b[01;31m\x1b[K^~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.644915] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:122:9:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree_go\x1b[m\x1b[K\xe2\x80\x99 does not name a type\n'}
+[1.644980] (convex_mpc) StderrLine: {'line': b'  122 |         \x1b[01;31m\x1b[Kunitree_go\x1b[m\x1b[K::msg::IMUState imu;         // Unitree go2 IMU message\n'}
+[1.645033] (convex_mpc) StderrLine: {'line': b'      |         \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.645987] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:123:9:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree_go\x1b[m\x1b[K\xe2\x80\x99 does not name a type\n'}
+[1.646071] (convex_mpc) StderrLine: {'line': b'  123 |         \x1b[01;31m\x1b[Kunitree_go\x1b[m\x1b[K::msg::MotorState motor[12]; // Unitree go2 motor state message\n'}
+[1.646131] (convex_mpc) StderrLine: {'line': b'      |         \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.646180] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:143:29:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree_go\x1b[m\x1b[K\xe2\x80\x99 has not been declared\n'}
+[1.646229] (convex_mpc) StderrLine: {'line': b'  143 |         void topic_callback(\x1b[01;31m\x1b[Kunitree_go\x1b[m\x1b[K::msg::LowState::SharedPtr data)\n'}
+[1.646278] (convex_mpc) StderrLine: {'line': b'      |                             \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.646327] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:143:66:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected \xe2\x80\x98\x1b[01m\x1b[K,\x1b[m\x1b[K\xe2\x80\x99 or \xe2\x80\x98\x1b[01m\x1b[K...\x1b[m\x1b[K\xe2\x80\x99 before \xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.646379] (convex_mpc) StderrLine: {'line': b'  143 |         void topic_callback(unitree_go::msg::LowState::SharedPtr \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K)\n'}
+[1.646428] (convex_mpc) StderrLine: {'line': b'      |                                                                  \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.646479] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:168:34:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree_go\x1b[m\x1b[K\xe2\x80\x99 has not been declared\n'}
+[1.646532] (convex_mpc) StderrLine: {'line': b'  168 |         void sport_mode_callback(\x1b[01;31m\x1b[Kunitree_go\x1b[m\x1b[K::msg::SportModeState::SharedPtr data)\n'}
+[1.646584] (convex_mpc) StderrLine: {'line': b'      |                                  \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.646640] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:168:77:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected \xe2\x80\x98\x1b[01m\x1b[K,\x1b[m\x1b[K\xe2\x80\x99 or \xe2\x80\x98\x1b[01m\x1b[K...\x1b[m\x1b[K\xe2\x80\x99 before \xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.646755] (convex_mpc) StderrLine: {'line': b'  168 |         void sport_mode_callback(unitree_go::msg::SportModeState::SharedPtr \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K)\n'}
+[1.646811] (convex_mpc) StderrLine: {'line': b'      |                                                                             \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.646860] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:256:2:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected \xe2\x80\x98\x1b[01m\x1b[K;\x1b[m\x1b[K\xe2\x80\x99 after class definition\n'}
+[1.646914] (convex_mpc) StderrLine: {'line': b'  256 | }\n'}
+[1.646964] (convex_mpc) StderrLine: {'line': b'      |  \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[1.647011] (convex_mpc) StderrLine: {'line': b'      |  \x1b[32m\x1b[K;\x1b[m\x1b[K\n'}
+[1.647059] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:\x1b[m\x1b[K In constructor \xe2\x80\x98\x1b[01m\x1b[KQuadConvexMPCNode::\x1b[01;32m\x1b[KQuadConvexMPCNode\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[1.647108] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:39:46:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kclass \xe2\x80\x98\x1b[01m\x1b[KQuadConvexMPCNode\x1b[m\x1b[K\xe2\x80\x99 does not have any field named \xe2\x80\x98\x1b[01m\x1b[Kcount_\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.647157] (convex_mpc) StderrLine: {'line': b'   39 |         : Node("quad_convex_mpc_publisher"), \x1b[01;31m\x1b[Kcount_\x1b[m\x1b[K(0)\n'}
+[1.647206] (convex_mpc) StderrLine: {'line': b'      |                                              \x1b[01;31m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[1.652530] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kjoint_torque_pub_\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.652607] (convex_mpc) StderrLine: {'line': b'   48 |             \x1b[01;31m\x1b[Kjoint_torque_pub_\x1b[m\x1b[K = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);\n'}
+[1.652660] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.656150] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:56:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kunitree_go\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kunitree_hg\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.656247] (convex_mpc) StderrLine: {'line': b'   48 |             joint_torque_pub_ = this->create_publisher<\x1b[01;31m\x1b[Kunitree_go\x1b[m\x1b[K::msg::LowCmd>("/lowcmd", 10);\n'}
+[1.656346] (convex_mpc) StderrLine: {'line': b'      |                                                        \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.656398] (convex_mpc) StderrLine: {'line': b'      |                                                        \x1b[32m\x1b[Kunitree_hg\x1b[m\x1b[K\n'}
+[1.656454] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:39:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kparse error in template argument list\n'}
+[1.656505] (convex_mpc) StderrLine: {'line': b'   48 |             joint_torque_pub_ = this->\x1b[01;31m\x1b[Kcreate_publisher<unitree_go::msg::LowCmd>\x1b[m\x1b[K("/lowcmd", 10);\n'}
+[1.656553] (convex_mpc) StderrLine: {'line': b'      |                                       \x1b[01;31m\x1b[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.656600] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:80:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kno matching function for call to \xe2\x80\x98\x1b[01m\x1b[KQuadConvexMPCNode::create_publisher<<expression error> >(const char [8], int)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.656656] (convex_mpc) StderrLine: {'line': b'   48 |             joint_torque_pub_ = \x1b[01;31m\x1b[Kthis->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10)\x1b[m\x1b[K;\n'}
+[1.656708] (convex_mpc) StderrLine: {'line': b'      |                                 \x1b[01;31m\x1b[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.656766] (convex_mpc) StderrLine: {'line': b'In file included from \x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/executors/single_threaded_executor.hpp:28\x1b[m\x1b[K,\n'}
+[1.656815] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/executors.hpp:22\x1b[m\x1b[K,\n'}
+[1.656862] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/rclcpp.hpp:172\x1b[m\x1b[K,\n'}
+[1.656908] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:8\x1b[m\x1b[K:\n'}
+[1.656954] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:197:3:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[Ktemplate<class MessageT, class AllocatorT, class PublisherT> std::shared_ptr<PublisherT> rclcpp::Node::\x1b[01;32m\x1b[Kcreate_publisher\x1b[m\x1b[K(const std::string&, const rclcpp::QoS&, const rclcpp::PublisherOptionsWithAllocator<AllocatorT>&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.657012] (convex_mpc) StderrLine: {'line': b'  197 |   \x1b[01;36m\x1b[Kcreate_publisher\x1b[m\x1b[K(\n'}
+[1.657061] (convex_mpc) StderrLine: {'line': b'      |   \x1b[01;36m\x1b[K^~~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.657108] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:197:3:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  template argument deduction/substitution failed:\n'}
+[1.657158] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:80:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Ktemplate argument 1 is invalid\n'}
+[1.657206] (convex_mpc) StderrLine: {'line': b'   48 |             joint_torque_pub_ = \x1b[01;31m\x1b[Kthis->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10)\x1b[m\x1b[K;\n'}
+[1.657252] (convex_mpc) StderrLine: {'line': b'      |                                 \x1b[01;31m\x1b[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.661563] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:57:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Ksport_state_sub_\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.661633] (convex_mpc) StderrLine: {'line': b'   57 |             \x1b[01;31m\x1b[Ksport_state_sub_\x1b[m\x1b[K = this->create_subscription<unitree_go::msg::SportModeState>(\n'}
+[1.661687] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.661769] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:57:38:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kparse error in template argument list\n'}
+[1.661824] (convex_mpc) StderrLine: {'line': b'   57 |             sport_state_sub_ = this->\x1b[01;31m\x1b[Kcreate_subscription<unitree_go::msg::SportModeState>\x1b[m\x1b[K(\n'}
+[1.661874] (convex_mpc) StderrLine: {'line': b'      |                                      \x1b[01;31m\x1b[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.664967] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:57:90:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kno matching function for call to \xe2\x80\x98\x1b[01m\x1b[KQuadConvexMPCNode::create_subscription<unitree_go>(const char [15], int, std::_Bind_helper<false, void (QuadConvexMPCNode::*)(int), QuadConvexMPCNode*, const std::_Placeholder<1>&>::type)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.665055] (convex_mpc) StderrLine: {'line': b'   57 |             sport_state_sub_ = \x1b[01;31m\x1b[Kthis->create_subscription<unitree_go::msg::SportModeState>(\x1b[m\x1b[K\n'}
+[1.665109] (convex_mpc) StderrLine: {'line': b'      |                                \x1b[01;31m\x1b[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^\x1b[m\x1b[K\n'}
+[1.665159] (convex_mpc) StderrLine: {'line': b'   58 | \x1b[01;31m\x1b[K                "sportmodestate", 10, std::bind(&QuadConvexMPCNode::sport_mode_callback, this, std::placeholders::_1)\x1b[m\x1b[K\n'}
+[1.665209] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;31m\x1b[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.665264] (convex_mpc) StderrLine: {'line': b'   59 | \x1b[01;31m\x1b[K            )\x1b[m\x1b[K\n'}
+[1.665313] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K~\x1b[m\x1b[K                                                                             \n'}
+[1.665368] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:221:3:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[Ktemplate<class MessageT, class CallbackT, class AllocatorT, class SubscriptionT, class MessageMemoryStrategyT> std::shared_ptr<ROSMessageT> rclcpp::Node::\x1b[01;32m\x1b[Kcreate_subscription\x1b[m\x1b[K(const std::string&, const rclcpp::QoS&, CallbackT&&, const rclcpp::SubscriptionOptionsWithAllocator<AllocatorT>&, typename MessageMemoryStrategyT::SharedPtr)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.665423] (convex_mpc) StderrLine: {'line': b'  221 |   \x1b[01;36m\x1b[Kcreate_subscription\x1b[m\x1b[K(\n'}
+[1.665472] (convex_mpc) StderrLine: {'line': b'      |   \x1b[01;36m\x1b[K^~~~~~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.665521] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:221:3:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  template argument deduction/substitution failed:\n'}
+[1.668767] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:75:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KMatrixXd\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.668878] (convex_mpc) StderrLine: {'line': b'   75 |             \x1b[01;31m\x1b[KMatrixXd\x1b[m\x1b[K Q = MatrixXd::Identity(N_STATES, N_STATES);\n'}
+[1.668942] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[1.668996] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:76:22:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected \xe2\x80\x98\x1b[01m\x1b[K;\x1b[m\x1b[K\xe2\x80\x99 before \xe2\x80\x98\x1b[01m\x1b[KR\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.669051] (convex_mpc) StderrLine: {'line': b'   76 |             MatrixXd \x1b[01;31m\x1b[KR\x1b[m\x1b[K = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);\n'}
+[1.669104] (convex_mpc) StderrLine: {'line': b'      |                      \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[1.672463] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:77:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KVectorXd\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.672531] (convex_mpc) StderrLine: {'line': b'   77 |             \x1b[01;31m\x1b[KVectorXd\x1b[m\x1b[K u_lower = VectorXd::Constant(N_CONTROLS, -1.0);\n'}
+[1.672584] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[1.672644] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:78:22:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected \xe2\x80\x98\x1b[01m\x1b[K;\x1b[m\x1b[K\xe2\x80\x99 before \xe2\x80\x98\x1b[01m\x1b[Ku_upper\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.672696] (convex_mpc) StderrLine: {'line': b'   78 |             VectorXd \x1b[01;31m\x1b[Ku_upper\x1b[m\x1b[K = VectorXd::Constant(N_CONTROLS, 1.0);\n'}
+[1.672763] (convex_mpc) StderrLine: {'line': b'      |                      \x1b[01;31m\x1b[K^~~~~~~\x1b[m\x1b[K\n'}
+[1.676183] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:79:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KMPCParams\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.676248] (convex_mpc) StderrLine: {'line': b'   79 |             \x1b[01;31m\x1b[KMPCParams\x1b[m\x1b[K mpc_params = MPCParams(N_MPC, N_CONTROLS, N_STATES,\n'}
+[1.676299] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~~\x1b[m\x1b[K\n'}
+[1.679762] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:92:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KMatrix3d\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.679825] (convex_mpc) StderrLine: {'line': b'   92 |             \x1b[01;31m\x1b[KMatrix3d\x1b[m\x1b[K inertiaTensor;\n'}
+[1.679876] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[1.684291] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:93:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KinertiaTensor\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.684384] (convex_mpc) StderrLine: {'line': b'   93 |             \x1b[01;31m\x1b[KinertiaTensor\x1b[m\x1b[K << ixx, ixy, ixz,\n'}
+[1.684442] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.689409] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:98:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KQuadrupedParams\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.689476] (convex_mpc) StderrLine: {'line': b'   98 |             \x1b[01;31m\x1b[KQuadrupedParams\x1b[m\x1b[K quadruped_params = QuadrupedParams(inertiaTensor, mass, gravity);\n'}
+[1.689531] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.693013] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:101:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KConvexMPC\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.693083] (convex_mpc) StderrLine: {'line': b'  101 |             \x1b[01;31m\x1b[KConvexMPC\x1b[m\x1b[K convex_mpc = ConvexMPC(mpc_params, quadruped_params);\n'}
+[1.693139] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~~~~~~~\x1b[m\x1b[K\n'}
+[1.693211] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:69:17:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[KN_MPC\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.693321] (convex_mpc) StderrLine: {'line': b'   69 |             int \x1b[01;35m\x1b[KN_MPC\x1b[m\x1b[K = 5;\n'}
+[1.693374] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;35m\x1b[K^~~~~\x1b[m\x1b[K\n'}
+[1.693433] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:70:20:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[Kdt\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.693492] (convex_mpc) StderrLine: {'line': b'   70 |             double \x1b[01;35m\x1b[Kdt\x1b[m\x1b[K = 0.01;\n'}
+[1.693542] (convex_mpc) StderrLine: {'line': b'      |                    \x1b[01;35m\x1b[K^~\x1b[m\x1b[K\n'}
+[1.693590] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:71:17:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[KN_STATES\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.693641] (convex_mpc) StderrLine: {'line': b'   71 |             int \x1b[01;35m\x1b[KN_STATES\x1b[m\x1b[K = 13;\n'}
+[1.693689] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;35m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[1.693750] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:72:17:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[KN_CONTROLS\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.693811] (convex_mpc) StderrLine: {'line': b'   72 |             int \x1b[01;35m\x1b[KN_CONTROLS\x1b[m\x1b[K = 12;\n'}
+[1.693861] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;35m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.693910] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:96:20:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[Kmass\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.693960] (convex_mpc) StderrLine: {'line': b'   96 |             double \x1b[01;35m\x1b[Kmass\x1b[m\x1b[K = 6.921;\n'}
+[1.694007] (convex_mpc) StderrLine: {'line': b'      |                    \x1b[01;35m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.694054] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:97:20:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[Kgravity\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.694110] (convex_mpc) StderrLine: {'line': b'   97 |             double \x1b[01;35m\x1b[Kgravity\x1b[m\x1b[K = 9.81;\n'}
+[1.694161] (convex_mpc) StderrLine: {'line': b'      |                    \x1b[01;35m\x1b[K^~~~~~~\x1b[m\x1b[K\n'}
+[1.696546] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[Kvoid QuadConvexMPCNode::\x1b[01;32m\x1b[Kinit_cmd\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[1.696614] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:134:17:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Klow_cmd\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.696666] (convex_mpc) StderrLine: {'line': b'  134 |                 \x1b[01;31m\x1b[Klow_cmd\x1b[m\x1b[K.motor_cmd[i].mode = 0x01; // Set torque mode, 0x00 is passive mode\n'}
+[1.696735] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;31m\x1b[K^~~~~~~\x1b[m\x1b[K\n'}
+[1.699972] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:135:42:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KPosStopF\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.700070] (convex_mpc) StderrLine: {'line': b'  135 |                 low_cmd.motor_cmd[i].q = \x1b[01;31m\x1b[KPosStopF\x1b[m\x1b[K;\n'}
+[1.700156] (convex_mpc) StderrLine: {'line': b'      |                                          \x1b[01;31m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[1.703241] (-) TimerEvent: {}
+[1.703433] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:137:43:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KVelStopF\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.703545] (convex_mpc) StderrLine: {'line': b'  137 |                 low_cmd.motor_cmd[i].dq = \x1b[01;31m\x1b[KVelStopF\x1b[m\x1b[K;\n'}
+[1.703630] (convex_mpc) StderrLine: {'line': b'      |                                           \x1b[01;31m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[1.706238] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[Kvoid QuadConvexMPCNode::\x1b[01;32m\x1b[Ktopic_callback\x1b[m\x1b[K(int)\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[1.706324] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:150:13:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kimu\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.706382] (convex_mpc) StderrLine: {'line': b'  150 |             \x1b[01;31m\x1b[Kimu\x1b[m\x1b[K = data->imu_state;\n'}
+[1.706441] (convex_mpc) StderrLine: {'line': b'      |             \x1b[01;31m\x1b[K^~~\x1b[m\x1b[K\n'}
+[1.706519] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:150:19:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.706616] (convex_mpc) StderrLine: {'line': b'  150 |             imu = \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K->imu_state;\n'}
+[1.706673] (convex_mpc) StderrLine: {'line': b'      |                   \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.706744] (convex_mpc) StderrLine: {'line': b'      |                   \x1b[32m\x1b[Kstd::data\x1b[m\x1b[K\n'}
+[1.706810] (convex_mpc) StderrLine: {'line': b'In file included from \x1b[01m\x1b[K/usr/include/c++/13/unordered_map:42\x1b[m\x1b[K,\n'}
+[1.706864] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/usr/include/c++/13/functional:63\x1b[m\x1b[K,\n'}
+[1.706914] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:2\x1b[m\x1b[K:\n'}
+[1.706963] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/c++/13/bits/range_access.h:346:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99 declared here\n'}
+[1.707016] (convex_mpc) StderrLine: {'line': b'  346 |     \x1b[01;36m\x1b[Kdata\x1b[m\x1b[K(initializer_list<_Tp> __il) noexcept\n'}
+[1.707069] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.707144] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:143:56:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused parameter \xe2\x80\x98\x1b[01m\x1b[KSharedPtr\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter\x07-Wunused-parameter\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.707214] (convex_mpc) StderrLine: {'line': b'  143 |         void topic_callback(\x1b[01;35m\x1b[Kunitree_go::msg::LowState::SharedPtr\x1b[m\x1b[K data)\n'}
+[1.707266] (convex_mpc) StderrLine: {'line': b'      |                             \x1b[01;35m\x1b[K~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~\x1b[m\x1b[K\n'}
+[1.707409] (convex_mpc) StderrLine: {'line': b'In file included from \x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/logging.hpp:24\x1b[m\x1b[K,\n'}
+[1.707470] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/copy_all_parameter_values.hpp:27\x1b[m\x1b[K,\n'}
+[1.707521] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/opt/ros/jazzy/include/rclcpp/rclcpp/rclcpp.hpp:171\x1b[m\x1b[K:\n'}
+[1.707570] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[Kvoid QuadConvexMPCNode::\x1b[01;32m\x1b[Ksport_mode_callback\x1b[m\x1b[K(int)\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[1.707628] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:174:94:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.707682] (convex_mpc) StderrLine: {'line': b'  174 |             RCLCPP_INFO(this->get_logger(), "Gait state -- gait type: %d; raise height: %f", \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K->gait_type, data->foot_raise_height);\n'}
+[1.707771] (convex_mpc) StderrLine: {'line': b'      |                                                                                              \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.707835] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/c++/13/bits/range_access.h:346:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99 declared here\n'}
+[1.707887] (convex_mpc) StderrLine: {'line': b'  346 |     \x1b[01;36m\x1b[Kdata\x1b[m\x1b[K(initializer_list<_Tp> __il) noexcept\n'}
+[1.707936] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.707984] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:176:25:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.708032] (convex_mpc) StderrLine: {'line': b'  176 |                         \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K->position[0], data->position[1], data->position[2], data->body_height);\n'}
+[1.708084] (convex_mpc) StderrLine: {'line': b'      |                         \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.708140] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/c++/13/bits/range_access.h:346:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99 declared here\n'}
+[1.708194] (convex_mpc) StderrLine: {'line': b'  346 |     \x1b[01;36m\x1b[Kdata\x1b[m\x1b[K(initializer_list<_Tp> __il) noexcept\n'}
+[1.708250] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.708343] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:178:25:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.708400] (convex_mpc) StderrLine: {'line': b'  178 |                         \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K->velocity[0], data->velocity[1], data->velocity[2], data->yaw_speed);\n'}
+[1.708459] (convex_mpc) StderrLine: {'line': b'      |                         \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.708509] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/c++/13/bits/range_access.h:346:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99 declared here\n'}
+[1.708558] (convex_mpc) StderrLine: {'line': b'  346 |     \x1b[01;36m\x1b[Kdata\x1b[m\x1b[K(initializer_list<_Tp> __il) noexcept\n'}
+[1.708607] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.708656] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:184:31:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.708712] (convex_mpc) StderrLine: {'line': b'  184 |                 foot_pos[i] = \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K->foot_position_body[i];\n'}
+[1.708772] (convex_mpc) StderrLine: {'line': b'      |                               \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.708829] (convex_mpc) StderrLine: {'line': b'      |                               \x1b[32m\x1b[Kstd::data\x1b[m\x1b[K\n'}
+[1.708879] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/c++/13/bits/range_access.h:346:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99 declared here\n'}
+[1.708935] (convex_mpc) StderrLine: {'line': b'  346 |     \x1b[01;36m\x1b[Kdata\x1b[m\x1b[K(initializer_list<_Tp> __il) noexcept\n'}
+[1.708984] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.709143] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:199:20:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kdata\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope; did you mean \xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99?\n'}
+[1.709202] (convex_mpc) StderrLine: {'line': b'  199 |             p[0] = \x1b[01;31m\x1b[Kdata\x1b[m\x1b[K->position[0]; // Position in x\n'}
+[1.709252] (convex_mpc) StderrLine: {'line': b'      |                    \x1b[01;31m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.709301] (convex_mpc) StderrLine: {'line': b'      |                    \x1b[32m\x1b[Kstd::data\x1b[m\x1b[K\n'}
+[1.709353] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/c++/13/bits/range_access.h:346:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kstd::data\x1b[m\x1b[K\xe2\x80\x99 declared here\n'}
+[1.709407] (convex_mpc) StderrLine: {'line': b'  346 |     \x1b[01;36m\x1b[Kdata\x1b[m\x1b[K(initializer_list<_Tp> __il) noexcept\n'}
+[1.709462] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~\x1b[m\x1b[K\n'}
+[1.709552] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:168:67:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused parameter \xe2\x80\x98\x1b[01m\x1b[KSharedPtr\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter\x07-Wunused-parameter\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.709615] (convex_mpc) StderrLine: {'line': b'  168 |         void sport_mode_callback(\x1b[01;35m\x1b[Kunitree_go::msg::SportModeState::SharedPtr\x1b[m\x1b[K data)\n'}
+[1.709668] (convex_mpc) StderrLine: {'line': b'      |                                  \x1b[01;35m\x1b[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~\x1b[m\x1b[K\n'}
+[1.709728] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[Kvoid QuadConvexMPCNode::\x1b[01;32m\x1b[Kupdate_mpc_state\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[1.709793] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:214:19:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kclass QuadConvexMPCNode\x1b[m\x1b[K\xe2\x80\x99 has no member named \xe2\x80\x98\x1b[01m\x1b[Kconvex_mpc\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.709846] (convex_mpc) StderrLine: {'line': b'  214 |             this->\x1b[01;31m\x1b[Kconvex_mpc\x1b[m\x1b[K.update_x0(\n'}
+[1.709896] (convex_mpc) StderrLine: {'line': b'      |                   \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[1.712657] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:215:17:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[KVector\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[1.712789] (convex_mpc) StderrLine: {'line': b'  215 |                 \x1b[01;31m\x1b[KVector\x1b[m\x1b[K<double, 13> {\n'}
+[1.712874] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;31m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[1.712954] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:215:24:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected primary-expression before \xe2\x80\x98\x1b[01m\x1b[Kdouble\x1b[m\x1b[K\xe2\x80\x99\n'}
+[1.713033] (convex_mpc) StderrLine: {'line': b'  215 |                 Vector<\x1b[01;31m\x1b[Kdouble\x1b[m\x1b[K, 13> {\n'}
+[1.713110] (convex_mpc) StderrLine: {'line': b'      |                        \x1b[01;31m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[1.713188] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:215:36:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kexpected primary-expression before \xe2\x80\x98\x1b[01m\x1b[K{\x1b[m\x1b[K\xe2\x80\x99 token\n'}
+[1.713268] (convex_mpc) StderrLine: {'line': b'  215 |                 Vector<double, 13> \x1b[01;31m\x1b[K{\x1b[m\x1b[K\n'}
+[1.713345] (convex_mpc) StderrLine: {'line': b'      |                                    \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[1.713421] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:212:19:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[Kg\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[1.713501] (convex_mpc) StderrLine: {'line': b'  212 |             float \x1b[01;35m\x1b[Kg\x1b[m\x1b[K = 9.81; // Gravity state\n'}
+[1.713576] (convex_mpc) StderrLine: {'line': b'      |                   \x1b[01;35m\x1b[K^\x1b[m\x1b[K\n'}
+[1.803346] (-) TimerEvent: {}
+[1.903598] (-) TimerEvent: {}
+[2.003853] (-) TimerEvent: {}
+[2.104101] (-) TimerEvent: {}
+[2.149375] (convex_mpc) StderrLine: {'line': b'gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1\n'}
+[2.149562] (convex_mpc) StderrLine: {'line': b'gmake[2]: *** Waiting for unfinished jobs....\n'}
+[2.204194] (-) TimerEvent: {}
+[2.304437] (-) TimerEvent: {}
+[2.404682] (-) TimerEvent: {}
+[2.504954] (-) TimerEvent: {}
+[2.605189] (-) TimerEvent: {}
+[2.705433] (-) TimerEvent: {}
+[2.805670] (-) TimerEvent: {}
+[2.905926] (-) TimerEvent: {}
+[3.006166] (-) TimerEvent: {}
+[3.106416] (-) TimerEvent: {}
+[3.206655] (-) TimerEvent: {}
+[3.306903] (-) TimerEvent: {}
+[3.407141] (-) TimerEvent: {}
+[3.507390] (-) TimerEvent: {}
+[3.607632] (-) TimerEvent: {}
+[3.707886] (-) TimerEvent: {}
+[3.808140] (-) TimerEvent: {}
+[3.908387] (-) TimerEvent: {}
+[4.008641] (-) TimerEvent: {}
+[4.108890] (-) TimerEvent: {}
+[4.209139] (-) TimerEvent: {}
+[4.309585] (-) TimerEvent: {}
+[4.409846] (-) TimerEvent: {}
+[4.510298] (-) TimerEvent: {}
+[4.610539] (-) TimerEvent: {}
+[4.710791] (-) TimerEvent: {}
+[4.811057] (-) TimerEvent: {}
+[4.911309] (-) TimerEvent: {}
+[5.011565] (-) TimerEvent: {}
+[5.016587] (convex_mpc) StderrLine: {'line': b'gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1\n'}
+[5.016851] (convex_mpc) StderrLine: {'line': b'gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2\n'}
+[5.017086] (convex_mpc) StderrLine: {'line': b'gmake: *** [Makefile:146: all] Error 2\n'}
+[5.019428] (convex_mpc) CommandEnded: {'returncode': 2}
+[5.025090] (convex_mpc) JobEnded: {'identifier': 'convex_mpc', 'rc': 2}
+[5.035468] (-) EventReactorShutdown: {}

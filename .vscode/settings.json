@@ -109,6 +109,10 @@
         "queue": "cpp",
         "stack": "cpp",
         "*.expression": "cpp",
-        "alignedvector3": "cpp"
+        "alignedvector3": "cpp",
+        "*.main": "cpp",
+        "matrixfunctions": "cpp",
+        "format": "cpp",
+        "stdfloat": "cpp"
     }
 }

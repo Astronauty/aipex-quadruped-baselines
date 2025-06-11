@@ -1,0 +1,15 @@
+[01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In member function ‘[01m[Kvoid QuadConvexMPCNode::[01;32m[Kupdate_mpc_state[m[K()[m[K’:
+[01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:240:13:[m[K [01;31m[Kerror: [m[K‘[01m[Kxo[m[K’ was not declared in this scope; did you mean ‘[01m[Kx0[m[K’?
+  240 |             [01;31m[Kxo[m[K <<   theta[0], theta[1], theta[2], // Orientation in roll, pitch, yaw
+      |             [01;31m[K^~[m[K
+      |             [32m[Kx0[m[K
+[01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:247:40:[m[K [01;31m[Kerror: [m[K‘[01m[Kvoid ConvexMPC::[01;32m[Kupdate_x0[m[K(Eigen::Vector<double, 13>)[m[K’ is private within this context
+  247 |             [01;31m[Kthis->convex_mpc->update_x0(x0)[m[K;
+      |             [01;31m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~[m[K
+In file included from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:25[m[K:
+[01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:65:14:[m[K [01;36m[Knote: [m[Kdeclared private here
+   65 |         void [01;36m[Kupdate_x0[m[K(Vector<double, 13> x0);
+      |              [01;36m[K^~~~~~~~~[m[K
+gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2

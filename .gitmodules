@@ -1,6 +1,0 @@
-[submodule "thirdparty/eigen"]
-	path = thirdparty/eigen
-	url = https://gitlab.com/libeigen/eigen.git
-[submodule "thirdparty/drake"]
-	path = thirdparty/drake
-	url = https://github.com/RobotLocomotion/drake.git
