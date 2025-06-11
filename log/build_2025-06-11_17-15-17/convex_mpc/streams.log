@@ -1,0 +1,22 @@
+[0.008s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.072s] [100%] Built target convex_mpc_controller
+[0.082s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.089s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/daniel/aipex-quadruped-baselines/build/convex_mpc
+[0.094s] -- Install configuration: ""
+[0.095s] -- Execute custom install script
+[0.095s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/package_run_dependencies/convex_mpc
+[0.095s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/parent_prefix_path/convex_mpc
+[0.095s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.sh
+[0.095s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.dsv
+[0.095s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.sh
+[0.096s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.dsv
+[0.096s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.bash
+[0.096s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.sh
+[0.096s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.zsh
+[0.096s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.dsv
+[0.096s] -- Symlinking: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.dsv
+[0.104s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/packages/convex_mpc
+[0.104s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig.cmake
+[0.104s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig-version.cmake
+[0.104s] -- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.xml
+[0.106s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/daniel/aipex-quadruped-baselines/build/convex_mpc

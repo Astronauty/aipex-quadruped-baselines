@@ -1,0 +1,71 @@
+[0.007s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/daniel/aipex-quadruped-baselines/src/convex_mpc -DCMAKE_INSTALL_PREFIX=/home/daniel/aipex-quadruped-baselines/install/convex_mpc
+[0.051s] -- The C compiler identification is GNU 13.3.0
+[0.093s] -- The CXX compiler identification is GNU 13.3.0
+[0.106s] -- Detecting C compiler ABI info
+[0.176s] -- Detecting C compiler ABI info - done
+[0.183s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.183s] -- Detecting C compile features
+[0.183s] -- Detecting C compile features - done
+[0.190s] -- Detecting CXX compiler ABI info
+[0.272s] -- Detecting CXX compiler ABI info - done
+[0.280s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.280s] -- Detecting CXX compile features
+[0.280s] -- Detecting CXX compile features - done
+[0.282s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.363s] -- Found Python3: /home/daniel/miniconda3/bin/python3 (found version "3.12.9") found components: Interpreter 
+[0.434s] -- Found rclcpp: 28.1.9 (/opt/ros/jazzy/share/rclcpp/cmake)
+[0.462s] -- Found rosidl_generator_c: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[0.471s] -- Found rosidl_generator_cpp: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[0.483s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.496s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.553s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[0.555s] -- Found rmw_fastrtps_cpp: 8.4.2 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+[0.620s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+[0.634s] -- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") 
+[0.650s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.702s] -- Found std_msgs: 5.3.6 (/opt/ros/jazzy/share/std_msgs/cmake)
+[0.715s] -- Found GUROBI: /opt/gurobi1202/linux64/lib/libgurobi120.so  
+[0.721s] -- Found ament_lint_auto: 0.17.2 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[0.791s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[0.791s] -- Configured cppcheck include dirs: /home/daniel/aipex-quadruped-baselines/src/convex_mpc/include
+[0.791s] -- Configured cppcheck exclude dirs and/or files: 
+[0.792s] -- Added test 'lint_cmake' to check CMake code style
+[0.793s] -- Added test 'uncrustify' to check C / C++ code style
+[0.793s] -- Configured uncrustify additional arguments: 
+[0.793s] -- Added test 'xmllint' to check XML markup files
+[0.794s] -- Configuring done (0.8s)
+[0.802s] -- Generating done (0.0s)
+[0.805s] -- Build files have been written to: /home/daniel/aipex-quadruped-baselines/build/convex_mpc
+[0.813s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/daniel/aipex-quadruped-baselines/src/convex_mpc -DCMAKE_INSTALL_PREFIX=/home/daniel/aipex-quadruped-baselines/install/convex_mpc
+[0.814s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.857s] [ 20%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/gurobi_utils.cpp.o[0m
+[0.857s] [ 40%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[0.857s] [ 60%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[0.857s] [ 80%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/simplified_quad_dynamics.cpp.o[0m
+[0.920s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/gurobi_utils.cpp:2:10:[m[K [01;31m[Kfatal error: [m[Kgurobi_utils.hpp: No such file or directory
+[0.920s]     2 | #include [01;31m[K"gurobi_utils.hpp"[m[K
+[0.920s]       |          [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+[0.920s] compilation terminated.
+[0.929s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:104: CMakeFiles/convex_mpc_controller.dir/src/gurobi_utils.cpp.o] Error 1
+[0.929s] gmake[2]: *** Waiting for unfinished jobs....
+[0.929s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:8:17:[m[K [01;31m[Kerror: [m[Kmissing terminating > character
+[0.929s]     8 | #include <convex
+[0.929s]       |                 [01;31m[K^[m[K
+[0.930s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:8:10:[m[K [01;31m[Kfatal error: [m[Kconvex: No such file or directory
+[0.930s]     8 | #include [01;31m[K<[m[Kconvex
+[0.930s]       |          [01;31m[K^[m[K
+[0.930s] compilation terminated.
+[0.931s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1
+[0.990s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/simplified_quad_dynamics.cpp:3:10:[m[K [01;31m[Kfatal error: [m[Ksimplified_quad_dynamics.hpp: No such file or directory
+[0.990s]     3 | #include [01;31m[K"simplified_quad_dynamics.hpp"[m[K
+[0.990s]       |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[0.990s] compilation terminated.
+[0.993s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:118: CMakeFiles/convex_mpc_controller.dir/src/simplified_quad_dynamics.cpp.o] Error 1
+[0.994s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:4:10:[m[K [01;31m[Kfatal error: [m[Kconvex_mpc.hpp: No such file or directory
+[0.994s]     4 | #include [01;31m[K"convex_mpc.hpp"[m[K
+[0.994s]       |          [01;31m[K^~~~~~~~~~~~~~~~[m[K
+[0.994s] compilation terminated.
+[0.996s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1
+[0.997s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[0.997s] gmake: *** [Makefile:146: all] Error 2
+[0.999s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

@@ -1,0 +1,10 @@
+[0.007s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.070s] [ 16%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[0.352s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:23:10:[m[K [01;31m[Kfatal error: [m[Kmpc_params.hpp: No such file or directory
+[0.352s]    23 | #include [01;31m[K<mpc_params.hpp>[m[K
+[0.352s]       |          [01;31m[K^~~~~~~~~~~~~~~~[m[K
+[0.352s] compilation terminated.
+[0.366s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1
+[0.366s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[0.366s] gmake: *** [Makefile:146: all] Error 2
+[0.369s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

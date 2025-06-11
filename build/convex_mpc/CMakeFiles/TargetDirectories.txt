@@ -1,0 +1,10 @@
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/uninstall.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/convex_mpc_uninstall.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/convex_mpc_controller.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/test.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/edit_cache.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/rebuild_cache.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/list_install_components.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/install.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/install/local.dir
+/home/daniel/aipex-quadruped-baselines/build/convex_mpc/CMakeFiles/install/strip.dir

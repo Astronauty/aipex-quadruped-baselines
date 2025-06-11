@@ -1,0 +1,31 @@
+[0.007s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.027s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.160s] -- Found rclcpp: 28.1.9 (/opt/ros/jazzy/share/rclcpp/cmake)
+[0.180s] -- Found rosidl_generator_c: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[0.187s] -- Found rosidl_generator_cpp: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[0.196s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.205s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.252s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[0.252s] -- Found rmw_fastrtps_cpp: 8.4.2 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+[0.299s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.345s] -- Found std_msgs: 5.3.6 (/opt/ros/jazzy/share/std_msgs/cmake)
+[0.363s] [31mCMake Error at CMakeLists.txt:15 (find_package):
+[0.364s]   By not providing "Findunitree_go.cmake" in CMAKE_MODULE_PATH this project
+[0.364s]   has asked CMake to find a package configuration file provided by
+[0.364s]   "unitree_go", but CMake did not find one.
+[0.364s] 
+[0.364s]   Could not find a package configuration file provided by "unitree_go" with
+[0.364s]   any of the following names:
+[0.364s] 
+[0.364s]     unitree_goConfig.cmake
+[0.364s]     unitree_go-config.cmake
+[0.364s] 
+[0.364s]   Add the installation prefix of "unitree_go" to CMAKE_PREFIX_PATH or set
+[0.364s]   "unitree_go_DIR" to a directory containing one of the above files.  If
+[0.364s]   "unitree_go" provides a separate development package or SDK, be sure it has
+[0.364s]   been installed.
+[0.364s] 
+[0.364s] [0m
+[0.364s] -- Configuring incomplete, errors occurred!
+[0.368s] gmake: *** [Makefile:375: cmake_check_build_system] Error 1
+[0.370s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

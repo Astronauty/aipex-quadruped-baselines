@@ -1,0 +1,8 @@
+source;share/convex_mpc/hook/cmake_prefix_path.ps1
+source;share/convex_mpc/hook/cmake_prefix_path.dsv
+source;share/convex_mpc/hook/cmake_prefix_path.sh
+source;share/convex_mpc/local_setup.bash
+source;share/convex_mpc/local_setup.dsv
+source;share/convex_mpc/local_setup.ps1
+source;share/convex_mpc/local_setup.sh
+source;share/convex_mpc/local_setup.zsh

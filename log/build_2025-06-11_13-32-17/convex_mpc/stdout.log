@@ -1,0 +1,4 @@
+[ 33%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[ 33%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[ 50%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/simplified_quad_dynamics.cpp.o[0m
+[ 66%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/state_space.cpp.o[0m

@@ -1,0 +1,311 @@
+[0.008s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.030s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.165s] -- Found rclcpp: 28.1.9 (/opt/ros/jazzy/share/rclcpp/cmake)
+[0.188s] -- Found rosidl_generator_c: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[0.195s] -- Found rosidl_generator_cpp: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[0.203s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.213s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.259s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[0.260s] -- Found rmw_cyclonedds_cpp: 2.2.3 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/share/rmw_cyclonedds_cpp/cmake)
+[0.275s] -- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+[0.317s] -- Found std_msgs: 5.3.6 (/opt/ros/jazzy/share/std_msgs/cmake)
+[0.328s] -- Found unitree_go: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/share/unitree_go/cmake)
+[0.352s] -- Found unitree_api: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/share/unitree_api/cmake)
+[0.363s] -- Found unitree_hg: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/share/unitree_hg/cmake)
+[0.376s] -- Found ament_lint_auto: 0.17.2 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[0.442s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[0.442s] -- Configured cppcheck include dirs: /home/daniel/aipex-quadruped-baselines/src/convex_mpc/include
+[0.442s] -- Configured cppcheck exclude dirs and/or files: 
+[0.442s] -- Added test 'lint_cmake' to check CMake code style
+[0.443s] -- Added test 'uncrustify' to check C / C++ code style
+[0.444s] -- Configured uncrustify additional arguments: 
+[0.444s] -- Added test 'xmllint' to check XML markup files
+[0.444s] -- Configuring done (0.4s)
+[0.455s] -- Generating done (0.0s)
+[0.458s] -- Build files have been written to: /home/daniel/aipex-quadruped-baselines/build/convex_mpc
+[0.506s] [ 16%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[0.506s] [ 33%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[1.226s] In file included from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:4[m[K:
+[1.226s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:[m[K In constructor ‘[01m[KConvexMPC::[01;32m[KConvexMPC[m[K(MPCParams, QuadrupedParams)[m[K’:
+[1.226s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:47:25:[m[K [01;35m[Kwarning: [m[K‘[01m[KConvexMPC::quad_params[m[K’ will be initialized after [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[1.226s]    47 |         QuadrupedParams [01;35m[Kquad_params[m[K;
+[1.227s]       |                         [01;35m[K^~~~~~~~~~~[m[K
+[1.227s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:41:16:[m[K [01;35m[Kwarning: [m[K  ‘[01m[KGRBEnv ConvexMPC::env[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[1.227s]    41 |         GRBEnv [01;35m[Kenv[m[K;
+[1.227s]       |                [01;35m[K^~~[m[K
+[1.227s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:16:1:[m[K [01;35m[Kwarning: [m[K  when initialized here [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[1.227s]    16 | [01;35m[KConvexMPC[m[K::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
+[1.227s]       | [01;35m[K^~~~~~~~~[m[K
+[1.227s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:41:16:[m[K [01;35m[Kwarning: [m[K‘[01m[KConvexMPC::env[m[K’ will be initialized after [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[1.227s]    41 |         GRBEnv [01;35m[Kenv[m[K;
+[1.227s]       |                [01;35m[K^~~[m[K
+[1.227s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:40:18:[m[K [01;35m[Kwarning: [m[K  ‘[01m[KGRBModel ConvexMPC::model[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[1.227s]    40 |         GRBModel [01;35m[Kmodel[m[K;
+[1.227s]       |                  [01;35m[K^~~~~[m[K
+[1.227s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:16:1:[m[K [01;35m[Kwarning: [m[K  when initialized here [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[1.227s]    16 | [01;35m[KConvexMPC[m[K::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
+[1.227s]       | [01;35m[K^~~~~~~~~[m[K
+[1.227s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:20:11:[m[K [01;35m[Kwarning: [m[Kmember ‘[01m[KConvexMPC::env[m[K’ is used uninitialized [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wuninitialized-Wuninitialized]8;;[m[K]
+[1.228s]    20 |     model([01;35m[Kenv[m[K)
+[1.228s]       |           [01;35m[K^~~[m[K
+[1.292s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In member function ‘[01m[KEigen::MatrixXd ConvexMPC::[01;32m[Kcompute_R_bar[m[K()[m[K’:
+[1.292s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:188:9:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KN_CONTROLS[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[1.292s]   188 |     int [01;35m[KN_CONTROLS[m[K = mpc_params.N_CONTROLS;
+[1.292s]       |         [01;35m[K^~~~~~~~~~[m[K
+[1.293s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In member function ‘[01m[KEigen::MatrixXd ConvexMPC::[01;32m[Kcompute_Q_bar[m[K()[m[K’:
+[1.293s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:199:9:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KN_CONTROLS[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[1.293s]   199 |     int [01;35m[KN_CONTROLS[m[K = mpc_params.N_CONTROLS;
+[1.293s]       |         [01;35m[K^~~~~~~~~~[m[K
+[2.064s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:17:17:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree[m[K’ has not been declared
+[2.064s]    17 | using namespace [01;31m[Kunitree[m[K::common;
+[2.064s]       |                 [01;31m[K^~~~~~~[m[K
+[2.064s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:17:26:[m[K [01;31m[Kerror: [m[K‘[01m[Kcommon[m[K’ is not a namespace-name
+[2.064s]    17 | using namespace unitree::[01;31m[Kcommon[m[K;
+[2.064s]       |                          [01;31m[K^~~~~~[m[K
+[2.064s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:18:17:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree[m[K’ has not been declared
+[2.065s]    18 | using namespace [01;31m[Kunitree[m[K::robot;
+[2.065s]       |                 [01;31m[K^~~~~~~[m[K
+[2.065s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:18:26:[m[K [01;31m[Kerror: [m[K‘[01m[Krobot[m[K’ is not a namespace-name
+[2.065s]    18 | using namespace unitree::[01;31m[Krobot[m[K;
+[2.065s]       |                          [01;31m[K^~~~~[m[K
+[2.066s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:28:1:[m[K [01;31m[Kerror: [m[K‘[01m[KMeasurementMode[m[K’ does not name a type; did you mean ‘[01m[KStateMeasurementMode[m[K’?
+[2.066s]    28 | [01;31m[KMeasurementMode[m[K measurement_mode_from_string(const std::string& mode_str) {
+[2.066s]       | [01;31m[K^~~~~~~~~~~~~~~[m[K
+[2.066s]       | [32m[KStateMeasurementMode[m[K
+[2.071s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:30:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree_go[m[K’ was not declared in this scope; did you mean ‘[01m[Kunitree_hg[m[K’?
+[2.071s]   115 |         rclcpp::Subscription<[01;31m[Kunitree_go[m[K::msg::SportModeState>::SharedPtr sport_mode_sub_;
+[2.071s]       |                              [01;31m[K^~~~~~~~~~[m[K
+[2.071s]       |                              [32m[Kunitree_hg[m[K
+[2.071s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.071s]   115 |         rclcpp::Subscription<unitree_go::msg::SportModeState[01;31m[K>[m[K::SharedPtr sport_mode_sub_;
+[2.072s]       |                                                             [01;31m[K^[m[K
+[2.072s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:[m[K [01;31m[Kerror: [m[Ktemplate argument 3 is invalid
+[2.072s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:[m[K [01;31m[Kerror: [m[Ktemplate argument 4 is invalid
+[2.072s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:61:[m[K [01;31m[Kerror: [m[Ktemplate argument 5 is invalid
+[2.072s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:64:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ at end of member declaration
+[2.072s]   115 |         rclcpp::Subscription<unitree_go::msg::SportModeState>::[01;31m[KSharedPtr[m[K sport_mode_sub_;
+[2.072s]       |                                                                [01;31m[K^~~~~~~~~[m[K
+[2.072s]       |                                                                         [32m[K;[m[K
+[2.073s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:74:[m[K [01;31m[Kerror: [m[K‘[01m[Ksport_mode_sub_[m[K’ does not name a type
+[2.073s]   115 |         rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr [01;31m[Ksport_mode_sub_[m[K;
+[2.073s]       |                                                                          [01;31m[K^~~~~~~~~~~~~~~[m[K
+[2.077s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:30:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree_go[m[K’ was not declared in this scope; did you mean ‘[01m[Kunitree_hg[m[K’?
+[2.077s]   120 |         rclcpp::Subscription<[01;31m[Kunitree_go[m[K::msg::LowState>::SharedPtr low_state_sub_;
+[2.077s]       |                              [01;31m[K^~~~~~~~~~[m[K
+[2.077s]       |                              [32m[Kunitree_hg[m[K
+[2.077s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.077s]   120 |         rclcpp::Subscription<unitree_go::msg::LowState[01;31m[K>[m[K::SharedPtr low_state_sub_;
+[2.077s]       |                                                       [01;31m[K^[m[K
+[2.078s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:[m[K [01;31m[Kerror: [m[Ktemplate argument 3 is invalid
+[2.078s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:[m[K [01;31m[Kerror: [m[Ktemplate argument 4 is invalid
+[2.078s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:55:[m[K [01;31m[Kerror: [m[Ktemplate argument 5 is invalid
+[2.078s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:58:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ at end of member declaration
+[2.078s]   120 |         rclcpp::Subscription<unitree_go::msg::LowState>::[01;31m[KSharedPtr[m[K low_state_sub_;
+[2.078s]       |                                                          [01;31m[K^~~~~~~~~[m[K
+[2.078s]       |                                                                   [32m[K;[m[K
+[2.078s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:58:[m[K [01;31m[Kerror: [m[Kredeclaration of ‘[01m[Kint QuadConvexMPCNode::SharedPtr[m[K’
+[2.078s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:115:64:[m[K [01;36m[Knote: [m[Kprevious declaration ‘[01m[Kint QuadConvexMPCNode::SharedPtr[m[K’
+[2.078s]   115 |         rclcpp::Subscription<unitree_go::msg::SportModeState>::[01;36m[KSharedPtr[m[K sport_mode_sub_;
+[2.078s]       |                                                                [01;36m[K^~~~~~~~~[m[K
+[2.079s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:120:68:[m[K [01;31m[Kerror: [m[K‘[01m[Klow_state_sub_[m[K’ does not name a type
+[2.079s]   120 |         rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr [01;31m[Klow_state_sub_[m[K;
+[2.079s]       |                                                                    [01;31m[K^~~~~~~~~~~~~~[m[K
+[2.080s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:122:9:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree_go[m[K’ does not name a type
+[2.080s]   122 |         [01;31m[Kunitree_go[m[K::msg::IMUState imu;         // Unitree go2 IMU message
+[2.080s]       |         [01;31m[K^~~~~~~~~~[m[K
+[2.081s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:123:9:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree_go[m[K’ does not name a type
+[2.081s]   123 |         [01;31m[Kunitree_go[m[K::msg::MotorState motor[12]; // Unitree go2 motor state message
+[2.081s]       |         [01;31m[K^~~~~~~~~~[m[K
+[2.081s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:143:29:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree_go[m[K’ has not been declared
+[2.081s]   143 |         void topic_callback([01;31m[Kunitree_go[m[K::msg::LowState::SharedPtr data)
+[2.081s]       |                             [01;31m[K^~~~~~~~~~[m[K
+[2.081s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:143:66:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K,[m[K’ or ‘[01m[K...[m[K’ before ‘[01m[Kdata[m[K’
+[2.081s]   143 |         void topic_callback(unitree_go::msg::LowState::SharedPtr [01;31m[Kdata[m[K)
+[2.081s]       |                                                                  [01;31m[K^~~~[m[K
+[2.081s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:168:34:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree_go[m[K’ has not been declared
+[2.082s]   168 |         void sport_mode_callback([01;31m[Kunitree_go[m[K::msg::SportModeState::SharedPtr data)
+[2.082s]       |                                  [01;31m[K^~~~~~~~~~[m[K
+[2.082s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:168:77:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K,[m[K’ or ‘[01m[K...[m[K’ before ‘[01m[Kdata[m[K’
+[2.082s]   168 |         void sport_mode_callback(unitree_go::msg::SportModeState::SharedPtr [01;31m[Kdata[m[K)
+[2.082s]       |                                                                             [01;31m[K^~~~[m[K
+[2.082s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:256:2:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ after class definition
+[2.082s]   256 | }
+[2.082s]       |  [01;31m[K^[m[K
+[2.082s]       |  [32m[K;[m[K
+[2.082s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In constructor ‘[01m[KQuadConvexMPCNode::[01;32m[KQuadConvexMPCNode[m[K()[m[K’:
+[2.082s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:39:46:[m[K [01;31m[Kerror: [m[Kclass ‘[01m[KQuadConvexMPCNode[m[K’ does not have any field named ‘[01m[Kcount_[m[K’
+[2.082s]    39 |         : Node("quad_convex_mpc_publisher"), [01;31m[Kcount_[m[K(0)
+[2.082s]       |                                              [01;31m[K^~~~~~[m[K
+[2.088s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:13:[m[K [01;31m[Kerror: [m[K‘[01m[Kjoint_torque_pub_[m[K’ was not declared in this scope
+[2.088s]    48 |             [01;31m[Kjoint_torque_pub_[m[K = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);
+[2.088s]       |             [01;31m[K^~~~~~~~~~~~~~~~~[m[K
+[2.092s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:56:[m[K [01;31m[Kerror: [m[K‘[01m[Kunitree_go[m[K’ was not declared in this scope; did you mean ‘[01m[Kunitree_hg[m[K’?
+[2.092s]    48 |             joint_torque_pub_ = this->create_publisher<[01;31m[Kunitree_go[m[K::msg::LowCmd>("/lowcmd", 10);
+[2.092s]       |                                                        [01;31m[K^~~~~~~~~~[m[K
+[2.092s]       |                                                        [32m[Kunitree_hg[m[K
+[2.092s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:39:[m[K [01;31m[Kerror: [m[Kparse error in template argument list
+[2.092s]    48 |             joint_torque_pub_ = this->[01;31m[Kcreate_publisher<unitree_go::msg::LowCmd>[m[K("/lowcmd", 10);
+[2.092s]       |                                       [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[2.092s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:80:[m[K [01;31m[Kerror: [m[Kno matching function for call to ‘[01m[KQuadConvexMPCNode::create_publisher<<expression error> >(const char [8], int)[m[K’
+[2.093s]    48 |             joint_torque_pub_ = [01;31m[Kthis->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10)[m[K;
+[2.093s]       |                                 [01;31m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~[m[K
+[2.093s] In file included from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/executors/single_threaded_executor.hpp:28[m[K,
+[2.093s]                  from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/executors.hpp:22[m[K,
+[2.093s]                  from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/rclcpp.hpp:172[m[K,
+[2.093s]                  from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:8[m[K:
+[2.093s] [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:197:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class MessageT, class AllocatorT, class PublisherT> std::shared_ptr<PublisherT> rclcpp::Node::[01;32m[Kcreate_publisher[m[K(const std::string&, const rclcpp::QoS&, const rclcpp::PublisherOptionsWithAllocator<AllocatorT>&)[m[K’
+[2.093s]   197 |   [01;36m[Kcreate_publisher[m[K(
+[2.093s]       |   [01;36m[K^~~~~~~~~~~~~~~~[m[K
+[2.093s] [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:197:3:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[2.093s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:48:80:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.093s]    48 |             joint_torque_pub_ = [01;31m[Kthis->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10)[m[K;
+[2.093s]       |                                 [01;31m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~[m[K
+[2.098s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:57:13:[m[K [01;31m[Kerror: [m[K‘[01m[Ksport_state_sub_[m[K’ was not declared in this scope
+[2.098s]    57 |             [01;31m[Ksport_state_sub_[m[K = this->create_subscription<unitree_go::msg::SportModeState>(
+[2.098s]       |             [01;31m[K^~~~~~~~~~~~~~~~[m[K
+[2.098s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:57:38:[m[K [01;31m[Kerror: [m[Kparse error in template argument list
+[2.098s]    57 |             sport_state_sub_ = this->[01;31m[Kcreate_subscription<unitree_go::msg::SportModeState>[m[K(
+[2.098s]       |                                      [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[2.101s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:57:90:[m[K [01;31m[Kerror: [m[Kno matching function for call to ‘[01m[KQuadConvexMPCNode::create_subscription<unitree_go>(const char [15], int, std::_Bind_helper<false, void (QuadConvexMPCNode::*)(int), QuadConvexMPCNode*, const std::_Placeholder<1>&>::type)[m[K’
+[2.101s]    57 |             sport_state_sub_ = [01;31m[Kthis->create_subscription<unitree_go::msg::SportModeState>([m[K
+[2.101s]       |                                [01;31m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^[m[K
+[2.101s]    58 | [01;31m[K                "sportmodestate", 10, std::bind(&QuadConvexMPCNode::sport_mode_callback, this, std::placeholders::_1)[m[K
+[2.101s]       |                 [01;31m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[2.101s]    59 | [01;31m[K            )[m[K
+[2.101s]       |             [01;31m[K~[m[K                                                                             
+[2.101s] [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:221:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class MessageT, class CallbackT, class AllocatorT, class SubscriptionT, class MessageMemoryStrategyT> std::shared_ptr<ROSMessageT> rclcpp::Node::[01;32m[Kcreate_subscription[m[K(const std::string&, const rclcpp::QoS&, CallbackT&&, const rclcpp::SubscriptionOptionsWithAllocator<AllocatorT>&, typename MessageMemoryStrategyT::SharedPtr)[m[K’
+[2.101s]   221 |   [01;36m[Kcreate_subscription[m[K(
+[2.101s]       |   [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[2.101s] [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/node.hpp:221:3:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[2.105s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:75:13:[m[K [01;31m[Kerror: [m[K‘[01m[KMatrixXd[m[K’ was not declared in this scope
+[2.105s]    75 |             [01;31m[KMatrixXd[m[K Q = MatrixXd::Identity(N_STATES, N_STATES);
+[2.105s]       |             [01;31m[K^~~~~~~~[m[K
+[2.105s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:76:22:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ before ‘[01m[KR[m[K’
+[2.105s]    76 |             MatrixXd [01;31m[KR[m[K = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
+[2.106s]       |                      [01;31m[K^[m[K
+[2.109s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:77:13:[m[K [01;31m[Kerror: [m[K‘[01m[KVectorXd[m[K’ was not declared in this scope
+[2.109s]    77 |             [01;31m[KVectorXd[m[K u_lower = VectorXd::Constant(N_CONTROLS, -1.0);
+[2.109s]       |             [01;31m[K^~~~~~~~[m[K
+[2.109s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:78:22:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ before ‘[01m[Ku_upper[m[K’
+[2.109s]    78 |             VectorXd [01;31m[Ku_upper[m[K = VectorXd::Constant(N_CONTROLS, 1.0);
+[2.109s]       |                      [01;31m[K^~~~~~~[m[K
+[2.113s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:79:13:[m[K [01;31m[Kerror: [m[K‘[01m[KMPCParams[m[K’ was not declared in this scope
+[2.113s]    79 |             [01;31m[KMPCParams[m[K mpc_params = MPCParams(N_MPC, N_CONTROLS, N_STATES,
+[2.113s]       |             [01;31m[K^~~~~~~~~[m[K
+[2.117s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:92:13:[m[K [01;31m[Kerror: [m[K‘[01m[KMatrix3d[m[K’ was not declared in this scope
+[2.117s]    92 |             [01;31m[KMatrix3d[m[K inertiaTensor;
+[2.117s]       |             [01;31m[K^~~~~~~~[m[K
+[2.121s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:93:13:[m[K [01;31m[Kerror: [m[K‘[01m[KinertiaTensor[m[K’ was not declared in this scope
+[2.121s]    93 |             [01;31m[KinertiaTensor[m[K << ixx, ixy, ixz,
+[2.121s]       |             [01;31m[K^~~~~~~~~~~~~[m[K
+[2.127s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:98:13:[m[K [01;31m[Kerror: [m[K‘[01m[KQuadrupedParams[m[K’ was not declared in this scope
+[2.127s]    98 |             [01;31m[KQuadrupedParams[m[K quadruped_params = QuadrupedParams(inertiaTensor, mass, gravity);
+[2.127s]       |             [01;31m[K^~~~~~~~~~~~~~~[m[K
+[2.130s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:101:13:[m[K [01;31m[Kerror: [m[K‘[01m[KConvexMPC[m[K’ was not declared in this scope
+[2.130s]   101 |             [01;31m[KConvexMPC[m[K convex_mpc = ConvexMPC(mpc_params, quadruped_params);
+[2.130s]       |             [01;31m[K^~~~~~~~~[m[K
+[2.131s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:69:17:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KN_MPC[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[2.131s]    69 |             int [01;35m[KN_MPC[m[K = 5;
+[2.131s]       |                 [01;35m[K^~~~~[m[K
+[2.131s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:70:20:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kdt[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[2.131s]    70 |             double [01;35m[Kdt[m[K = 0.01;
+[2.131s]       |                    [01;35m[K^~[m[K
+[2.131s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:71:17:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KN_STATES[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[2.131s]    71 |             int [01;35m[KN_STATES[m[K = 13;
+[2.131s]       |                 [01;35m[K^~~~~~~~[m[K
+[2.131s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:72:17:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[KN_CONTROLS[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[2.131s]    72 |             int [01;35m[KN_CONTROLS[m[K = 12;
+[2.131s]       |                 [01;35m[K^~~~~~~~~~[m[K
+[2.131s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:96:20:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kmass[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[2.131s]    96 |             double [01;35m[Kmass[m[K = 6.921;
+[2.131s]       |                    [01;35m[K^~~~[m[K
+[2.131s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:97:20:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kgravity[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[2.132s]    97 |             double [01;35m[Kgravity[m[K = 9.81;
+[2.132s]       |                    [01;35m[K^~~~~~~[m[K
+[2.134s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In member function ‘[01m[Kvoid QuadConvexMPCNode::[01;32m[Kinit_cmd[m[K()[m[K’:
+[2.134s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:134:17:[m[K [01;31m[Kerror: [m[K‘[01m[Klow_cmd[m[K’ was not declared in this scope
+[2.134s]   134 |                 [01;31m[Klow_cmd[m[K.motor_cmd[i].mode = 0x01; // Set torque mode, 0x00 is passive mode
+[2.134s]       |                 [01;31m[K^~~~~~~[m[K
+[2.137s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:135:42:[m[K [01;31m[Kerror: [m[K‘[01m[KPosStopF[m[K’ was not declared in this scope
+[2.137s]   135 |                 low_cmd.motor_cmd[i].q = [01;31m[KPosStopF[m[K;
+[2.138s]       |                                          [01;31m[K^~~~~~~~[m[K
+[2.141s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:137:43:[m[K [01;31m[Kerror: [m[K‘[01m[KVelStopF[m[K’ was not declared in this scope
+[2.141s]   137 |                 low_cmd.motor_cmd[i].dq = [01;31m[KVelStopF[m[K;
+[2.141s]       |                                           [01;31m[K^~~~~~~~[m[K
+[2.144s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In member function ‘[01m[Kvoid QuadConvexMPCNode::[01;32m[Ktopic_callback[m[K(int)[m[K’:
+[2.144s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:150:13:[m[K [01;31m[Kerror: [m[K‘[01m[Kimu[m[K’ was not declared in this scope
+[2.144s]   150 |             [01;31m[Kimu[m[K = data->imu_state;
+[2.144s]       |             [01;31m[K^~~[m[K
+[2.144s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:150:19:[m[K [01;31m[Kerror: [m[K‘[01m[Kdata[m[K’ was not declared in this scope; did you mean ‘[01m[Kstd::data[m[K’?
+[2.144s]   150 |             imu = [01;31m[Kdata[m[K->imu_state;
+[2.144s]       |                   [01;31m[K^~~~[m[K
+[2.144s]       |                   [32m[Kstd::data[m[K
+[2.144s] In file included from [01m[K/usr/include/c++/13/unordered_map:42[m[K,
+[2.144s]                  from [01m[K/usr/include/c++/13/functional:63[m[K,
+[2.144s]                  from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:2[m[K:
+[2.144s] [01m[K/usr/include/c++/13/bits/range_access.h:346:5:[m[K [01;36m[Knote: [m[K‘[01m[Kstd::data[m[K’ declared here
+[2.144s]   346 |     [01;36m[Kdata[m[K(initializer_list<_Tp> __il) noexcept
+[2.144s]       |     [01;36m[K^~~~[m[K
+[2.145s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:143:56:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[KSharedPtr[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[2.145s]   143 |         void topic_callback([01;35m[Kunitree_go::msg::LowState::SharedPtr[m[K data)
+[2.145s]       |                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~[m[K
+[2.145s] In file included from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[2.145s]                  from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/copy_all_parameter_values.hpp:27[m[K,
+[2.145s]                  from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/rclcpp.hpp:171[m[K:
+[2.145s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In member function ‘[01m[Kvoid QuadConvexMPCNode::[01;32m[Ksport_mode_callback[m[K(int)[m[K’:
+[2.145s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:174:94:[m[K [01;31m[Kerror: [m[K‘[01m[Kdata[m[K’ was not declared in this scope; did you mean ‘[01m[Kstd::data[m[K’?
+[2.145s]   174 |             RCLCPP_INFO(this->get_logger(), "Gait state -- gait type: %d; raise height: %f", [01;31m[Kdata[m[K->gait_type, data->foot_raise_height);
+[2.145s]       |                                                                                              [01;31m[K^~~~[m[K
+[2.145s] [01m[K/usr/include/c++/13/bits/range_access.h:346:5:[m[K [01;36m[Knote: [m[K‘[01m[Kstd::data[m[K’ declared here
+[2.145s]   346 |     [01;36m[Kdata[m[K(initializer_list<_Tp> __il) noexcept
+[2.145s]       |     [01;36m[K^~~~[m[K
+[2.145s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:176:25:[m[K [01;31m[Kerror: [m[K‘[01m[Kdata[m[K’ was not declared in this scope; did you mean ‘[01m[Kstd::data[m[K’?
+[2.146s]   176 |                         [01;31m[Kdata[m[K->position[0], data->position[1], data->position[2], data->body_height);
+[2.146s]       |                         [01;31m[K^~~~[m[K
+[2.146s] [01m[K/usr/include/c++/13/bits/range_access.h:346:5:[m[K [01;36m[Knote: [m[K‘[01m[Kstd::data[m[K’ declared here
+[2.146s]   346 |     [01;36m[Kdata[m[K(initializer_list<_Tp> __il) noexcept
+[2.146s]       |     [01;36m[K^~~~[m[K
+[2.146s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:178:25:[m[K [01;31m[Kerror: [m[K‘[01m[Kdata[m[K’ was not declared in this scope; did you mean ‘[01m[Kstd::data[m[K’?
+[2.146s]   178 |                         [01;31m[Kdata[m[K->velocity[0], data->velocity[1], data->velocity[2], data->yaw_speed);
+[2.146s]       |                         [01;31m[K^~~~[m[K
+[2.146s] [01m[K/usr/include/c++/13/bits/range_access.h:346:5:[m[K [01;36m[Knote: [m[K‘[01m[Kstd::data[m[K’ declared here
+[2.146s]   346 |     [01;36m[Kdata[m[K(initializer_list<_Tp> __il) noexcept
+[2.146s]       |     [01;36m[K^~~~[m[K
+[2.146s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:184:31:[m[K [01;31m[Kerror: [m[K‘[01m[Kdata[m[K’ was not declared in this scope; did you mean ‘[01m[Kstd::data[m[K’?
+[2.146s]   184 |                 foot_pos[i] = [01;31m[Kdata[m[K->foot_position_body[i];
+[2.146s]       |                               [01;31m[K^~~~[m[K
+[2.146s]       |                               [32m[Kstd::data[m[K
+[2.146s] [01m[K/usr/include/c++/13/bits/range_access.h:346:5:[m[K [01;36m[Knote: [m[K‘[01m[Kstd::data[m[K’ declared here
+[2.146s]   346 |     [01;36m[Kdata[m[K(initializer_list<_Tp> __il) noexcept
+[2.146s]       |     [01;36m[K^~~~[m[K
+[2.147s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:199:20:[m[K [01;31m[Kerror: [m[K‘[01m[Kdata[m[K’ was not declared in this scope; did you mean ‘[01m[Kstd::data[m[K’?
+[2.147s]   199 |             p[0] = [01;31m[Kdata[m[K->position[0]; // Position in x
+[2.147s]       |                    [01;31m[K^~~~[m[K
+[2.147s]       |                    [32m[Kstd::data[m[K
+[2.147s] [01m[K/usr/include/c++/13/bits/range_access.h:346:5:[m[K [01;36m[Knote: [m[K‘[01m[Kstd::data[m[K’ declared here
+[2.147s]   346 |     [01;36m[Kdata[m[K(initializer_list<_Tp> __il) noexcept
+[2.147s]       |     [01;36m[K^~~~[m[K
+[2.147s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:168:67:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[KSharedPtr[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[2.147s]   168 |         void sport_mode_callback([01;35m[Kunitree_go::msg::SportModeState::SharedPtr[m[K data)
+[2.147s]       |                                  [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~[m[K
+[2.147s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In member function ‘[01m[Kvoid QuadConvexMPCNode::[01;32m[Kupdate_mpc_state[m[K()[m[K’:
+[2.147s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:214:19:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass QuadConvexMPCNode[m[K’ has no member named ‘[01m[Kconvex_mpc[m[K’
+[2.147s]   214 |             this->[01;31m[Kconvex_mpc[m[K.update_x0(
+[2.147s]       |                   [01;31m[K^~~~~~~~~~[m[K
+[2.150s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:215:17:[m[K [01;31m[Kerror: [m[K‘[01m[KVector[m[K’ was not declared in this scope
+[2.150s]   215 |                 [01;31m[KVector[m[K<double, 13> {
+[2.150s]       |                 [01;31m[K^~~~~~[m[K
+[2.150s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:215:24:[m[K [01;31m[Kerror: [m[Kexpected primary-expression before ‘[01m[Kdouble[m[K’
+[2.150s]   215 |                 Vector<[01;31m[Kdouble[m[K, 13> {
+[2.150s]       |                        [01;31m[K^~~~~~[m[K
+[2.150s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:215:36:[m[K [01;31m[Kerror: [m[Kexpected primary-expression before ‘[01m[K{[m[K’ token
+[2.151s]   215 |                 Vector<double, 13> [01;31m[K{[m[K
+[2.151s]       |                                    [01;31m[K^[m[K
+[2.151s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:212:19:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kg[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[2.151s]   212 |             float [01;35m[Kg[m[K = 9.81; // Gravity state
+[2.151s]       |                   [01;35m[K^[m[K
+[2.588s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1
+[2.588s] gmake[2]: *** Waiting for unfinished jobs....
+[9.475s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[9.475s] gmake: *** [Makefile:146: all] Error 2
+[9.477s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

@@ -1,0 +1,93 @@
+[0.008s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.072s] [ 16%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[1.990s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:37:12:[m[K [01;31m[Kerror: [m[Kmultiple definition of ‘[01m[Kenum class StateMeasurementMode[m[K’
+[1.990s]    37 | enum class [01;31m[KStateMeasurementMode[m[K {
+[1.990s]       |            [01;31m[K^~~~~~~~~~~~~~~~~~~~[m[K
+[1.990s] In file included from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:25[m[K:
+[1.990s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:17:12:[m[K [01;36m[Knote: [m[Kprevious definition here
+[1.990s]    17 | enum class [01;36m[KStateMeasurementMode[m[K {
+[1.990s]       |            [01;36m[K^~~~~~~~~~~~~~~~~~~~[m[K
+[2.085s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In member function ‘[01m[Kvoid QuadConvexMPCNode::[01;32m[Kinit_cmd[m[K()[m[K’:
+[2.085s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:156:42:[m[K [01;31m[Kerror: [m[K‘[01m[KPosStopF[m[K’ was not declared in this scope
+[2.085s]   156 |                 low_cmd.motor_cmd[i].q = [01;31m[KPosStopF[m[K;
+[2.085s]       |                                          [01;31m[K^~~~~~~~[m[K
+[2.090s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:158:43:[m[K [01;31m[Kerror: [m[K‘[01m[KVelStopF[m[K’ was not declared in this scope
+[2.090s]   158 |                 low_cmd.motor_cmd[i].dq = [01;31m[KVelStopF[m[K;
+[2.090s]       |                                           [01;31m[K^~~~~~~~[m[K
+[2.095s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:[m[K In member function ‘[01m[Kvoid QuadConvexMPCNode::[01;32m[Kupdate_mpc_state[m[K()[m[K’:
+[2.095s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:235:19:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass QuadConvexMPCNode[m[K’ has no member named ‘[01m[Kconvex_mpc[m[K’
+[2.095s]   235 |             this->[01;31m[Kconvex_mpc[m[K.update_x0(
+[2.095s]       |                   [01;31m[K^~~~~~~~~~[m[K
+[2.100s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:238:21:[m[K [01;31m[Kerror: [m[K‘[01m[Kposition[m[K’ was not declared in this scope
+[2.100s]   238 |                     [01;31m[Kposition[m[K[0], position[1], position[2], // Position in x, y, z
+[2.100s]       |                     [01;31m[K^~~~~~~~[m[K
+[2.100s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:[m[K [01;31m[Kerror: [m[Kno matching function for call to ‘[01m[KEigen::Matrix<double, 13, 1, 0, 13, 1>::Matrix(<brace-enclosed initializer list>)[m[K’
+[2.100s]   242 |                 [01;31m[K}[m[K
+[2.100s]       |                 [01;31m[K^[m[K
+[2.100s] In file included from [01m[K/usr/include/eigen3/Eigen/Core:295[m[K,
+[2.101s]                  from [01m[K/usr/include/eigen3/Eigen/Dense:1[m[K,
+[2.101s]                  from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:7[m[K:
+[2.101s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:435:14:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class OtherDerived> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const Eigen::RotationBase<OtherDerived, Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::ColsAtCompileTime>&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.101s]   435 |     explicit [01;36m[KMatrix[m[K(const RotationBase<OtherDerived,ColsAtCompileTime>& r);
+[2.101s]       |              [01;36m[K^~~~~~[m[K
+[2.101s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:435:14:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[2.101s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:[m[K [01;36m[Knote: [m[K  mismatched types ‘[01m[Kconst Eigen::RotationBase<OtherDerived, 1>[m[K’ and ‘[01m[Kfloat[m[K’
+[2.101s]   242 |                 [01;36m[K}[m[K
+[2.101s]       |                 [01;36m[K^[m[K
+[2.101s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:422:25:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class OtherDerived> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const Eigen::EigenBase<OtherDerived>&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.101s]   422 |     EIGEN_STRONG_INLINE [01;36m[KMatrix[m[K(const EigenBase<OtherDerived> &other)
+[2.101s]       |                         [01;36m[K^~~~~~[m[K
+[2.102s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:422:25:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[2.102s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:[m[K [01;36m[Knote: [m[K  mismatched types ‘[01m[Kconst Eigen::EigenBase<Derived>[m[K’ and ‘[01m[Kfloat[m[K’
+[2.102s]   242 |                 [01;36m[K}[m[K
+[2.102s]       |                 [01;36m[K^[m[K
+[2.102s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:337:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class T0, class T1> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const T0&, const T1&) [35m[K[with T1 = T0; _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.102s]   337 |     [01;36m[KMatrix[m[K(const T0& x, const T1& y)
+[2.102s]       |     [01;36m[K^~~~~~[m[K
+[2.102s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:337:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[2.102s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:[m[K [01;36m[Knote: [m[K  candidate expects 2 arguments, 13 provided
+[2.102s]   242 |                 [01;36m[K}[m[K
+[2.102s]       |                 [01;36m[K^[m[K
+[2.102s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:329:14:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class T> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const T&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.102s]   329 |     explicit [01;36m[KMatrix[m[K(const T& x)
+[2.102s]       |              [01;36m[K^~~~~~[m[K
+[2.102s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:329:14:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[2.102s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 13 provided
+[2.102s]   242 |                 [01;36m[K}[m[K
+[2.102s]       |                 [01;36m[K^[m[K
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:296:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... ArgTypes> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const Scalar&, const Scalar&, const Scalar&, const Scalar&, const ArgTypes& ...) [35m[K[with ArgTypes = {ArgTypes ...}; _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.103s]   296 |     [01;36m[KMatrix[m[K(const Scalar& a0, const Scalar& a1, const Scalar& a2,  const Scalar& a3, const ArgTypes&... args)
+[2.103s]       |     [01;36m[K^~~~~~[m[K
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:296:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:414:25:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.103s]   414 |     EIGEN_STRONG_INLINE [01;36m[KMatrix[m[K(const Matrix& other) : Base(other)
+[2.103s]       |                         [01;36m[K^~~~~~[m[K
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:414:25:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 13 provided
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:401:25:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const Scalar&, const Scalar&, const Scalar&, const Scalar&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1; Scalar = double][m[K[m[K’
+[2.103s]   401 |     EIGEN_STRONG_INLINE [01;36m[KMatrix[m[K(const Scalar& x, const Scalar& y, const Scalar& z, const Scalar& w)
+[2.103s]       |                         [01;36m[K^~~~~~[m[K
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:401:25:[m[K [01;36m[Knote: [m[K  candidate expects 4 arguments, 13 provided
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:389:25:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const Scalar&, const Scalar&, const Scalar&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1; Scalar = double][m[K[m[K’
+[2.103s]   389 |     EIGEN_STRONG_INLINE [01;36m[KMatrix[m[K(const Scalar& x, const Scalar& y, const Scalar& z)
+[2.103s]       |                         [01;36m[K^~~~~~[m[K
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:389:25:[m[K [01;36m[Knote: [m[K  candidate expects 3 arguments, 13 provided
+[2.103s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:321:34:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(const std::initializer_list<std::initializer_list<typename Eigen::internal::traits<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> >::Scalar> >&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1; typename Eigen::internal::traits<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> >::Scalar = double][m[K[m[K’
+[2.104s]   321 |     explicit EIGEN_STRONG_INLINE [01;36m[KMatrix[m[K(const std::initializer_list<std::initializer_list<Scalar>>& list) : Base(list) {}
+[2.104s]       |                                  [01;36m[K^~~~~~[m[K
+[2.104s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:321:34:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 13 provided
+[2.104s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:273:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>&&) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.104s]   273 |     [01;36m[KMatrix[m[K(Matrix&& other) EIGEN_NOEXCEPT_IF(std::is_nothrow_move_constructible<Scalar>::value)
+[2.104s]       |     [01;36m[K^~~~~~[m[K
+[2.104s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:273:5:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 13 provided
+[2.104s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:267:14:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K(Eigen::internal::constructor_without_unaligned_array_assert) [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.104s]   267 |     explicit [01;36m[KMatrix[m[K(internal::constructor_without_unaligned_array_assert)
+[2.104s]       |              [01;36m[K^~~~~~[m[K
+[2.104s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:267:14:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 13 provided
+[2.104s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:259:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::[01;32m[KMatrix[m[K() [35m[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1][m[K[m[K’
+[2.104s]   259 |     [01;36m[KMatrix[m[K() : Base()
+[2.104s]       |     [01;36m[K^~~~~~[m[K
+[2.104s] [01m[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:259:5:[m[K [01;36m[Knote: [m[K  candidate expects 0 arguments, 13 provided
+[3.817s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1
+[3.817s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[3.818s] gmake: *** [Makefile:146: all] Error 2
+[3.820s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

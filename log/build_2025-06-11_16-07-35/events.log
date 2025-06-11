@@ -1,0 +1,186 @@
+[0.000000] (-) TimerEvent: {}
+[0.000137] (convex_mpc) JobQueued: {'identifier': 'convex_mpc', 'dependencies': OrderedDict()}
+[0.000164] (convex_mpc) JobStarted: {'identifier': 'convex_mpc'}
+[0.005699] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'cmake'}
+[0.006032] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'build'}
+[0.006377] (convex_mpc) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', '--', '-j16', '-l16'], 'cwd': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'env': OrderedDict({'GJS_DEBUG_TOPICS': 'JS ERROR;JS LOG', 'XDG_ACTIVATION_TOKEN': 'gnome-shell/Terminator/3685-9-daniel-home-ubuntu_TIME23759061', 'LESSOPEN': '| /usr/bin/lesspipe %s', 'CONDA_PROMPT_MODIFIER': '(base)', 'USER': 'daniel', 'XDG_SESSION_TYPE': 'x11', 'CLUTTER_DISABLE_MIPMAPPED_TEXT': '1', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/opt/gurobi1202/linux64/lib', 'HOME': '/home/daniel', 'CONDA_SHLVL': '1', 'CYCLONEDDS_URI': '<CycloneDDS><Domain><General><Interfaces>\n                            <NetworkInterface name="lo" priority="default" multicast="default" />\n                        </Interfaces></General></Domain></CycloneDDS>', 'OLDPWD': '/home/daniel', 'DESKTOP_SESSION': 'ubuntu', 'GIO_LAUNCHED_DESKTOP_FILE': '/usr/share/applications/terminator.desktop', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'MANAGERPID': '3256', 'SYSTEMD_EXEC_PID': '3685', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'TERMINATOR_DBUS_NAME': 'net.tenshu.Terminator23558193cd9818af7fe4d2c2f5bd9d00f', 'GIO_LAUNCHED_DESKTOP_FILE_PID': '284877', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'COLCON_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'daniel', 'JOURNAL_STREAM': '9:29891', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/x86_64-linux-gnu/pkgconfig:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/pkgconfig', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.Shell@x11.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'daniel', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/bin:/opt/ros/jazzy/bin:/home/daniel/.local/bin:/home/daniel/.local/bin:/home/daniel/miniconda3/bin:/home/daniel/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/gurobi1202/linux64/bin', 'SESSION_MANAGER': 'local/daniel-home-ubuntu:@/tmp/.ICE-unix/3641,unix/daniel-home-ubuntu:/tmp/.ICE-unix/3641', 'INVOCATION_ID': '6ceb3a01491340c99665138d9763c257', 'XDG_MENU_PREFIX': 'gnome-', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'TERMINATOR_DBUS_PATH': '/net/tenshu/Terminator2', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'RMW_IMPLEMENTATION': 'rmw_cyclonedds_cpp', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/ros/jazzy', 'CONDA_PYTHON_EXE': '/home/daniel/miniconda3/bin/python', 'SHELL': '/bin/bash', 'TERMINATOR_UUID': 'urn:uuid:176569c4-02ac-4ce6-8383-d6ca4d44d2f9', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'CONDA_DEFAULT_ENV': 'base', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'GJS_DEBUG_OUTPUT': 'stderr', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'CONDA_EXE': '/home/daniel/miniconda3/bin/conda', 'GUROBI_HOME': '/opt/gurobi1202/linux64', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'CONDA_PREFIX': '/home/daniel/miniconda3', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[0.069096] (convex_mpc) StdoutLine: {'line': b'[ 16%] \x1b[32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o\x1b[0m\n'}
+[0.069487] (convex_mpc) StdoutLine: {'line': b'[ 33%] \x1b[32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o\x1b[0m\n'}
+[0.099497] (-) TimerEvent: {}
+[0.199699] (-) TimerEvent: {}
+[0.299950] (-) TimerEvent: {}
+[0.400203] (-) TimerEvent: {}
+[0.500444] (-) TimerEvent: {}
+[0.600717] (-) TimerEvent: {}
+[0.700964] (-) TimerEvent: {}
+[0.801211] (-) TimerEvent: {}
+[0.851518] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::\x1b[01;32m\x1b[Kcompute_R_bar\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[0.851956] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:188:9:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[KN_CONTROLS\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[0.852033] (convex_mpc) StderrLine: {'line': b'  188 |     int \x1b[01;35m\x1b[KN_CONTROLS\x1b[m\x1b[K = mpc_params.N_CONTROLS;\n'}
+[0.852092] (convex_mpc) StderrLine: {'line': b'      |         \x1b[01;35m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[0.852338] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[KEigen::MatrixXd ConvexMPC::\x1b[01;32m\x1b[Kcompute_Q_bar\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[0.852404] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:199:9:\x1b[m\x1b[K \x1b[01;35m\x1b[Kwarning: \x1b[m\x1b[Kunused variable \xe2\x80\x98\x1b[01m\x1b[KN_CONTROLS\x1b[m\x1b[K\xe2\x80\x99 [\x1b[01;35m\x1b[K\x1b]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable\x07-Wunused-variable\x1b]8;;\x07\x1b[m\x1b[K]\n'}
+[0.852461] (convex_mpc) StderrLine: {'line': b'  199 |     int \x1b[01;35m\x1b[KN_CONTROLS\x1b[m\x1b[K = mpc_params.N_CONTROLS;\n'}
+[0.852526] (convex_mpc) StderrLine: {'line': b'      |         \x1b[01;35m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[0.901317] (-) TimerEvent: {}
+[1.001604] (-) TimerEvent: {}
+[1.101892] (-) TimerEvent: {}
+[1.202186] (-) TimerEvent: {}
+[1.302470] (-) TimerEvent: {}
+[1.402725] (-) TimerEvent: {}
+[1.502957] (-) TimerEvent: {}
+[1.603201] (-) TimerEvent: {}
+[1.703447] (-) TimerEvent: {}
+[1.803704] (-) TimerEvent: {}
+[1.903954] (-) TimerEvent: {}
+[2.004199] (-) TimerEvent: {}
+[2.104444] (-) TimerEvent: {}
+[2.196693] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:\x1b[m\x1b[K In member function \xe2\x80\x98\x1b[01m\x1b[Kvoid QuadConvexMPCNode::\x1b[01;32m\x1b[Kupdate_mpc_state\x1b[m\x1b[K()\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[2.196935] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:235:19:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kclass QuadConvexMPCNode\x1b[m\x1b[K\xe2\x80\x99 has no member named \xe2\x80\x98\x1b[01m\x1b[Kconvex_mpc\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.197007] (convex_mpc) StderrLine: {'line': b'  235 |             this->\x1b[01;31m\x1b[Kconvex_mpc\x1b[m\x1b[K.update_x0(\n'}
+[2.197064] (convex_mpc) StderrLine: {'line': b'      |                   \x1b[01;31m\x1b[K^~~~~~~~~~\x1b[m\x1b[K\n'}
+[2.203465] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:238:21:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kposition\x1b[m\x1b[K\xe2\x80\x99 was not declared in this scope\n'}
+[2.203583] (convex_mpc) StderrLine: {'line': b'  238 |                     \x1b[01;31m\x1b[Kposition\x1b[m\x1b[K[0], position[1], position[2], // Position in x, y, z\n'}
+[2.203668] (convex_mpc) StderrLine: {'line': b'      |                     \x1b[01;31m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[2.203730] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kno matching function for call to \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<double, 13, 1, 0, 13, 1>::Matrix(<brace-enclosed initializer list>)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.203833] (convex_mpc) StderrLine: {'line': b'  242 |                 \x1b[01;31m\x1b[K}\x1b[m\x1b[K\n'}
+[2.203892] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[2.203948] (convex_mpc) StderrLine: {'line': b'In file included from \x1b[01m\x1b[K/usr/include/eigen3/Eigen/Core:295\x1b[m\x1b[K,\n'}
+[2.204009] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/usr/include/eigen3/Eigen/Dense:1\x1b[m\x1b[K,\n'}
+[2.204084] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:7\x1b[m\x1b[K:\n'}
+[2.204140] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:435:14:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[Ktemplate<class OtherDerived> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const Eigen::RotationBase<OtherDerived, Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::ColsAtCompileTime>&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.204206] (convex_mpc) StderrLine: {'line': b'  435 |     explicit \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const RotationBase<OtherDerived,ColsAtCompileTime>& r);\n'}
+[2.204261] (convex_mpc) StderrLine: {'line': b'      |              \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.204418] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:435:14:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  template argument deduction/substitution failed:\n'}
+[2.204597] (-) TimerEvent: {}
+[2.204702] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  mismatched types \xe2\x80\x98\x1b[01m\x1b[Kconst Eigen::RotationBase<OtherDerived, 1>\x1b[m\x1b[K\xe2\x80\x99 and \xe2\x80\x98\x1b[01m\x1b[Kfloat\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.204813] (convex_mpc) StderrLine: {'line': b'  242 |                 \x1b[01;36m\x1b[K}\x1b[m\x1b[K\n'}
+[2.204905] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;36m\x1b[K^\x1b[m\x1b[K\n'}
+[2.204992] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:422:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[Ktemplate<class OtherDerived> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const Eigen::EigenBase<OtherDerived>&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.205108] (convex_mpc) StderrLine: {'line': b'  422 |     EIGEN_STRONG_INLINE \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const EigenBase<OtherDerived> &other)\n'}
+[2.205195] (convex_mpc) StderrLine: {'line': b'      |                         \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.205273] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:422:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  template argument deduction/substitution failed:\n'}
+[2.205365] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  mismatched types \xe2\x80\x98\x1b[01m\x1b[Kconst Eigen::EigenBase<Derived>\x1b[m\x1b[K\xe2\x80\x99 and \xe2\x80\x98\x1b[01m\x1b[Kfloat\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.205464] (convex_mpc) StderrLine: {'line': b'  242 |                 \x1b[01;36m\x1b[K}\x1b[m\x1b[K\n'}
+[2.205571] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;36m\x1b[K^\x1b[m\x1b[K\n'}
+[2.205663] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:337:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[Ktemplate<class T0, class T1> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const T0&, const T1&) \x1b[35m\x1b[K[with T1 = T0; _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.205753] (convex_mpc) StderrLine: {'line': b'  337 |     \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const T0& x, const T1& y)\n'}
+[2.205845] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.205933] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:337:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  template argument deduction/substitution failed:\n'}
+[2.206026] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 2 arguments, 13 provided\n'}
+[2.206116] (convex_mpc) StderrLine: {'line': b'  242 |                 \x1b[01;36m\x1b[K}\x1b[m\x1b[K\n'}
+[2.206200] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;36m\x1b[K^\x1b[m\x1b[K\n'}
+[2.206273] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:329:14:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[Ktemplate<class T> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const T&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.206338] (convex_mpc) StderrLine: {'line': b'  329 |     explicit \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const T& x)\n'}
+[2.206397] (convex_mpc) StderrLine: {'line': b'      |              \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.206454] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:329:14:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  template argument deduction/substitution failed:\n'}
+[2.206529] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc_publisher.cpp:242:17:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 13 provided\n'}
+[2.206592] (convex_mpc) StderrLine: {'line': b'  242 |                 \x1b[01;36m\x1b[K}\x1b[m\x1b[K\n'}
+[2.206652] (convex_mpc) StderrLine: {'line': b'      |                 \x1b[01;36m\x1b[K^\x1b[m\x1b[K\n'}
+[2.206711] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:296:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[Ktemplate<class ... ArgTypes> Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const Scalar&, const Scalar&, const Scalar&, const Scalar&, const ArgTypes& ...) \x1b[35m\x1b[K[with ArgTypes = {ArgTypes ...}; _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.206772] (convex_mpc) StderrLine: {'line': b'  296 |     \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const Scalar& a0, const Scalar& a1, const Scalar& a2,  const Scalar& a3, const ArgTypes&... args)\n'}
+[2.206831] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.206898] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:296:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  template argument deduction/substitution failed:\n'}
+[2.206968] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:414:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.207037] (convex_mpc) StderrLine: {'line': b'  414 |     EIGEN_STRONG_INLINE \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const Matrix& other) : Base(other)\n'}
+[2.207117] (convex_mpc) StderrLine: {'line': b'      |                         \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.207201] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:414:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 13 provided\n'}
+[2.207298] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:401:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const Scalar&, const Scalar&, const Scalar&, const Scalar&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1; Scalar = double]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.207373] (convex_mpc) StderrLine: {'line': b'  401 |     EIGEN_STRONG_INLINE \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const Scalar& x, const Scalar& y, const Scalar& z, const Scalar& w)\n'}
+[2.207432] (convex_mpc) StderrLine: {'line': b'      |                         \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.207499] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:401:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 4 arguments, 13 provided\n'}
+[2.207563] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:389:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const Scalar&, const Scalar&, const Scalar&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1; Scalar = double]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.207623] (convex_mpc) StderrLine: {'line': b'  389 |     EIGEN_STRONG_INLINE \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const Scalar& x, const Scalar& y, const Scalar& z)\n'}
+[2.207681] (convex_mpc) StderrLine: {'line': b'      |                         \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.207740] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:389:25:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 3 arguments, 13 provided\n'}
+[2.207824] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:321:34:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(const std::initializer_list<std::initializer_list<typename Eigen::internal::traits<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> >::Scalar> >&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1; typename Eigen::internal::traits<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> >::Scalar = double]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.207921] (convex_mpc) StderrLine: {'line': b'  321 |     explicit EIGEN_STRONG_INLINE \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(const std::initializer_list<std::initializer_list<Scalar>>& list) : Base(list) {}\n'}
+[2.208017] (convex_mpc) StderrLine: {'line': b'      |                                  \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.208103] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:321:34:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 13 provided\n'}
+[2.208192] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:273:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>&&) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.208284] (convex_mpc) StderrLine: {'line': b'  273 |     \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(Matrix&& other) EIGEN_NOEXCEPT_IF(std::is_nothrow_move_constructible<Scalar>::value)\n'}
+[2.208367] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.208452] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:273:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 13 provided\n'}
+[2.208586] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:267:14:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K(Eigen::internal::constructor_without_unaligned_array_assert) \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.208660] (convex_mpc) StderrLine: {'line': b'  267 |     explicit \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K(internal::constructor_without_unaligned_array_assert)\n'}
+[2.208717] (convex_mpc) StderrLine: {'line': b'      |              \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.208771] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:267:14:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 13 provided\n'}
+[2.208825] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:259:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KEigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>::\x1b[01;32m\x1b[KMatrix\x1b[m\x1b[K() \x1b[35m\x1b[K[with _Scalar = double; int _Rows = 13; int _Cols = 1; int _Options = 0; int _MaxRows = 13; int _MaxCols = 1]\x1b[m\x1b[K\x1b[m\x1b[K\xe2\x80\x99\n'}
+[2.208886] (convex_mpc) StderrLine: {'line': b'  259 |     \x1b[01;36m\x1b[KMatrix\x1b[m\x1b[K() : Base()\n'}
+[2.208937] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~\x1b[m\x1b[K\n'}
+[2.208988] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/usr/include/eigen3/Eigen/src/Core/Matrix.h:259:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 0 arguments, 13 provided\n'}
+[2.304700] (-) TimerEvent: {}
+[2.404942] (-) TimerEvent: {}
+[2.505189] (-) TimerEvent: {}
+[2.605431] (-) TimerEvent: {}
+[2.705681] (-) TimerEvent: {}
+[2.805935] (-) TimerEvent: {}
+[2.906188] (-) TimerEvent: {}
+[3.006432] (-) TimerEvent: {}
+[3.106690] (-) TimerEvent: {}
+[3.206934] (-) TimerEvent: {}
+[3.307173] (-) TimerEvent: {}
+[3.407421] (-) TimerEvent: {}
+[3.507678] (-) TimerEvent: {}
+[3.607918] (-) TimerEvent: {}
+[3.708151] (-) TimerEvent: {}
+[3.808394] (-) TimerEvent: {}
+[3.908642] (-) TimerEvent: {}
+[3.945806] (convex_mpc) StderrLine: {'line': b'gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:76: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o] Error 1\n'}
+[3.945980] (convex_mpc) StderrLine: {'line': b'gmake[2]: *** Waiting for unfinished jobs....\n'}
+[4.008730] (-) TimerEvent: {}
+[4.108962] (-) TimerEvent: {}
+[4.209198] (-) TimerEvent: {}
+[4.309438] (-) TimerEvent: {}
+[4.409705] (-) TimerEvent: {}
+[4.509950] (-) TimerEvent: {}
+[4.610190] (-) TimerEvent: {}
+[4.710431] (-) TimerEvent: {}
+[4.810691] (-) TimerEvent: {}
+[4.910973] (-) TimerEvent: {}
+[5.011215] (-) TimerEvent: {}
+[5.111534] (-) TimerEvent: {}
+[5.211776] (-) TimerEvent: {}
+[5.312027] (-) TimerEvent: {}
+[5.412270] (-) TimerEvent: {}
+[5.512526] (-) TimerEvent: {}
+[5.612790] (-) TimerEvent: {}
+[5.713037] (-) TimerEvent: {}
+[5.813286] (-) TimerEvent: {}
+[5.913739] (-) TimerEvent: {}
+[6.013999] (-) TimerEvent: {}
+[6.114242] (-) TimerEvent: {}
+[6.214465] (-) TimerEvent: {}
+[6.314711] (-) TimerEvent: {}
+[6.414940] (-) TimerEvent: {}
+[6.515177] (-) TimerEvent: {}
+[6.615413] (-) TimerEvent: {}
+[6.715652] (-) TimerEvent: {}
+[6.815884] (-) TimerEvent: {}
+[6.916121] (-) TimerEvent: {}
+[7.016361] (-) TimerEvent: {}
+[7.116611] (-) TimerEvent: {}
+[7.216842] (-) TimerEvent: {}
+[7.317081] (-) TimerEvent: {}
+[7.417307] (-) TimerEvent: {}
+[7.517525] (-) TimerEvent: {}
+[7.617743] (-) TimerEvent: {}
+[7.717980] (-) TimerEvent: {}
+[7.818217] (-) TimerEvent: {}
+[7.918451] (-) TimerEvent: {}
+[8.018693] (-) TimerEvent: {}
+[8.118929] (-) TimerEvent: {}
+[8.219155] (-) TimerEvent: {}
+[8.319385] (-) TimerEvent: {}
+[8.419616] (-) TimerEvent: {}
+[8.519845] (-) TimerEvent: {}
+[8.620089] (-) TimerEvent: {}
+[8.720335] (-) TimerEvent: {}
+[8.820541] (-) TimerEvent: {}
+[8.920788] (-) TimerEvent: {}
+[9.021056] (-) TimerEvent: {}
+[9.059821] (convex_mpc) StderrLine: {'line': b'gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2\n'}
+[9.060002] (convex_mpc) StderrLine: {'line': b'gmake: *** [Makefile:146: all] Error 2\n'}
+[9.062188] (convex_mpc) CommandEnded: {'returncode': 2}
+[9.067588] (convex_mpc) JobEnded: {'identifier': 'convex_mpc', 'rc': 2}
+[9.068208] (-) EventReactorShutdown: {}

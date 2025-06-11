@@ -1,0 +1,4 @@
+[ 20%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/gurobi_utils.cpp.o[0m
+[ 40%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[ 60%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[ 80%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/simplified_quad_dynamics.cpp.o[0m

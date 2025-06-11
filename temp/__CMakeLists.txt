@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.5.0)
+project(aipex-quadruped-baselines VERSION 0.1.0 LANGUAGES C CXX)
+
+find_package(GUROBI REQUIRED)
+
+
+add_executable(aipex-quadruped-baselines main.cpp)
+
+include(CTest)
+enable_testing()
+
