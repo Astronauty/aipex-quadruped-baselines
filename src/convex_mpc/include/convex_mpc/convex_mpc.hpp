@@ -2,7 +2,12 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <memory>
+
 #include "gurobi_c++.h"
+
+#include "rclcpp/rclcpp.hpp"
+
 #include "convex_mpc/state_space.hpp"
 #include "convex_mpc/gurobi_utils.hpp"
 #include "convex_mpc/mpc_params.hpp"
@@ -16,7 +21,7 @@ using namespace Eigen;
 class ConvexMPC
 {
     public:
-        ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params);
+        ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rclcpp::Logger& logger);
         // ~ConvexMPC();
 
         tuple<MatrixXd, MatrixXd> create_state_space_prediction_matrices(const StateSpace& quad_dss);
@@ -32,14 +37,14 @@ class ConvexMPC
     private:
         MPCParams mpc_params;
         QuadrupedParams quad_params;
-        GRBEnv env;
-        GRBModel model;
+        std::unique_ptr<GRBEnv> env; //Using a unique pointer to delay model initialization until env is properly set, while keeping model a member variable
+        std::unique_ptr<GRBModel> model;
 
         GRBVar* U;
         GRBQuadExpr quad_expr;
         GRBLinExpr lin_expr;
 
-
+        rclcpp::Logger logger_;
         
         Vector<double, 13> x0;
         Vector<double, 12> u;
@@ -48,12 +53,10 @@ class ConvexMPC
         MatrixXd A_qp;
         MatrixXd B_qp;
 
-
         MatrixXd P; // Quadratic cost of MPC
         MatrixXd q; // Linear cost of MPC
 
         Vector3d foot_positions[4];
-
 
         MatrixXd Q_bar; // Diagonal block matrix of quadratic state cost for N_MPC steps
         MatrixXd R_bar; // Diagonal block matrix of quadratic control cost for N_MPC-1 steps

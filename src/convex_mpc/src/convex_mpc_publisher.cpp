@@ -48,6 +48,18 @@ StateMeasurementMode measurement_mode_from_string(const std::string& mode_str) {
     throw std::invalid_argument("Invalid measurement mode: " + mode_str);
 }
 
+
+
+/**
+ * @class QuadConvexMPCNode
+ * @brief ROS2 node for quadruped robot control using Convex MPC
+ *
+ * This node performs the following:
+ * 1. Receives robot state information from SportMode and LowState
+ * 2. Updates the MPC state representation
+ * 3. Solves the convex optimization problem
+ * 4. Publishes torque commands to control the robot
+ */
 class QuadConvexMPCNode : public rclcpp::Node
 {
     public:
@@ -64,9 +76,9 @@ class QuadConvexMPCNode : public rclcpp::Node
             joint_torque_pub_ = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);
 
             // // Create a lowstate subscriber to update mpc states
-            // low_state_sub_ = this->create_subscription<unitree_go::msg::LowState>(
-            //     "lowstate", 10, std::bind
-            // )
+            low_state_sub_ = this->create_subscription<unitree_go::msg::LowState>(
+                "lowstate", 10, std::bind(&QuadConvexMPCNode::low_state_callback, this, std::placeholders::_1)
+            );
 
             // Sport mode state subscriber
             // TODO: switch between subscriber callbacks based on measurement_mode
@@ -75,7 +87,7 @@ class QuadConvexMPCNode : public rclcpp::Node
             );
 
             // TODO: Set correct rate for the timer
-            timer_ = this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&QuadConvexMPCNode::update_mpc_state, this));
+            timer_ = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&QuadConvexMPCNode::update_mpc_state, this));
 
             // Initialize unitree lowcmd#
             int N_STATES = 13;
@@ -110,7 +122,7 @@ class QuadConvexMPCNode : public rclcpp::Node
             QuadrupedParams quadruped_params = QuadrupedParams(inertiaTensor, mass, gravity);
 
             // Initialize the ConvexMPC object
-             convex_mpc = std::make_unique<ConvexMPC>(mpc_params, quadruped_params);
+             convex_mpc = std::make_unique<ConvexMPC>(mpc_params, quadruped_params, this->get_logger());
         }
         
     private:
@@ -163,7 +175,7 @@ class QuadConvexMPCNode : public rclcpp::Node
             }
         }
 
-        void topic_callback(unitree_go::msg::LowState::SharedPtr data)
+        void low_state_callback(unitree_go::msg::LowState::SharedPtr data)
         {
             // Info IMU states
             // RPY euler angle(ZYX order respected to body frame)
@@ -243,7 +255,8 @@ class QuadConvexMPCNode : public rclcpp::Node
                     p_dot[0], p_dot[1], p_dot[2], // Velocity in x, y, z
                     g; // Gravity state
 
-            
+            RCLCPP_INFO(this->get_logger(), "Setting x0 to [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
+                x0(0), x0(1), x0(2), x0(3), x0(4), x0(5), x0(6), x0(7), x0(8), x0(9), x0(10), x0(11), x0(12));
             this->convex_mpc->update_x0(x0);
         }
 
@@ -282,11 +295,26 @@ class QuadConvexMPCNode : public rclcpp::Node
 
 int main(int argc, char * argv[])
 {
-    std::cout << "Main started" << std::endl;
+    try{
+        rclcpp::init(argc, argv);
+        auto node = std::make_shared<QuadConvexMPCNode>();
+        rclcpp::spin(node);
+        rclcpp::shutdown();
+    }
+    catch(GRBException& e) {
+        std::cerr << "Gurobi error code = " << e.getErrorCode() << std::endl;
+        std::cerr << "Gurobi error message: " << e.getMessage() << std::endl;
+        return 1;
+    }
+    catch(std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return 1;
+    }
+    catch(...) {
+        std::cerr << "Unknown exception occurred" << std::endl;
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Unknown exception occurred");
+        return 1;
+    }
 
-    rclcpp::init(argc, argv);
-    auto node = std::make_shared<QuadConvexMPCNode>();
-    rclcpp::spin(node);
-    rclcpp::shutdown();
     return 0;
 }

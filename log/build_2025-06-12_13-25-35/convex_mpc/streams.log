@@ -1,0 +1,119 @@
+[0.008s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/daniel/aipex-quadruped-baselines/src/convex_mpc -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/daniel/aipex-quadruped-baselines/install/convex_mpc
+[0.023s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.163s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[0.177s] -- Found rclcpp: 28.1.9 (/opt/ros/jazzy/share/rclcpp/cmake)
+[0.207s] -- Found rosidl_generator_c: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[0.215s] -- Found rosidl_generator_cpp: 4.6.5 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[0.226s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.239s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.294s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[0.296s] -- Found rmw_cyclonedds_cpp: 2.2.3 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/share/rmw_cyclonedds_cpp/cmake)
+[0.315s] -- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+[0.369s] -- Found std_msgs: 5.3.6 (/opt/ros/jazzy/share/std_msgs/cmake)
+[0.383s] -- Found unitree_go: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/share/unitree_go/cmake)
+[0.412s] -- Found unitree_api: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/share/unitree_api/cmake)
+[0.426s] -- Found unitree_hg: 0.0.0 (/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/share/unitree_hg/cmake)
+[0.441s] -- GUROBI_INCLUDE_DIRS: /opt/gurobi1202/linux64/include
+[0.441s] -- GUROBI_LIBRARY: /opt/gurobi1202/linux64/lib/libgurobi120.so
+[0.441s] -- GUROBI_CXX_LIBRARY: /opt/gurobi1202/linux64/lib/libgurobi_c++.a
+[0.442s] -- Found ament_lint_auto: 0.17.2 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[0.519s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[0.520s] -- Configured cppcheck include dirs: /home/daniel/aipex-quadruped-baselines/src/convex_mpc/include
+[0.520s] -- Configured cppcheck exclude dirs and/or files: 
+[0.520s] -- Added test 'lint_cmake' to check CMake code style
+[0.522s] -- Added test 'uncrustify' to check C / C++ code style
+[0.522s] -- Configured uncrustify additional arguments: 
+[0.522s] -- Added test 'xmllint' to check XML markup files
+[0.523s] -- Configuring done (0.5s)
+[0.536s] -- Generating done (0.0s)
+[0.539s] -- Build files have been written to: /home/daniel/aipex-quadruped-baselines/build/convex_mpc
+[0.545s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/daniel/aipex-quadruped-baselines/src/convex_mpc -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/daniel/aipex-quadruped-baselines/install/convex_mpc
+[0.547s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.614s] [ 14%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[0.616s] [ 28%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[2.600s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In constructor ‘[01m[KConvexMPC::[01;32m[KConvexMPC[m[K(MPCParams, QuadrupedParams, rclcpp::Logger)[m[K’:
+[2.600s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:16:28:[m[K [01;31m[Kerror: [m[K‘[01m[Krclcpp::Logger::[01;32m[KLogger[m[K()[m[K’ is private within this context
+[2.601s]    16 |     quad_params(quad_params[01;31m[K)[m[K
+[2.601s]       |                            [01;31m[K^[m[K
+[2.601s] In file included from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/copy_all_parameter_values.hpp:26[m[K,
+[2.601s]                  from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/rclcpp.hpp:171[m[K,
+[2.601s]                  from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:9[m[K,
+[2.601s]                  from [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:3[m[K:
+[2.601s] [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/logger.hpp:115:3:[m[K [01;36m[Knote: [m[Kdeclared private here
+[2.601s]   115 |   [01;36m[KLogger[m[K()
+[2.601s]       |   [01;36m[K^~~~~~[m[K
+[2.601s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:17:5:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K{[m[K’ before ‘[01m[Klogger_[m[K’
+[2.601s]    17 |     [01;31m[Klogger_[m[K(logger)
+[2.601s]       |     [01;31m[K^~~~~~~[m[K
+[2.601s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:14:88:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Klogger[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[2.601s]    14 | ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, [01;35m[Krclcpp::Logger logger[m[K)
+[2.601s]       |                                                                         [01;35m[K~~~~~~~~~~~~~~~^~~~~~[m[K
+[2.601s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K At global scope:
+[2.601s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:17:12:[m[K [01;31m[Kerror: [m[Kexpected constructor, destructor, or type conversion before ‘[01m[K([m[K’ token
+[2.602s]    17 |     logger_[01;31m[K([m[Klogger)
+[2.602s]       |            [01;31m[K^[m[K
+[2.630s] In file included from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/copy_all_parameter_values.hpp:27[m[K:
+[2.630s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In member function ‘[01m[KStateSpace ConvexMPC::[01;32m[Kget_default_dss_model[m[K()[m[K’:
+[2.630s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:153:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.630s]   153 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "Default discrete state space model created.");
+[2.630s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.630s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:153:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.630s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:153:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.630s]   153 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "Default discrete state space model created.");
+[2.630s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.631s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:153:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.631s]   153 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "Default discrete state space model created.");
+[2.631s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.631s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:153:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.631s]   153 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "Default discrete state space model created.");
+[2.631s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.631s] In file included from [01m[K/opt/ros/jazzy/include/rclcpp/rclcpp/logging.hpp:24[m[K:
+[2.631s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:153:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.631s]   153 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "Default discrete state space model created.");
+[2.631s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.631s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:153:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.631s]   153 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "Default discrete state space model created.");
+[2.631s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.631s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:154:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.631s]   154 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
+[2.631s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.631s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:154:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.631s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:154:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.632s]   154 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
+[2.632s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.632s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:154:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.632s]   154 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
+[2.632s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.632s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:154:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.632s]   154 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
+[2.632s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.632s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:154:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.632s]   154 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
+[2.632s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.632s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:154:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.632s]   154 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
+[2.632s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.632s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:155:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.632s]   155 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
+[2.632s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.632s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:155:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.632s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:155:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.633s]   155 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
+[2.633s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.633s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:155:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.633s]   155 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
+[2.633s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.633s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:155:5:[m[K [01;31m[Kerror: [m[Ktemplate argument 1 is invalid
+[2.633s]   155 |     [01;31m[KRCLCPP_INFO[m[K(this->get_logger(), "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
+[2.633s]       |     [01;31m[K^~~~~~~~~~~[m[K
+[2.633s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:155:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.633s]   155 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
+[2.633s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[2.633s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:155:23:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass ConvexMPC[m[K’ has no member named ‘[01m[Kget_logger[m[K’
+[2.633s]   155 |     RCLCPP_INFO(this->[01;31m[Kget_logger[m[K(), "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
+[2.633s]       |                       [01;31m[K^~~~~~~~~~[m[K
+[7.812s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1
+[7.812s] gmake[2]: *** Waiting for unfinished jobs....
+[8.794s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[8.794s] gmake: *** [Makefile:146: all] Error 2
+[8.796s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

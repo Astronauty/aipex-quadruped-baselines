@@ -1,0 +1,11 @@
+[0.008s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.058s] [ 14%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[0.753s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In constructor ‘[01m[KConvexMPC::[01;32m[KConvexMPC[m[K(MPCParams, QuadrupedParams)[m[K’:
+[0.753s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:25:17:[m[K [01;31m[Kerror: [m[K‘[01m[KGRB_StringParam_LicenseFile[m[K’ was not declared in this scope; did you mean ‘[01m[KGRB_StringParam_LogFile[m[K’?
+[0.753s]    25 |         env.set([01;31m[KGRB_StringParam_LicenseFile[m[K, "/home/daniel/gurobi.lic");
+[0.753s]       |                 [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[0.754s]       |                 [32m[KGRB_StringParam_LogFile[m[K
+[4.703s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1
+[4.703s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[4.703s] gmake: *** [Makefile:146: all] Error 2
+[4.705s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

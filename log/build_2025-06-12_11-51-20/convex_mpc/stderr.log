@@ -1,0 +1,8 @@
+[01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In constructor ‘[01m[KConvexMPC::[01;32m[KConvexMPC[m[K(MPCParams, QuadrupedParams)[m[K’:
+[01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:25:17:[m[K [01;31m[Kerror: [m[K‘[01m[KGRB_StringParam_LicenseFile[m[K’ was not declared in this scope; did you mean ‘[01m[KGRB_StringParam_LogFile[m[K’?
+   25 |         env.set([01;31m[KGRB_StringParam_LicenseFile[m[K, "/home/daniel/gurobi.lic");
+      |                 [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+      |                 [32m[KGRB_StringParam_LogFile[m[K
+gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
