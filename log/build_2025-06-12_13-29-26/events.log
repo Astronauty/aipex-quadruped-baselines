@@ -1,0 +1,148 @@
+[0.000000] (-) TimerEvent: {}
+[0.000176] (convex_mpc) JobQueued: {'identifier': 'convex_mpc', 'dependencies': OrderedDict()}
+[0.000481] (convex_mpc) JobStarted: {'identifier': 'convex_mpc'}
+[0.005873] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'cmake'}
+[0.006353] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'build'}
+[0.006821] (convex_mpc) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', '--', '-j16', '-l16'], 'cwd': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'CONDA_PROMPT_MODIFIER': '(base)', 'USER': 'daniel', 'SSH_CLIENT': '128.237.82.210 62636 22', 'XDG_SESSION_TYPE': 'tty', 'GIT_ASKPASS': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/extensions/git/dist/askpass.sh', 'SHLVL': '2', 'LD_LIBRARY_PATH': '/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib', 'BROWSER': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/bin/helpers/browser.sh', 'HOME': '/home/daniel', 'CONDA_SHLVL': '1', 'CYCLONEDDS_URI': '<CycloneDDS><Domain><General><Interfaces>\n                            <NetworkInterface name="lo" priority="default" multicast="default" />\n                        </Interfaces></General></Domain></CycloneDDS>', 'TERM_PROGRAM_VERSION': '1.100.2', 'VSCODE_IPC_HOOK_CLI': '/run/user/1000/vscode-ipc-092de83d-43b6-4b9c-ab5e-89901b2ef729.sock', 'GRB_LICENSE_FILE': '/home/daniel/gurobi.lic', 'ROS_PYTHON_VERSION': '3', 'VSCODE_GIT_ASKPASS_MAIN': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/extensions/git/dist/askpass-main.js', 'VSCODE_GIT_ASKPASS_NODE': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/node', 'SSL_CERT_FILE': '/usr/lib/ssl/cert.pem', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'COLCON_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install:/home/daniel/aipex-quadruped-baselines/install', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'daniel', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/x86_64-linux-gnu/pkgconfig:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/pkgconfig', 'XDG_SESSION_CLASS': 'user', 'TERM': 'xterm-256color', 'XDG_SESSION_ID': '10', 'PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/bin:/opt/ros/jazzy/bin:/home/daniel/.local/bin:/home/daniel/.local/bin:/home/daniel/miniconda3/bin:/home/daniel/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/gurobi1202/linux64/bin:/opt/gurobi1202/linux64/bin', 'XDG_RUNTIME_DIR': '/run/user/1000', 'SSL_CERT_DIR': '/usr/lib/ssl/certs', 'LANG': 'en_US.UTF-8', 'RMW_IMPLEMENTATION': 'rmw_cyclonedds_cpp', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'VSCODE_GIT_IPC_HANDLE': '/run/user/1000/vscode-git-153a627f36.sock', 'TERM_PROGRAM': 'vscode', 'AMENT_PREFIX_PATH': '/home/daniel/aipex-quadruped-baselines/install/convex_mpc:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/ros/jazzy', 'CONDA_PYTHON_EXE': '/home/daniel/miniconda3/bin/python', 'SHELL': '/bin/bash', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'CONDA_DEFAULT_ENV': 'base', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'VSCODE_GIT_ASKPASS_EXTRA_ARGS': '', 'PWD': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'LC_ALL': 'en_US.UTF-8', 'CONDA_EXE': '/home/daniel/miniconda3/bin/conda', 'SSH_CONNECTION': '128.237.82.210 62636 10.0.0.73 22', 'GUROBI_HOME': '/opt/gurobi1202/linux64', 'XDG_DATA_DIRS': '/usr/share/gnome:/usr/local/share:/usr/share:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'CONDA_PREFIX': '/home/daniel/miniconda3', 'COLCON': '1', 'CMAKE_PREFIX_PATH': '/home/daniel/aipex-quadruped-baselines/install/convex_mpc:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[0.077410] (convex_mpc) StdoutLine: {'line': b'[ 28%] \x1b[32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o\x1b[0m\n'}
+[0.077617] (convex_mpc) StdoutLine: {'line': b'[ 28%] \x1b[32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o\x1b[0m\n'}
+[0.099889] (-) TimerEvent: {}
+[0.200092] (-) TimerEvent: {}
+[0.300333] (-) TimerEvent: {}
+[0.400566] (-) TimerEvent: {}
+[0.500802] (-) TimerEvent: {}
+[0.601031] (-) TimerEvent: {}
+[0.701477] (-) TimerEvent: {}
+[0.801727] (-) TimerEvent: {}
+[0.901967] (-) TimerEvent: {}
+[1.002213] (-) TimerEvent: {}
+[1.102654] (-) TimerEvent: {}
+[1.202914] (-) TimerEvent: {}
+[1.303425] (-) TimerEvent: {}
+[1.403684] (-) TimerEvent: {}
+[1.503924] (-) TimerEvent: {}
+[1.604165] (-) TimerEvent: {}
+[1.704614] (-) TimerEvent: {}
+[1.804867] (-) TimerEvent: {}
+[1.905121] (-) TimerEvent: {}
+[2.005578] (-) TimerEvent: {}
+[2.105840] (-) TimerEvent: {}
+[2.206098] (-) TimerEvent: {}
+[2.306336] (-) TimerEvent: {}
+[2.406574] (-) TimerEvent: {}
+[2.506814] (-) TimerEvent: {}
+[2.607050] (-) TimerEvent: {}
+[2.707274] (-) TimerEvent: {}
+[2.807515] (-) TimerEvent: {}
+[2.907734] (-) TimerEvent: {}
+[3.007991] (-) TimerEvent: {}
+[3.108248] (-) TimerEvent: {}
+[3.208508] (-) TimerEvent: {}
+[3.308750] (-) TimerEvent: {}
+[3.409009] (-) TimerEvent: {}
+[3.509246] (-) TimerEvent: {}
+[3.609483] (-) TimerEvent: {}
+[3.709728] (-) TimerEvent: {}
+[3.809966] (-) TimerEvent: {}
+[3.910405] (-) TimerEvent: {}
+[4.010655] (-) TimerEvent: {}
+[4.110904] (-) TimerEvent: {}
+[4.211145] (-) TimerEvent: {}
+[4.314447] (-) TimerEvent: {}
+[4.414710] (-) TimerEvent: {}
+[4.514948] (-) TimerEvent: {}
+[4.615389] (-) TimerEvent: {}
+[4.715636] (-) TimerEvent: {}
+[4.815888] (-) TimerEvent: {}
+[4.916122] (-) TimerEvent: {}
+[5.016357] (-) TimerEvent: {}
+[5.116599] (-) TimerEvent: {}
+[5.216873] (-) TimerEvent: {}
+[5.317106] (-) TimerEvent: {}
+[5.417348] (-) TimerEvent: {}
+[5.517576] (-) TimerEvent: {}
+[5.617830] (-) TimerEvent: {}
+[5.718072] (-) TimerEvent: {}
+[5.818315] (-) TimerEvent: {}
+[5.918554] (-) TimerEvent: {}
+[6.018808] (-) TimerEvent: {}
+[6.119241] (-) TimerEvent: {}
+[6.219483] (-) TimerEvent: {}
+[6.319730] (-) TimerEvent: {}
+[6.419964] (-) TimerEvent: {}
+[6.520194] (-) TimerEvent: {}
+[6.620433] (-) TimerEvent: {}
+[6.720688] (-) TimerEvent: {}
+[6.820949] (-) TimerEvent: {}
+[6.921194] (-) TimerEvent: {}
+[7.021433] (-) TimerEvent: {}
+[7.121673] (-) TimerEvent: {}
+[7.221915] (-) TimerEvent: {}
+[7.322160] (-) TimerEvent: {}
+[7.422405] (-) TimerEvent: {}
+[7.522637] (-) TimerEvent: {}
+[7.622887] (-) TimerEvent: {}
+[7.723143] (-) TimerEvent: {}
+[7.823390] (-) TimerEvent: {}
+[7.923633] (-) TimerEvent: {}
+[8.024203] (-) TimerEvent: {}
+[8.124454] (-) TimerEvent: {}
+[8.224693] (-) TimerEvent: {}
+[8.324934] (-) TimerEvent: {}
+[8.425163] (-) TimerEvent: {}
+[8.525385] (-) TimerEvent: {}
+[8.625616] (-) TimerEvent: {}
+[8.725864] (-) TimerEvent: {}
+[8.826100] (-) TimerEvent: {}
+[8.926342] (-) TimerEvent: {}
+[9.026576] (-) TimerEvent: {}
+[9.126835] (-) TimerEvent: {}
+[9.227069] (-) TimerEvent: {}
+[9.327294] (-) TimerEvent: {}
+[9.427523] (-) TimerEvent: {}
+[9.527719] (-) TimerEvent: {}
+[9.627945] (-) TimerEvent: {}
+[9.728174] (-) TimerEvent: {}
+[9.828403] (-) TimerEvent: {}
+[9.928632] (-) TimerEvent: {}
+[10.028870] (-) TimerEvent: {}
+[10.129096] (-) TimerEvent: {}
+[10.229336] (-) TimerEvent: {}
+[10.329573] (-) TimerEvent: {}
+[10.429819] (-) TimerEvent: {}
+[10.530086] (-) TimerEvent: {}
+[10.630344] (-) TimerEvent: {}
+[10.730613] (-) TimerEvent: {}
+[10.830877] (-) TimerEvent: {}
+[10.918858] (convex_mpc) StdoutLine: {'line': b'[ 42%] \x1b[32m\x1b[1mLinking CXX executable convex_mpc_controller\x1b[0m\n'}
+[10.930939] (-) TimerEvent: {}
+[11.031139] (-) TimerEvent: {}
+[11.131383] (-) TimerEvent: {}
+[11.231641] (-) TimerEvent: {}
+[11.331899] (-) TimerEvent: {}
+[11.427200] (convex_mpc) StdoutLine: {'line': b'[100%] Built target convex_mpc_controller\n'}
+[11.431963] (-) TimerEvent: {}
+[11.437744] (convex_mpc) CommandEnded: {'returncode': 0}
+[11.438389] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'install'}
+[11.446741] (convex_mpc) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/daniel/aipex-quadruped-baselines/build/convex_mpc'], 'cwd': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'CONDA_PROMPT_MODIFIER': '(base)', 'USER': 'daniel', 'SSH_CLIENT': '128.237.82.210 62636 22', 'XDG_SESSION_TYPE': 'tty', 'GIT_ASKPASS': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/extensions/git/dist/askpass.sh', 'SHLVL': '2', 'LD_LIBRARY_PATH': '/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib', 'BROWSER': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/bin/helpers/browser.sh', 'HOME': '/home/daniel', 'CONDA_SHLVL': '1', 'CYCLONEDDS_URI': '<CycloneDDS><Domain><General><Interfaces>\n                            <NetworkInterface name="lo" priority="default" multicast="default" />\n                        </Interfaces></General></Domain></CycloneDDS>', 'TERM_PROGRAM_VERSION': '1.100.2', 'VSCODE_IPC_HOOK_CLI': '/run/user/1000/vscode-ipc-092de83d-43b6-4b9c-ab5e-89901b2ef729.sock', 'GRB_LICENSE_FILE': '/home/daniel/gurobi.lic', 'ROS_PYTHON_VERSION': '3', 'VSCODE_GIT_ASKPASS_MAIN': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/extensions/git/dist/askpass-main.js', 'VSCODE_GIT_ASKPASS_NODE': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/node', 'SSL_CERT_FILE': '/usr/lib/ssl/cert.pem', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'COLCON_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install:/home/daniel/aipex-quadruped-baselines/install', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'daniel', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/x86_64-linux-gnu/pkgconfig:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/pkgconfig', 'XDG_SESSION_CLASS': 'user', 'TERM': 'xterm-256color', 'XDG_SESSION_ID': '10', 'PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/bin:/opt/ros/jazzy/bin:/home/daniel/.local/bin:/home/daniel/.local/bin:/home/daniel/miniconda3/bin:/home/daniel/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/gurobi1202/linux64/bin:/opt/gurobi1202/linux64/bin', 'XDG_RUNTIME_DIR': '/run/user/1000', 'SSL_CERT_DIR': '/usr/lib/ssl/certs', 'LANG': 'en_US.UTF-8', 'RMW_IMPLEMENTATION': 'rmw_cyclonedds_cpp', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'VSCODE_GIT_IPC_HANDLE': '/run/user/1000/vscode-git-153a627f36.sock', 'TERM_PROGRAM': 'vscode', 'AMENT_PREFIX_PATH': '/home/daniel/aipex-quadruped-baselines/install/convex_mpc:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/ros/jazzy', 'CONDA_PYTHON_EXE': '/home/daniel/miniconda3/bin/python', 'SHELL': '/bin/bash', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'CONDA_DEFAULT_ENV': 'base', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'VSCODE_GIT_ASKPASS_EXTRA_ARGS': '', 'PWD': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'LC_ALL': 'en_US.UTF-8', 'CONDA_EXE': '/home/daniel/miniconda3/bin/conda', 'SSH_CONNECTION': '128.237.82.210 62636 10.0.0.73 22', 'GUROBI_HOME': '/opt/gurobi1202/linux64', 'XDG_DATA_DIRS': '/usr/share/gnome:/usr/local/share:/usr/share:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'CONDA_PREFIX': '/home/daniel/miniconda3', 'COLCON': '1', 'CMAKE_PREFIX_PATH': '/home/daniel/aipex-quadruped-baselines/install/convex_mpc:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[11.452734] (convex_mpc) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[11.453083] (convex_mpc) StdoutLine: {'line': b'-- Execute custom install script\n'}
+[11.453293] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/lib/convex_mpc/convex_mpc_controller\n'}
+[11.453440] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/package_run_dependencies/convex_mpc\n'}
+[11.453563] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/parent_prefix_path/convex_mpc\n'}
+[11.453688] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.sh\n'}
+[11.453802] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/ament_prefix_path.dsv\n'}
+[11.453914] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.sh\n'}
+[11.454018] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/environment/path.dsv\n'}
+[11.454121] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.bash\n'}
+[11.454223] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.sh\n'}
+[11.454326] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.zsh\n'}
+[11.454427] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/local_setup.dsv\n'}
+[11.454502] (convex_mpc) StdoutLine: {'line': b'-- Symlinking: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.dsv\n'}
+[11.462287] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/ament_index/resource_index/packages/convex_mpc\n'}
+[11.462420] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig.cmake\n'}
+[11.462509] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/cmake/convex_mpcConfig-version.cmake\n'}
+[11.462624] (convex_mpc) StdoutLine: {'line': b'-- Up-to-date symlink: /home/daniel/aipex-quadruped-baselines/install/convex_mpc/share/convex_mpc/package.xml\n'}
+[11.463908] (convex_mpc) CommandEnded: {'returncode': 0}
+[11.475428] (convex_mpc) JobEnded: {'identifier': 'convex_mpc', 'rc': 0}
+[11.475899] (-) EventReactorShutdown: {}

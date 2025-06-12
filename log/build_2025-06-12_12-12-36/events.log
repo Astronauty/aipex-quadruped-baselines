@@ -1,0 +1,102 @@
+[0.000000] (-) TimerEvent: {}
+[0.000265] (convex_mpc) JobQueued: {'identifier': 'convex_mpc', 'dependencies': OrderedDict()}
+[0.000291] (convex_mpc) JobStarted: {'identifier': 'convex_mpc'}
+[0.005640] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'cmake'}
+[0.005963] (convex_mpc) JobProgress: {'identifier': 'convex_mpc', 'progress': 'build'}
+[0.006298] (convex_mpc) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', '--', '-j16', '-l16'], 'cwd': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'CONDA_PROMPT_MODIFIER': '(base)', 'USER': 'daniel', 'SSH_CLIENT': '128.237.82.210 62636 22', 'XDG_SESSION_TYPE': 'tty', 'GIT_ASKPASS': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/extensions/git/dist/askpass.sh', 'SHLVL': '2', 'LD_LIBRARY_PATH': '/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp/lib:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib:/home/daniel/miniconda3/pkgs/python-3.8.20-he870216_0/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib:/opt/gurobi1202/linux64/lib', 'BROWSER': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/bin/helpers/browser.sh', 'HOME': '/home/daniel', 'CONDA_SHLVL': '1', 'CYCLONEDDS_URI': '<CycloneDDS><Domain><General><Interfaces>\n                            <NetworkInterface name="lo" priority="default" multicast="default" />\n                        </Interfaces></General></Domain></CycloneDDS>', 'TERM_PROGRAM_VERSION': '1.100.2', 'VSCODE_IPC_HOOK_CLI': '/run/user/1000/vscode-ipc-092de83d-43b6-4b9c-ab5e-89901b2ef729.sock', 'GRB_LICENSE_FILE': '/home/daniel/gurobi.lic', 'ROS_PYTHON_VERSION': '3', 'VSCODE_GIT_ASKPASS_MAIN': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/extensions/git/dist/askpass-main.js', 'VSCODE_GIT_ASKPASS_NODE': '/home/daniel/.vscode-server/cli/servers/Stable-848b80aeb52026648a8ff9f7c45a9b0a80641e2e/server/node', 'SSL_CERT_FILE': '/usr/lib/ssl/cert.pem', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'COLCON_PREFIX_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install:/home/daniel/aipex-quadruped-baselines/install', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'daniel', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'PKG_CONFIG_PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/x86_64-linux-gnu/pkgconfig:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/lib/pkgconfig', 'XDG_SESSION_CLASS': 'user', 'TERM': 'xterm-256color', 'XDG_SESSION_ID': '10', 'PATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds/bin:/opt/ros/jazzy/bin:/home/daniel/.local/bin:/home/daniel/.local/bin:/home/daniel/miniconda3/bin:/home/daniel/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/gurobi1202/linux64/bin:/opt/gurobi1202/linux64/bin', 'XDG_RUNTIME_DIR': '/run/user/1000', 'SSL_CERT_DIR': '/usr/lib/ssl/certs', 'LANG': 'en_US.UTF-8', 'RMW_IMPLEMENTATION': 'rmw_cyclonedds_cpp', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'VSCODE_GIT_IPC_HANDLE': '/run/user/1000/vscode-git-153a627f36.sock', 'TERM_PROGRAM': 'vscode', 'AMENT_PREFIX_PATH': '/home/daniel/aipex-quadruped-baselines/install/convex_mpc:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/ros/jazzy', 'CONDA_PYTHON_EXE': '/home/daniel/miniconda3/bin/python', 'SHELL': '/bin/bash', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'CONDA_DEFAULT_ENV': 'base', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'VSCODE_GIT_ASKPASS_EXTRA_ARGS': '', 'PWD': '/home/daniel/aipex-quadruped-baselines/build/convex_mpc', 'LC_ALL': 'en_US.UTF-8', 'CONDA_EXE': '/home/daniel/miniconda3/bin/conda', 'SSH_CONNECTION': '128.237.82.210 62636 10.0.0.73 22', 'GUROBI_HOME': '/opt/gurobi1202/linux64', 'XDG_DATA_DIRS': '/usr/share/gnome:/usr/local/share:/usr/share:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go/lib/python3.12/site-packages:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'CONDA_PREFIX': '/home/daniel/miniconda3', 'COLCON': '1', 'CMAKE_PREFIX_PATH': '/home/daniel/aipex-quadruped-baselines/install/convex_mpc:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_hg:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_go:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/unitree_api:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/rmw_cyclonedds_cpp:/opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/cyclonedds:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[0.071626] (convex_mpc) StdoutLine: {'line': b'[ 14%] \x1b[32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o\x1b[0m\n'}
+[0.099913] (-) TimerEvent: {}
+[0.200109] (-) TimerEvent: {}
+[0.300581] (-) TimerEvent: {}
+[0.400818] (-) TimerEvent: {}
+[0.501060] (-) TimerEvent: {}
+[0.601315] (-) TimerEvent: {}
+[0.701567] (-) TimerEvent: {}
+[0.759187] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:\x1b[m\x1b[K In constructor \xe2\x80\x98\x1b[01m\x1b[KConvexMPC::\x1b[01;32m\x1b[KConvexMPC\x1b[m\x1b[K(MPCParams, QuadrupedParams)\x1b[m\x1b[K\xe2\x80\x99:\n'}
+[0.759394] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:16:28:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[Kno matching function for call to \xe2\x80\x98\x1b[01m\x1b[KGRBModel::GRBModel()\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.759464] (convex_mpc) StderrLine: {'line': b'   16 |     quad_params(quad_params\x1b[01;31m\x1b[K)\x1b[m\x1b[K\n'}
+[0.759549] (convex_mpc) StderrLine: {'line': b'      |                            \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[0.759648] (convex_mpc) StderrLine: {'line': b'In file included from \x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/include/convex_mpc/convex_mpc.hpp:5\x1b[m\x1b[K,\n'}
+[0.759715] (convex_mpc) StderrLine: {'line': b'                 from \x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:3\x1b[m\x1b[K:\n'}
+[0.759775] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:544:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel&, const GRBEnv&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.759833] (convex_mpc) StderrLine: {'line': b'  544 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel& xmodel, const GRBEnv& targetenv);\n'}
+[0.759889] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.759945] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:544:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 2 arguments, 0 provided\n'}
+[0.760000] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:543:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.760054] (convex_mpc) StderrLine: {'line': b'  543 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBModel& xmodel);\n'}
+[0.760107] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.760160] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:543:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 0 provided\n'}
+[0.760213] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:542:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv&, const std::string&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.760266] (convex_mpc) StderrLine: {'line': b'  542 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv& env, const std::string& filename);\n'}
+[0.760318] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.760371] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:542:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 2 arguments, 0 provided\n'}
+[0.760424] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:541:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv*, const std::string&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.760477] (convex_mpc) StderrLine: {'line': b'  541 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv* env, const std::string& filename);\n'}
+[0.760542] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.760604] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:541:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 2 arguments, 0 provided\n'}
+[0.760665] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:540:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv&)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.760719] (convex_mpc) StderrLine: {'line': b'  540 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv& env);\n'}
+[0.760772] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.760823] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:540:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 0 provided\n'}
+[0.760878] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:539:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kcandidate: \xe2\x80\x98\x1b[01m\x1b[KGRBModel::\x1b[01;32m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv*)\x1b[m\x1b[K\xe2\x80\x99\n'}
+[0.760931] (convex_mpc) StderrLine: {'line': b'  539 |     \x1b[01;36m\x1b[KGRBModel\x1b[m\x1b[K(const GRBEnv* env);\n'}
+[0.760984] (convex_mpc) StderrLine: {'line': b'      |     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.761037] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:539:5:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[K  candidate expects 1 argument, 0 provided\n'}
+[0.761089] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:23:26:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kconst GRBEnv& GRBEnv::\x1b[01;32m\x1b[Koperator=\x1b[m\x1b[K(const GRBEnv&)\x1b[m\x1b[K\xe2\x80\x99 is private within this context\n'}
+[0.761150] (convex_mpc) StderrLine: {'line': b'   23 |         env = GRBEnv(true\x1b[01;31m\x1b[K)\x1b[m\x1b[K;\n'}
+[0.761205] (convex_mpc) StderrLine: {'line': b'      |                          \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[0.761256] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:473:19:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kdeclared private here\n'}
+[0.761306] (convex_mpc) StderrLine: {'line': b'  473 |     const GRBEnv& \x1b[01;36m\x1b[Koperator\x1b[m\x1b[K=(const GRBEnv &xenv);\n'}
+[0.761356] (convex_mpc) StderrLine: {'line': b'      |                   \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.761406] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:29:29:\x1b[m\x1b[K \x1b[01;31m\x1b[Kerror: \x1b[m\x1b[K\xe2\x80\x98\x1b[01m\x1b[Kconst GRBModel& GRBModel::\x1b[01;32m\x1b[Koperator=\x1b[m\x1b[K(const GRBModel&)\x1b[m\x1b[K\xe2\x80\x99 is private within this context\n'}
+[0.761462] (convex_mpc) StderrLine: {'line': b'   29 |         model = GRBModel(env\x1b[01;31m\x1b[K)\x1b[m\x1b[K;\n'}
+[0.761516] (convex_mpc) StderrLine: {'line': b'      |                             \x1b[01;31m\x1b[K^\x1b[m\x1b[K\n'}
+[0.761586] (convex_mpc) StderrLine: {'line': b'\x1b[01m\x1b[K/opt/gurobi1202/linux64/include/gurobi_c++.h:534:21:\x1b[m\x1b[K \x1b[01;36m\x1b[Knote: \x1b[m\x1b[Kdeclared private here\n'}
+[0.761640] (convex_mpc) StderrLine: {'line': b'  534 |     const GRBModel& \x1b[01;36m\x1b[Koperator\x1b[m\x1b[K=(const GRBModel &xmodel);\n'}
+[0.761690] (convex_mpc) StderrLine: {'line': b'      |                     \x1b[01;36m\x1b[K^~~~~~~~\x1b[m\x1b[K\n'}
+[0.801655] (-) TimerEvent: {}
+[0.902090] (-) TimerEvent: {}
+[1.002345] (-) TimerEvent: {}
+[1.102585] (-) TimerEvent: {}
+[1.202843] (-) TimerEvent: {}
+[1.303100] (-) TimerEvent: {}
+[1.403359] (-) TimerEvent: {}
+[1.503575] (-) TimerEvent: {}
+[1.603825] (-) TimerEvent: {}
+[1.704082] (-) TimerEvent: {}
+[1.804342] (-) TimerEvent: {}
+[1.904604] (-) TimerEvent: {}
+[2.004860] (-) TimerEvent: {}
+[2.105112] (-) TimerEvent: {}
+[2.205369] (-) TimerEvent: {}
+[2.305624] (-) TimerEvent: {}
+[2.405868] (-) TimerEvent: {}
+[2.506128] (-) TimerEvent: {}
+[2.606385] (-) TimerEvent: {}
+[2.706634] (-) TimerEvent: {}
+[2.806893] (-) TimerEvent: {}
+[2.907148] (-) TimerEvent: {}
+[3.007455] (-) TimerEvent: {}
+[3.107716] (-) TimerEvent: {}
+[3.207966] (-) TimerEvent: {}
+[3.308213] (-) TimerEvent: {}
+[3.408456] (-) TimerEvent: {}
+[3.508724] (-) TimerEvent: {}
+[3.608987] (-) TimerEvent: {}
+[3.709230] (-) TimerEvent: {}
+[3.809470] (-) TimerEvent: {}
+[3.909736] (-) TimerEvent: {}
+[4.009987] (-) TimerEvent: {}
+[4.110226] (-) TimerEvent: {}
+[4.210483] (-) TimerEvent: {}
+[4.310727] (-) TimerEvent: {}
+[4.410969] (-) TimerEvent: {}
+[4.511227] (-) TimerEvent: {}
+[4.611471] (-) TimerEvent: {}
+[4.711770] (-) TimerEvent: {}
+[4.794333] (convex_mpc) StderrLine: {'line': b'gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1\n'}
+[4.794604] (convex_mpc) StderrLine: {'line': b'gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2\n'}
+[4.794821] (convex_mpc) StderrLine: {'line': b'gmake: *** [Makefile:146: all] Error 2\n'}
+[4.797019] (convex_mpc) CommandEnded: {'returncode': 2}
+[4.803784] (convex_mpc) JobEnded: {'identifier': 'convex_mpc', 'rc': 2}
+[4.804378] (-) EventReactorShutdown: {}

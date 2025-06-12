@@ -1,0 +1,25 @@
+[0.008s] Invoking command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16
+[0.076s] [ 14%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc_publisher.cpp.o[0m
+[0.076s] [ 28%] [32mBuilding CXX object CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o[0m
+[0.815s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In constructor ‘[01m[KConvexMPC::[01;32m[KConvexMPC[m[K(MPCParams, QuadrupedParams)[m[K’:
+[0.816s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:18:1:[m[K [01;31m[Kerror: [m[Kexpected identifier before ‘[01m[K{[m[K’ token
+[0.816s]    18 | [01;31m[K{[m[K
+[0.816s]       | [01;31m[K^[m[K
+[0.841s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:44:19:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass std::unique_ptr<GRBModel>[m[K’ has no member named ‘[01m[KaddVars[m[K’
+[0.841s]    44 |         U = model.[01;31m[KaddVars[m[K(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
+[0.841s]       |                   [01;31m[K^~~~~~~[m[K
+[0.842s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:67:15:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass std::unique_ptr<GRBModel>[m[K’ has no member named ‘[01m[KsetObjective[m[K’
+[0.842s]    67 |         model.[01;31m[KsetObjective[m[K(quad_expr + lin_expr, GRB_MINIMIZE);
+[0.842s]       |               [01;31m[K^~~~~~~~~~~~[m[K
+[0.842s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:71:15:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass std::unique_ptr<GRBModel>[m[K’ has no member named ‘[01m[Koptimize[m[K’
+[0.842s]    71 |         model.[01;31m[Koptimize[m[K();
+[0.842s]       |               [01;31m[K^~~~~~~~[m[K
+[0.971s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:[m[K In member function ‘[01m[Kvoid ConvexMPC::[01;32m[Kupdate_x0[m[K(Eigen::Vector<double, 13>)[m[K’:
+[0.971s] [01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/convex_mpc.cpp:243:17:[m[K [01;31m[Kerror: [m[K‘[01m[Kclass std::unique_ptr<GRBModel>[m[K’ has no member named ‘[01m[KsetObjective[m[K’
+[0.971s]   243 |     this->model.[01;31m[KsetObjective[m[K(quad_expr + lin_expr, GRB_MINIMIZE);
+[0.971s]       |                 [01;31m[K^~~~~~~~~~~~[m[K
+[5.726s] gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:90: CMakeFiles/convex_mpc_controller.dir/src/convex_mpc.cpp.o] Error 1
+[5.726s] gmake[2]: *** Waiting for unfinished jobs....
+[6.208s] gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
+[6.208s] gmake: *** [Makefile:146: all] Error 2
+[6.211s] Invoked command in '/home/daniel/aipex-quadruped-baselines/build/convex_mpc' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy CONDA_PROMPT_MODIFIER=(base) DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/daniel/aipex-quadruped-baselines/build/convex_mpc -- -j16 -l16

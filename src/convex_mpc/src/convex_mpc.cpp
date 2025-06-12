@@ -11,22 +11,24 @@ min 0.5 x^T P x + q^T x
 
 */
 
-ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
+ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rclcpp::Logger& logger)
     : mpc_params(mpc_params), 
     quad_params(quad_params),
-    env(true),
-    model(env)
+    logger_(logger)
 {
-    std::cout << "ConvexMPC constructor started" << std::endl;
+    // std::cout << "ConvexMPC constructor started" << std::endl;
+    RCLCPP_INFO(logger, "ConvexMPC constructor started");
     try
     {
         // Create an environment
         // GRBEnv env = GRBEnv();
-        env.set("LogFile", "convex_mpc.log");
-        env.start();
+        env = make_unique<GRBEnv>(true);
+        // env.set("LicenseFile", "/home/daniel/gurobi.lic");
+        env->set("LogFile", "convex_mpc.log");
+        env->start();
 
         // Create an empty Gurobi model
-        // GRBModel model = GRBModel(env);
+        model = make_unique<GRBModel>(*env);
 
         // Initialize robot state
         // x0 = Vector<double, 13>::Zero();
@@ -40,7 +42,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
         // Formulate the QP 
-        U = model.addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
+        U = model->addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
         cout << "Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
 
 
@@ -63,17 +65,17 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params)
         // GRBLinExpr test_expr = U[1];
         // model.setObjective(create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)) 
             // + create_lin_obj(U, q, mpc_params.N_STATES));
-        model.setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
+        model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
         // model.setObjective(test_expr, GRB_MINIMIZE);
 
         // cout << "Objective Function: " << model.getObjective() << endl;
-        model.optimize();
+        model->optimize();
 
         
-        std::cout << "Optimized variables:" << std::endl;
+        RCLCPP_INFO(logger_, "Optimized variables:");
         for (int i = 0; i < mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1); ++i) {
             double u_value = U[i].get(GRB_DoubleAttr_X);
-            std::cout << "U[" << i << "] = " << u_value << std::endl;
+            RCLCPP_INFO(logger_, "U[%d] = %f", i, u_value);
         }
     } 
     catch(GRBException e) 
@@ -148,9 +150,9 @@ StateSpace ConvexMPC::get_default_dss_model()
 
     double yaw = 0.0f;
     StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, this->mpc_params.dt);
-    
-    cout << "A Size:  " << quad_dss.A.rows() << "x" << quad_dss.A.cols() << endl;
-    cout << "B Size:  " << quad_dss.B.rows() << "x" << quad_dss.B.cols() << endl;
+    RCLCPP_INFO(logger_, "Default discrete state space model created.");
+    RCLCPP_INFO(logger_, "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
+    RCLCPP_INFO(logger_, "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
 
 
     return quad_dss;
@@ -212,7 +214,6 @@ MatrixXd ConvexMPC::compute_Q_bar()
 
 /*
 Computes the quadratic cost fo the unconstrained linear mpc problem
-
 P = 2*R_bar + 2*A_qp'*Q_bar*A_qp
 */
 MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
@@ -239,7 +240,7 @@ void ConvexMPC::update_x0(Vector<double, 13> x0)
     this->q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
 
     lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
-    this->model.setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
+    this->model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
 
 }
 
