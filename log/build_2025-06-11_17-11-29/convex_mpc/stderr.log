@@ -1,7 +1,0 @@
-[01m[K/home/daniel/aipex-quadruped-baselines/src/convex_mpc/src/transforms.cpp:2:10:[m[K [01;31m[Kfatal error: [m[Ktransforms.hpp: No such file or directory
-    2 | #include [01;31m[K"transforms.hpp"[m[K
-      |          [01;31m[K^~~~~~~~~~~~~~~~[m[K
-compilation terminated.
-gmake[2]: *** [CMakeFiles/convex_mpc_controller.dir/build.make:146: CMakeFiles/convex_mpc_controller.dir/src/transforms.cpp.o] Error 1
-gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/convex_mpc_controller.dir/all] Error 2
-gmake: *** [Makefile:146: all] Error 2
