@@ -4,6 +4,8 @@
 ## Dependency Installation
 Tested on Ubuntu 24.04.02 Noble
 ROS Jazzy
+## Eigen
+
 
 ### ROS
 https://docs.ros.org/en/jazzy/Installation.html
@@ -11,9 +13,9 @@ https://docs.ros.org/en/jazzy/Installation.html
 ### Unitree
 Make sure to install all of the following repos under the /opt/unitree_robotics directory.
 
-https://github.com/unitreerobotics/unitree_sdk2
-https://github.com/unitreerobotics/unitree_ros2
-https://github.com/unitreerobotics/unitree_mujoco
+1. https://github.com/unitreerobotics/unitree_sdk
+2. https://github.com/unitreerobotics/unitree_ros2
+3. https://github.com/unitreerobotics/unitree_mujoco
 
 ### Gurobi Optimizer
 The convex MPC controller requires Gurobi optimization solver:
