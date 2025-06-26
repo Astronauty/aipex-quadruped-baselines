@@ -114,5 +114,6 @@
         "matrixfunctions": "cpp",
         "format": "cpp",
         "stdfloat": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/aipexws5/daniel/aipex-quadruped-baselines/src/convex_mpc"
 }

@@ -29,6 +29,7 @@ class ConvexMPC
 
 
         StateSpace get_default_dss_model();
+        
 
         
         // void update();
@@ -66,6 +67,4 @@ class ConvexMPC
 
         MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp);
         VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd x_ref);
-
-
 };
