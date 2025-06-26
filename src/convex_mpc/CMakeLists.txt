@@ -19,6 +19,7 @@ set (
   unitree_api
   rclcpp
   std_msgs
+  pinocchio
 )
 
 # find dependencies
@@ -28,14 +29,9 @@ find_package(std_msgs REQUIRED)
 find_package(unitree_go REQUIRED)
 find_package(unitree_api REQUIRED)
 find_package(unitree_hg REQUIRED)
-
-# find_package(rosbag2)
-
-### Find Packages ###
-# include_directories(/include)
-# Gurobi
 find_package(GUROBI REQUIRED)
 include_directories(${GUROBI_INCLUDE_DIRS})
+find_package(pinocchio REQUIRED)
 
 message(STATUS "GUROBI_INCLUDE_DIRS: ${GUROBI_INCLUDE_DIRS}")
 message(STATUS "GUROBI_LIBRARY: ${GUROBI_LIBRARY}")
@@ -63,7 +59,7 @@ endif()
 set(MY_EXECUTABLES convex_mpc_controller)
 
 add_executable(convex_mpc_controller
-  src/convex_mpc_publisher.cpp
+  src/convex_mpc_node.cpp
   src/convex_mpc.cpp
   src/gurobi_utils.cpp
   src/simplified_quad_dynamics.cpp
@@ -80,6 +76,7 @@ target_include_directories(convex_mpc_controller PRIVATE
 target_link_libraries(convex_mpc_controller
   ${GUROBI_CXX_LIBRARY}
   ${GUROBI_LIBRARY}
+  pinocchio::pinocchio
 )
 
 ament_target_dependencies(convex_mpc_controller ${DEPENDENCY_LIST})

@@ -18,6 +18,13 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 {
     // std::cout << "ConvexMPC constructor started" << std::endl;
     RCLCPP_INFO(logger, "ConvexMPC constructor started");
+
+    RCLCPP_INFO(logger, "MPCParams: N_MPC: %d, N_CONTROLS: %d, N_STATES: %d, dt: %f",
+        mpc_params.N_MPC, mpc_params.N_CONTROLS, mpc_params.N_STATES, mpc_params.dt);
+
+    RCLCPP_INFO(logger, "QuadrupedParams: mass: %f, gravity: %f",
+        quad_params.mass, quad_params.g);
+
     try
     {
         // Create an environment
@@ -43,7 +50,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 
         // Formulate the QP 
         U = model->addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
-        cout << "Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
+        cout << "Number of Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
 
 
         Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
@@ -121,7 +128,7 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
     {
         for (int j = 0; j < i; j++) 
         {
-            cout << i << " x " << j << endl;
+            // cout << i << " x " << j << endl;
             A_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = quad_dss.A.pow(i - j) * quad_dss.B;
             // cout << "A_qp accessing: " << i * N_STATES << "x" << j * N_CONTROLS << endl;
             // cout << "A_qp block size: " << N_STATES << "x" << N_CONTROLS << endl;
@@ -156,13 +163,28 @@ StateSpace ConvexMPC::get_default_dss_model()
 
 
     return quad_dss;
+    
 }
+
+/**
+* @brief Computes the joint torques from the ground reaction forces (GRF).
+ *
+ * This function computes the joint torques based on the ground reaction forces (GRF) and the foot positions.
+ *
+ * @param grf A 3x4 vector of ground reaction forces for each foot.
+ * @return A matrix of joint torques corresponding to the GRF.
+*/
+
+// MatrixXd ConvexMPC::get_joint_torques_from_GRF
+// {
+
+// }
 
 MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
     // Calculate the total size of the block diagonal matrix
     int totalRows = 0, totalCols = 0;
     for (const auto& mat : matrices) {
-        cout << "Matrix dimensions: " << mat.rows() << " x " << mat.cols() << endl;
+        // cout << "Matrix dimensions: " << mat.rows() << " x " << mat.cols() << endl;
         totalRows += mat.rows();
         totalCols += mat.cols();
     }
@@ -178,7 +200,7 @@ MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
         currentRow += mat.rows();
         currentCol += mat.cols();
     }
-    cout << "Block diagonal matrix dimensions: " << blockDiagonal.rows() << " x " << blockDiagonal.cols() << endl;
+    // cout << "Block diagonal matrix dimensions: " << blockDiagonal.rows() << " x " << blockDiagonal.cols() << endl;
     // return blockDiagonal;
     return MatrixXd::Identity(totalRows, totalCols);
 }
@@ -200,14 +222,13 @@ MatrixXd ConvexMPC::compute_Q_bar()
     // int N_CONTROLS = mpc_params.N_CONTROLS;
     int N_MPC = mpc_params.N_MPC;
 
-    cout << "here 3" << endl;
-    cout << "Size of Q: " << Q.rows() << " x " << Q.cols() << endl;
-    cout << "mpc_params.Q:\n" << Q << endl;
-    cout << "N_MPC: " << N_MPC << endl;
+
+    // cout << "Size of Q: " << Q.rows() << " x " << Q.cols() << endl;
+    // cout << "mpc_params.Q:\n" << Q << endl;
     std::vector<MatrixXd> Q_vec(N_MPC, Q);
-    cout << "here 4" << endl;
+    // cout << "here 4" << endl;
     MatrixXd Q_bar = blkdiag(Q_vec);
-    cout << "here 5" << endl;
+    // cout << "here 5" << endl;
     return Q_bar;
 }
 
@@ -241,6 +262,12 @@ void ConvexMPC::update_x0(Vector<double, 13> x0)
 
     lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
     this->model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
+
+    // RCLCPP_INFO(logger_, "Optimized variables:");
+    // for (int i = 0; i < mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1); ++i) {
+    //     double u_value = U[i].get(GRB_DoubleAttr_X);
+    //     RCLCPP_INFO(logger_, "U[%d] = %f", i, u_value);
+    // }
 
 }
 

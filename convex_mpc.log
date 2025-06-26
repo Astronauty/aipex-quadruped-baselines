@@ -598,3 +598,423 @@ Iter       Primal          Dual         Primal    Dual     Compl     Time
 Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
 Optimal objective -1.06856189e-02
 
+
+Gurobi 12.0.2 (linux64, C++) logging started Wed Jun 25 14:39:16 2025
+
+Set parameter Username
+Set parameter LicenseID to value 2681951
+Set parameter LogFile to value "convex_mpc.log"
+Academic license - for non-commercial use only - expires 2026-06-24
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Ubuntu 22.04.5 LTS")
+
+CPU model: AMD Ryzen Threadripper 7960X 24-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 24 physical cores, 48 logical processors, using up to 24 threads
+
+Optimize a model with 0 rows, 48 columns and 0 nonzeros
+Model fingerprint: 0x53e58d9e
+Model has 664 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [0e+00, 0e+00]
+  Objective range  [6e-02, 1e-01]
+  QObjective range [8e-06, 4e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [0e+00, 0e+00]
+Presolve removed 0 rows and 12 columns
+Presolve time: 0.00s
+Presolved: 0 rows, 36 columns, 0 nonzeros
+Presolved model has 538 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ Free vars  : 34
+ AA' NZ     : 4.680e+02
+ Factor NZ  : 5.020e+02
+ Factor Ops : 1.043e+04 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.49174685e+05 -2.50101415e+05  1.00e+03 9.89e-02  1.00e+06     0s
+   1   2.04953040e+06 -2.04970630e+06  1.00e-03 5.68e-14  1.14e+05     0s
+   2   3.00258268e+05 -3.00325605e+05  1.00e-09 2.84e-14  1.67e+04     0s
+   3   4.39829062e+04 -4.40086869e+04  5.33e-14 1.35e-13  2.44e+03     0s
+   4   6.44088983e+03 -6.45076441e+03  1.24e-14 2.84e-14  3.58e+02     0s
+   5   9.42484749e+02 -9.46270999e+02  6.66e-15 2.22e-14  5.25e+01     0s
+   6   1.37632143e+02 -1.39088004e+02  2.22e-15 4.44e-15  7.69e+00     0s
+   7   1.99883846e+01 -2.05522881e+01  8.88e-16 2.69e-15  1.13e+00     0s
+   8   2.85770518e+00 -3.08029328e+00  4.72e-16 1.11e-15  1.65e-01     0s
+   9   3.88085199e-01 -4.80278116e-01  1.39e-16 3.33e-16  2.41e-02     0s
+  10   4.13621627e-02 -8.42865779e-02  5.55e-17 1.67e-16  3.49e-03     0s
+  11  -4.27720095e-03 -2.13405937e-02  1.73e-17 3.47e-17  4.74e-04     0s
+  12  -9.82661913e-03 -1.17615287e-02  1.39e-17 5.55e-17  5.37e-05     0s
+  13  -1.05617151e-02 -1.08145209e-02  1.04e-17 4.16e-17  7.02e-06     0s
+  14  -1.06674583e-02 -1.07041070e-02  6.94e-18 2.78e-17  1.02e-06     0s
+  15  -1.06828937e-02 -1.06881716e-02  6.94e-18 1.39e-17  1.47e-07     0s
+  16  -1.06851905e-02 -1.06859487e-02  1.73e-17 4.16e-17  2.11e-08     0s
+  17  -1.06855484e-02 -1.06856552e-02  3.12e-17 4.16e-17  2.97e-09     0s
+  18  -1.06856090e-02 -1.06856223e-02  7.98e-17 5.55e-17  3.68e-10     0s
+  19  -1.06856189e-02 -1.06856199e-02  2.29e-16 1.39e-17  2.55e-11     0s
+
+Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
+Optimal objective -1.06856189e-02
+
+
+Gurobi 12.0.2 (linux64, C++) logging started Wed Jun 25 14:41:48 2025
+
+Set parameter Username
+Set parameter LicenseID to value 2681951
+Set parameter LogFile to value "convex_mpc.log"
+Academic license - for non-commercial use only - expires 2026-06-24
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Ubuntu 22.04.5 LTS")
+
+CPU model: AMD Ryzen Threadripper 7960X 24-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 24 physical cores, 48 logical processors, using up to 24 threads
+
+Optimize a model with 0 rows, 48 columns and 0 nonzeros
+Model fingerprint: 0x53e58d9e
+Model has 664 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [0e+00, 0e+00]
+  Objective range  [6e-02, 1e-01]
+  QObjective range [8e-06, 4e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [0e+00, 0e+00]
+Presolve removed 0 rows and 12 columns
+Presolve time: 0.00s
+Presolved: 0 rows, 36 columns, 0 nonzeros
+Presolved model has 538 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ Free vars  : 34
+ AA' NZ     : 4.680e+02
+ Factor NZ  : 5.020e+02
+ Factor Ops : 1.043e+04 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.49174685e+05 -2.50101415e+05  1.00e+03 9.89e-02  1.00e+06     0s
+   1   2.04953040e+06 -2.04970630e+06  1.00e-03 5.68e-14  1.14e+05     0s
+   2   3.00258268e+05 -3.00325605e+05  1.00e-09 2.84e-14  1.67e+04     0s
+   3   4.39829062e+04 -4.40086869e+04  5.33e-14 1.35e-13  2.44e+03     0s
+   4   6.44088983e+03 -6.45076441e+03  1.24e-14 2.84e-14  3.58e+02     0s
+   5   9.42484749e+02 -9.46270999e+02  6.66e-15 2.22e-14  5.25e+01     0s
+   6   1.37632143e+02 -1.39088004e+02  2.22e-15 4.44e-15  7.69e+00     0s
+   7   1.99883846e+01 -2.05522881e+01  8.88e-16 2.69e-15  1.13e+00     0s
+   8   2.85770518e+00 -3.08029328e+00  4.72e-16 1.11e-15  1.65e-01     0s
+   9   3.88085199e-01 -4.80278116e-01  1.39e-16 3.33e-16  2.41e-02     0s
+  10   4.13621627e-02 -8.42865779e-02  5.55e-17 1.67e-16  3.49e-03     0s
+  11  -4.27720095e-03 -2.13405937e-02  1.73e-17 3.47e-17  4.74e-04     0s
+  12  -9.82661913e-03 -1.17615287e-02  1.39e-17 5.55e-17  5.37e-05     0s
+  13  -1.05617151e-02 -1.08145209e-02  1.04e-17 4.16e-17  7.02e-06     0s
+  14  -1.06674583e-02 -1.07041070e-02  6.94e-18 2.78e-17  1.02e-06     0s
+  15  -1.06828937e-02 -1.06881716e-02  6.94e-18 1.39e-17  1.47e-07     0s
+  16  -1.06851905e-02 -1.06859487e-02  1.73e-17 4.16e-17  2.11e-08     0s
+  17  -1.06855484e-02 -1.06856552e-02  3.12e-17 4.16e-17  2.97e-09     0s
+  18  -1.06856090e-02 -1.06856223e-02  7.98e-17 5.55e-17  3.68e-10     0s
+  19  -1.06856189e-02 -1.06856199e-02  2.29e-16 1.39e-17  2.55e-11     0s
+
+Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
+Optimal objective -1.06856189e-02
+
+
+Gurobi 12.0.2 (linux64, C++) logging started Wed Jun 25 14:42:03 2025
+
+Set parameter Username
+Set parameter LicenseID to value 2681951
+Set parameter LogFile to value "convex_mpc.log"
+Academic license - for non-commercial use only - expires 2026-06-24
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Ubuntu 22.04.5 LTS")
+
+CPU model: AMD Ryzen Threadripper 7960X 24-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 24 physical cores, 48 logical processors, using up to 24 threads
+
+Optimize a model with 0 rows, 48 columns and 0 nonzeros
+Model fingerprint: 0x53e58d9e
+Model has 664 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [0e+00, 0e+00]
+  Objective range  [6e-02, 1e-01]
+  QObjective range [8e-06, 4e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [0e+00, 0e+00]
+Presolve removed 0 rows and 12 columns
+Presolve time: 0.00s
+Presolved: 0 rows, 36 columns, 0 nonzeros
+Presolved model has 538 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ Free vars  : 34
+ AA' NZ     : 4.680e+02
+ Factor NZ  : 5.020e+02
+ Factor Ops : 1.043e+04 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.49174685e+05 -2.50101415e+05  1.00e+03 9.89e-02  1.00e+06     0s
+   1   2.04953040e+06 -2.04970630e+06  1.00e-03 5.68e-14  1.14e+05     0s
+   2   3.00258268e+05 -3.00325605e+05  1.00e-09 2.84e-14  1.67e+04     0s
+   3   4.39829062e+04 -4.40086869e+04  5.33e-14 1.35e-13  2.44e+03     0s
+   4   6.44088983e+03 -6.45076441e+03  1.24e-14 2.84e-14  3.58e+02     0s
+   5   9.42484749e+02 -9.46270999e+02  6.66e-15 2.22e-14  5.25e+01     0s
+   6   1.37632143e+02 -1.39088004e+02  2.22e-15 4.44e-15  7.69e+00     0s
+   7   1.99883846e+01 -2.05522881e+01  8.88e-16 2.69e-15  1.13e+00     0s
+   8   2.85770518e+00 -3.08029328e+00  4.72e-16 1.11e-15  1.65e-01     0s
+   9   3.88085199e-01 -4.80278116e-01  1.39e-16 3.33e-16  2.41e-02     0s
+  10   4.13621627e-02 -8.42865779e-02  5.55e-17 1.67e-16  3.49e-03     0s
+  11  -4.27720095e-03 -2.13405937e-02  1.73e-17 3.47e-17  4.74e-04     0s
+  12  -9.82661913e-03 -1.17615287e-02  1.39e-17 5.55e-17  5.37e-05     0s
+  13  -1.05617151e-02 -1.08145209e-02  1.04e-17 4.16e-17  7.02e-06     0s
+  14  -1.06674583e-02 -1.07041070e-02  6.94e-18 2.78e-17  1.02e-06     0s
+  15  -1.06828937e-02 -1.06881716e-02  6.94e-18 1.39e-17  1.47e-07     0s
+  16  -1.06851905e-02 -1.06859487e-02  1.73e-17 4.16e-17  2.11e-08     0s
+  17  -1.06855484e-02 -1.06856552e-02  3.12e-17 4.16e-17  2.97e-09     0s
+  18  -1.06856090e-02 -1.06856223e-02  7.98e-17 5.55e-17  3.68e-10     0s
+  19  -1.06856189e-02 -1.06856199e-02  2.29e-16 1.39e-17  2.55e-11     0s
+
+Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
+Optimal objective -1.06856189e-02
+
+
+Gurobi 12.0.2 (linux64, C++) logging started Wed Jun 25 14:47:53 2025
+
+Set parameter Username
+Set parameter LicenseID to value 2681951
+Set parameter LogFile to value "convex_mpc.log"
+Academic license - for non-commercial use only - expires 2026-06-24
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Ubuntu 22.04.5 LTS")
+
+CPU model: AMD Ryzen Threadripper 7960X 24-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 24 physical cores, 48 logical processors, using up to 24 threads
+
+Optimize a model with 0 rows, 48 columns and 0 nonzeros
+Model fingerprint: 0x53e58d9e
+Model has 664 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [0e+00, 0e+00]
+  Objective range  [6e-02, 1e-01]
+  QObjective range [8e-06, 4e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [0e+00, 0e+00]
+Presolve removed 0 rows and 12 columns
+Presolve time: 0.00s
+Presolved: 0 rows, 36 columns, 0 nonzeros
+Presolved model has 538 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ Free vars  : 34
+ AA' NZ     : 4.680e+02
+ Factor NZ  : 5.020e+02
+ Factor Ops : 1.043e+04 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.49174685e+05 -2.50101415e+05  1.00e+03 9.89e-02  1.00e+06     0s
+   1   2.04953040e+06 -2.04970630e+06  1.00e-03 5.68e-14  1.14e+05     0s
+   2   3.00258268e+05 -3.00325605e+05  1.00e-09 2.84e-14  1.67e+04     0s
+   3   4.39829062e+04 -4.40086869e+04  5.33e-14 1.35e-13  2.44e+03     0s
+   4   6.44088983e+03 -6.45076441e+03  1.24e-14 2.84e-14  3.58e+02     0s
+   5   9.42484749e+02 -9.46270999e+02  6.66e-15 2.22e-14  5.25e+01     0s
+   6   1.37632143e+02 -1.39088004e+02  2.22e-15 4.44e-15  7.69e+00     0s
+   7   1.99883846e+01 -2.05522881e+01  8.88e-16 2.69e-15  1.13e+00     0s
+   8   2.85770518e+00 -3.08029328e+00  4.72e-16 1.11e-15  1.65e-01     0s
+   9   3.88085199e-01 -4.80278116e-01  1.39e-16 3.33e-16  2.41e-02     0s
+  10   4.13621627e-02 -8.42865779e-02  5.55e-17 1.67e-16  3.49e-03     0s
+  11  -4.27720095e-03 -2.13405937e-02  1.73e-17 3.47e-17  4.74e-04     0s
+  12  -9.82661913e-03 -1.17615287e-02  1.39e-17 5.55e-17  5.37e-05     0s
+  13  -1.05617151e-02 -1.08145209e-02  1.04e-17 4.16e-17  7.02e-06     0s
+  14  -1.06674583e-02 -1.07041070e-02  6.94e-18 2.78e-17  1.02e-06     0s
+  15  -1.06828937e-02 -1.06881716e-02  6.94e-18 1.39e-17  1.47e-07     0s
+  16  -1.06851905e-02 -1.06859487e-02  1.73e-17 4.16e-17  2.11e-08     0s
+  17  -1.06855484e-02 -1.06856552e-02  3.12e-17 4.16e-17  2.97e-09     0s
+  18  -1.06856090e-02 -1.06856223e-02  7.98e-17 5.55e-17  3.68e-10     0s
+  19  -1.06856189e-02 -1.06856199e-02  2.29e-16 1.39e-17  2.55e-11     0s
+
+Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
+Optimal objective -1.06856189e-02
+
+
+Gurobi 12.0.2 (linux64, C++) logging started Wed Jun 25 14:48:38 2025
+
+Set parameter Username
+Set parameter LicenseID to value 2681951
+Set parameter LogFile to value "convex_mpc.log"
+Academic license - for non-commercial use only - expires 2026-06-24
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Ubuntu 22.04.5 LTS")
+
+CPU model: AMD Ryzen Threadripper 7960X 24-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 24 physical cores, 48 logical processors, using up to 24 threads
+
+Optimize a model with 0 rows, 48 columns and 0 nonzeros
+Model fingerprint: 0x53e58d9e
+Model has 664 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [0e+00, 0e+00]
+  Objective range  [6e-02, 1e-01]
+  QObjective range [8e-06, 4e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [0e+00, 0e+00]
+Presolve removed 0 rows and 12 columns
+Presolve time: 0.00s
+Presolved: 0 rows, 36 columns, 0 nonzeros
+Presolved model has 538 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ Free vars  : 34
+ AA' NZ     : 4.680e+02
+ Factor NZ  : 5.020e+02
+ Factor Ops : 1.043e+04 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.49174685e+05 -2.50101415e+05  1.00e+03 9.89e-02  1.00e+06     0s
+   1   2.04953040e+06 -2.04970630e+06  1.00e-03 5.68e-14  1.14e+05     0s
+   2   3.00258268e+05 -3.00325605e+05  1.00e-09 2.84e-14  1.67e+04     0s
+   3   4.39829062e+04 -4.40086869e+04  5.33e-14 1.35e-13  2.44e+03     0s
+   4   6.44088983e+03 -6.45076441e+03  1.24e-14 2.84e-14  3.58e+02     0s
+   5   9.42484749e+02 -9.46270999e+02  6.66e-15 2.22e-14  5.25e+01     0s
+   6   1.37632143e+02 -1.39088004e+02  2.22e-15 4.44e-15  7.69e+00     0s
+   7   1.99883846e+01 -2.05522881e+01  8.88e-16 2.69e-15  1.13e+00     0s
+   8   2.85770518e+00 -3.08029328e+00  4.72e-16 1.11e-15  1.65e-01     0s
+   9   3.88085199e-01 -4.80278116e-01  1.39e-16 3.33e-16  2.41e-02     0s
+  10   4.13621627e-02 -8.42865779e-02  5.55e-17 1.67e-16  3.49e-03     0s
+  11  -4.27720095e-03 -2.13405937e-02  1.73e-17 3.47e-17  4.74e-04     0s
+  12  -9.82661913e-03 -1.17615287e-02  1.39e-17 5.55e-17  5.37e-05     0s
+  13  -1.05617151e-02 -1.08145209e-02  1.04e-17 4.16e-17  7.02e-06     0s
+  14  -1.06674583e-02 -1.07041070e-02  6.94e-18 2.78e-17  1.02e-06     0s
+  15  -1.06828937e-02 -1.06881716e-02  6.94e-18 1.39e-17  1.47e-07     0s
+  16  -1.06851905e-02 -1.06859487e-02  1.73e-17 4.16e-17  2.11e-08     0s
+  17  -1.06855484e-02 -1.06856552e-02  3.12e-17 4.16e-17  2.97e-09     0s
+  18  -1.06856090e-02 -1.06856223e-02  7.98e-17 5.55e-17  3.68e-10     0s
+  19  -1.06856189e-02 -1.06856199e-02  2.29e-16 1.39e-17  2.55e-11     0s
+
+Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
+Optimal objective -1.06856189e-02
+
+
+Gurobi 12.0.2 (linux64, C++) logging started Wed Jun 25 14:52:20 2025
+
+Set parameter Username
+Set parameter LicenseID to value 2681951
+Set parameter LogFile to value "convex_mpc.log"
+Academic license - for non-commercial use only - expires 2026-06-24
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Ubuntu 22.04.5 LTS")
+
+CPU model: AMD Ryzen Threadripper 7960X 24-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 24 physical cores, 48 logical processors, using up to 24 threads
+
+Optimize a model with 0 rows, 48 columns and 0 nonzeros
+Model fingerprint: 0x53e58d9e
+Model has 664 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [0e+00, 0e+00]
+  Objective range  [6e-02, 1e-01]
+  QObjective range [8e-06, 4e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [0e+00, 0e+00]
+Presolve removed 0 rows and 12 columns
+Presolve time: 0.00s
+Presolved: 0 rows, 36 columns, 0 nonzeros
+Presolved model has 538 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ Free vars  : 34
+ AA' NZ     : 4.680e+02
+ Factor NZ  : 5.020e+02
+ Factor Ops : 1.043e+04 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.49174685e+05 -2.50101415e+05  1.00e+03 9.89e-02  1.00e+06     0s
+   1   2.04953040e+06 -2.04970630e+06  1.00e-03 5.68e-14  1.14e+05     0s
+   2   3.00258268e+05 -3.00325605e+05  1.00e-09 2.84e-14  1.67e+04     0s
+   3   4.39829062e+04 -4.40086869e+04  5.33e-14 1.35e-13  2.44e+03     0s
+   4   6.44088983e+03 -6.45076441e+03  1.24e-14 2.84e-14  3.58e+02     0s
+   5   9.42484749e+02 -9.46270999e+02  6.66e-15 2.22e-14  5.25e+01     0s
+   6   1.37632143e+02 -1.39088004e+02  2.22e-15 4.44e-15  7.69e+00     0s
+   7   1.99883846e+01 -2.05522881e+01  8.88e-16 2.69e-15  1.13e+00     0s
+   8   2.85770518e+00 -3.08029328e+00  4.72e-16 1.11e-15  1.65e-01     0s
+   9   3.88085199e-01 -4.80278116e-01  1.39e-16 3.33e-16  2.41e-02     0s
+  10   4.13621627e-02 -8.42865779e-02  5.55e-17 1.67e-16  3.49e-03     0s
+  11  -4.27720095e-03 -2.13405937e-02  1.73e-17 3.47e-17  4.74e-04     0s
+  12  -9.82661913e-03 -1.17615287e-02  1.39e-17 5.55e-17  5.37e-05     0s
+  13  -1.05617151e-02 -1.08145209e-02  1.04e-17 4.16e-17  7.02e-06     0s
+  14  -1.06674583e-02 -1.07041070e-02  6.94e-18 2.78e-17  1.02e-06     0s
+  15  -1.06828937e-02 -1.06881716e-02  6.94e-18 1.39e-17  1.47e-07     0s
+  16  -1.06851905e-02 -1.06859487e-02  1.73e-17 4.16e-17  2.11e-08     0s
+  17  -1.06855484e-02 -1.06856552e-02  3.12e-17 4.16e-17  2.97e-09     0s
+  18  -1.06856090e-02 -1.06856223e-02  7.98e-17 5.55e-17  3.68e-10     0s
+  19  -1.06856189e-02 -1.06856199e-02  2.29e-16 1.39e-17  2.55e-11     0s
+
+Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
+Optimal objective -1.06856189e-02
+
+
+Gurobi 12.0.2 (linux64, C++) logging started Wed Jun 25 14:57:37 2025
+
+Set parameter Username
+Set parameter LicenseID to value 2681951
+Set parameter LogFile to value "convex_mpc.log"
+Academic license - for non-commercial use only - expires 2026-06-24
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Ubuntu 22.04.5 LTS")
+
+CPU model: AMD Ryzen Threadripper 7960X 24-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 24 physical cores, 48 logical processors, using up to 24 threads
+
+Optimize a model with 0 rows, 48 columns and 0 nonzeros
+Model fingerprint: 0x53e58d9e
+Model has 664 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [0e+00, 0e+00]
+  Objective range  [6e-02, 1e-01]
+  QObjective range [8e-06, 4e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [0e+00, 0e+00]
+Presolve removed 0 rows and 12 columns
+Presolve time: 0.00s
+Presolved: 0 rows, 36 columns, 0 nonzeros
+Presolved model has 538 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ Free vars  : 34
+ AA' NZ     : 4.680e+02
+ Factor NZ  : 5.020e+02
+ Factor Ops : 1.043e+04 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.49174685e+05 -2.50101415e+05  1.00e+03 9.89e-02  1.00e+06     0s
+   1   2.04953040e+06 -2.04970630e+06  1.00e-03 5.68e-14  1.14e+05     0s
+   2   3.00258268e+05 -3.00325605e+05  1.00e-09 2.84e-14  1.67e+04     0s
+   3   4.39829062e+04 -4.40086869e+04  5.33e-14 1.35e-13  2.44e+03     0s
+   4   6.44088983e+03 -6.45076441e+03  1.24e-14 2.84e-14  3.58e+02     0s
+   5   9.42484749e+02 -9.46270999e+02  6.66e-15 2.22e-14  5.25e+01     0s
+   6   1.37632143e+02 -1.39088004e+02  2.22e-15 4.44e-15  7.69e+00     0s
+   7   1.99883846e+01 -2.05522881e+01  8.88e-16 2.69e-15  1.13e+00     0s
+   8   2.85770518e+00 -3.08029328e+00  4.72e-16 1.11e-15  1.65e-01     0s
+   9   3.88085199e-01 -4.80278116e-01  1.39e-16 3.33e-16  2.41e-02     0s
+  10   4.13621627e-02 -8.42865779e-02  5.55e-17 1.67e-16  3.49e-03     0s
+  11  -4.27720095e-03 -2.13405937e-02  1.73e-17 3.47e-17  4.74e-04     0s
+  12  -9.82661913e-03 -1.17615287e-02  1.39e-17 5.55e-17  5.37e-05     0s
+  13  -1.05617151e-02 -1.08145209e-02  1.04e-17 4.16e-17  7.02e-06     0s
+  14  -1.06674583e-02 -1.07041070e-02  6.94e-18 2.78e-17  1.02e-06     0s
+  15  -1.06828937e-02 -1.06881716e-02  6.94e-18 1.39e-17  1.47e-07     0s
+  16  -1.06851905e-02 -1.06859487e-02  1.73e-17 4.16e-17  2.11e-08     0s
+  17  -1.06855484e-02 -1.06856552e-02  3.12e-17 4.16e-17  2.97e-09     0s
+  18  -1.06856090e-02 -1.06856223e-02  7.98e-17 5.55e-17  3.68e-10     0s
+  19  -1.06856189e-02 -1.06856199e-02  2.29e-16 1.39e-17  2.55e-11     0s
+
+Barrier solved model in 19 iterations and 0.00 seconds (0.00 work units)
+Optimal objective -1.06856189e-02
+
