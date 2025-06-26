@@ -34,6 +34,10 @@ The convex MPC controller requires Gurobi optimization solver:
    source ~/.bashrc
    ``` -->
 
+### Pinocchio
+```bash
+sudo apt install ros-$ROS_DISTRO-pinocchio
+```
 
 ### Sourcing ROS and Unitree WS
 Run
