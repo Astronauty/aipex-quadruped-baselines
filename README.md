@@ -9,7 +9,7 @@ ROS Jazzy
 https://eigen.tuxfamily.org/index.php?title=Main_Page#Download
 
 ### ROS
-https://docs.ros.org/en/jazzy/Installation.html
+https://docs.ros.org/en/humble/Installation.html
 
 ### Unitree
 Make sure to install all of the following repos under the /opt/unitree_robotics directory.
