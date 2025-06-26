@@ -2,7 +2,7 @@
 
 
 ## Dependency Installation
-Tested on Ubuntu 24.04.02 Noble
+Tested on Ubuntu 22.04.05 Humble
 ROS Jazzy
 
 ### Eigen
