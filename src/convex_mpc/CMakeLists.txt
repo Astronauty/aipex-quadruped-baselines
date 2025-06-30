@@ -66,7 +66,15 @@ add_executable(convex_mpc_controller
   src/state_space.cpp
   src/transforms.cpp
 )
+### Specify URDF location ###
+set(URDF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/urdf")
 
+# Pass it as a compile definition
+target_compile_definitions(convex_mpc_controller PRIVATE
+    PINOCCHIO_MODEL_DIR="${URDF_DIR}"
+)
+
+### Link Libraries for Executables ###
 target_include_directories(convex_mpc_controller PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${GUROBI_INCLUDE_DIRS}
