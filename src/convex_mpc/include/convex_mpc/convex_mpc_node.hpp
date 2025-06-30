@@ -56,7 +56,6 @@ class QuadConvexMPCNode : public rclcpp::Node
         float p_dot[3]; // Linear velocity in x, y, z
 
         float foot_positions[4][3]; // Foot positions in x, y, z
-
         float joint_angles[12]; // Joint angles of Go2
 
            // Publisher for joint torque commands
