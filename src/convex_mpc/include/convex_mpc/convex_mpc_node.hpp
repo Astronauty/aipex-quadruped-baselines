@@ -57,6 +57,8 @@ class QuadConvexMPCNode : public rclcpp::Node
 
         float foot_positions[4][3]; // Foot positions in x, y, z
 
+        float joint_angles[12]; // Joint angles of Go2
+
            // Publisher for joint torque commands
         rclcpp::Publisher<unitree_go::msg::LowCmd>::SharedPtr joint_torque_pub_;
 

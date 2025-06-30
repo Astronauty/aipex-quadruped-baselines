@@ -2,8 +2,9 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include "convex_mpc/convex_mpc.hpp"
 
-using namespace std;
-using namespace Eigen;
+// using namespace std;
+// using namespace Eigen;
+
 
 /*
 QP Form:
@@ -27,25 +28,28 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 
     try
     {
-        // Create an environment
+        // Create an GRB environment & model
         // GRBEnv env = GRBEnv();
         env = make_unique<GRBEnv>(true);
         // env.set("LicenseFile", "/home/daniel/gurobi.lic");
         env->set("LogFile", "convex_mpc.log");
         env->start();
-
-        // Create an empty Gurobi model
         model = make_unique<GRBModel>(*env);
 
         // Initialize robot state
-        // x0 = Vector<double, 13>::Zero();
         x0 = Vector<double, 13>::Zero();
-        u = Vector<double, 12>::Zero();
-        
+        // u = Vector<double, 12>::Zero();
+        ground_reaction_forces = Matrix<double, 3, 4>::Zero(); // Initialize GRFs for the 4 feet of the quadruped robot
         x_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC);
+        theta = Vector<double, 12>::Zero(); // Initialize joint angles of the quadruped robot
 
+        // Initialize pinocchio model & data (for foot jacobian computaiton)
+        string urdf_path = PINOCCHIO_MODEL_DIR "urdf/go2_description.urdf";
+        pinocchio::urdf::buildModel(urdf_path, pinocchio_model);
+        pinocchio_data = pinocchio::Data(pinocchio_model);
+        
+        // Initialize state space prediction matrices
         StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
-
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
         // Formulate the QP 
@@ -76,14 +80,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         // model.setObjective(test_expr, GRB_MINIMIZE);
 
         // cout << "Objective Function: " << model.getObjective() << endl;
-        model->optimize();
 
-        
-        RCLCPP_INFO(logger_, "Optimized variables:");
-        for (int i = 0; i < mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1); ++i) {
-            double u_value = U[i].get(GRB_DoubleAttr_X);
-            RCLCPP_INFO(logger_, "U[%d] = %f", i, u_value);
-        }
     } 
     catch(GRBException e) 
     {
@@ -114,7 +111,6 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
  * @param N_MPC Number of steps for the horizon length in MPC.
  * @return A tuple containing two Eigen::MatrixXd objects representing the state evolution matrices.
  */
-
 tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(const StateSpace& quad_dss)
 {
     const int& N_STATES = this->mpc_params.N_STATES;
@@ -165,20 +161,6 @@ StateSpace ConvexMPC::get_default_dss_model()
     return quad_dss;
     
 }
-
-/**
-* @brief Computes the joint torques from the ground reaction forces (GRF).
- *
- * This function computes the joint torques based on the ground reaction forces (GRF) and the foot positions.
- *
- * @param grf A 3x4 vector of ground reaction forces for each foot.
- * @return A matrix of joint torques corresponding to the GRF.
-*/
-
-// MatrixXd ConvexMPC::get_joint_torques_from_GRF
-// {
-
-// }
 
 MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
     // Calculate the total size of the block diagonal matrix
@@ -258,18 +240,115 @@ void ConvexMPC::update_x0(Vector<double, 13> x0)
 {
     // Update the initial state vector x0
     this->x0 = x0;
-    this->q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
+    this->q = compute_q(Q_bar, A_qp, B_qp, this->x0, x_ref);
 
     lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
-    this->model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
+    this->model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE); // Update the MPC cost with new x0
+}
 
-    // RCLCPP_INFO(logger_, "Optimized variables:");
-    // for (int i = 0; i < mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1); ++i) {
-    //     double u_value = U[i].get(GRB_DoubleAttr_X);
-    //     RCLCPP_INFO(logger_, "U[%d] = %f", i, u_value);
-    // }
+void ConvexMPC::update_joint_angles(Vector<double, 12> theta)
+{
+    this->theta = theta;
 
 }
+
+Vector<double, 12> ConvexMPC::solve_joint_torques()
+{
+    model->optimize(); // Resolve to capture any changes made to model
+
+    // Extract ground reaction forces from Gurobi solution
+    Matrix<double, 3, 4> grf = Matrix<double, 3, 4>::Zero();
+    for (int foot = 0; foot < 4; foot++) {
+        for (int axis = 0; axis < 3; axis++) {
+            int idx = foot * 3 + axis;
+            grf(axis, foot) = U[idx].get(GRB_DoubleAttr_X);
+            RCLCPP_INFO(logger_, "GRF[foot %d, axis %d] = %f", foot, axis, grf(axis, foot));
+        }
+    }
+
+    // Get the foot jacobian
+    vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
+
+    // Compute joint torques by utilizing the foot jacobians
+    Vector<double, 12> joint_torques;
+
+    double roll = x0[0];
+    double pitch = x0[1];
+    double yaw = x0[2];
+
+    Matrix3d R_WB = (AngleAxisd(roll, Vector3d::UnitX()) * 
+           AngleAxisd(pitch, Vector3d::UnitY()) * 
+           AngleAxisd(yaw, Vector3d::UnitZ())).toRotationMatrix(); // Body frame orientation in world frame
+
+    for (int foot = 0; foot < 4; foot++)
+    {
+        Vector3d foot_grf = grf.col(foot); // Extract the grf for the current foot (world frame)
+        
+        Vector3d foot_joint_torques = foot_jacobians[foot].transpose() * R_WB.transpose() * foot_grf; // Compute joint torques for the current foot (correpsonding to its 3 actuators)
+        joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
+    }
+
+    return joint_torques;
+}
+
+
+vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
+{
+
+    // TODO: check joint order
+    vector<vector<string>> joint_names_by_foot = {
+        {"FL_hip_joint", "FL_thigh_joint", "FL_calf_joint"}, // Foot 0
+        {"FR_hip_joint", "FR_thigh_joint", "FR_calf_joint"}, // Foot 1
+        {"RL_hip_joint", "RL_thigh_joint", "RL_calf_joint"}, // Foot 2
+        {"RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"}  // Foot 3
+    };
+
+    vector<string> foot_names = {
+        "FL_foot", // Foot 0
+        "FR_foot", // Foot 1
+        "RL_foot", // Foot 2
+        "RR_foot"  // Foot 3
+    };
+
+    vector<Matrix<double, 3, 3>> J(4); // Initialize a vector of 4 matrices for the foot jacobians
+
+
+    // Update the pinocchio model config q with the joint angles (doing this to make sure joint indices match)
+    Eigen::VectorXd q = Eigen::VectorXd::Zero(pinocchio_model.nq);
+    for (int foot_index = 0; foot_index < 4; foot_index++) {
+        for (int joint_index = 0; joint_index < 3; joint_index++) {
+            int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][joint_index]);
+            q[pinocchio_model.joints[joint_id].idx_q()] = theta[foot_index * 3 + joint_index];
+        }
+    }
+
+    // FK to update model state
+    pinocchio::forwardKinematics(pinocchio_model, pinocchio_data, q);
+    pinocchio::updateFramePlacements(pinocchio_model, pinocchio_data);
+
+    // Compute Jacobian for each foot
+    for (int foot_index=0; foot_index < 4; foot_index++)
+    {
+        pinocchio::FrameIndex foot_frame_id = pinocchio_model.getFrameId(foot_names[foot_index]);
+
+        Eigen::MatrixXd J_temp(6, pinocchio_model.nv);
+        pinocchio::computeFrameJacobian(pinocchio_model, pinocchio_data, q, foot_frame_id, pinocchio::LOCAL_WORLD_ALIGNED, J_temp);
+
+        // Construct the 3x3 Jacobian for each foot
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][j]);
+                J[foot_index](i, j) = J_temp(i, pinocchio_model.joints[joint_id].idx_v());
+            }
+
+        }
+    }
+
+    return J;
+}
+
 
 
 // int main(int, char**)
