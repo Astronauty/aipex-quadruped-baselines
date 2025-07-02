@@ -56,7 +56,7 @@ endif()
 
 
 ### Executables ###
-set(MY_EXECUTABLES convex_mpc_controller)
+set(MY_EXECUTABLES convex_mpc_controller gait_planner)
 
 add_executable(convex_mpc_controller
   src/convex_mpc_node.cpp
@@ -65,6 +65,10 @@ add_executable(convex_mpc_controller
   src/simplified_quad_dynamics.cpp
   src/state_space.cpp
   src/transforms.cpp
+)
+
+add_executable(gait_planner
+  src/gait_planner.cpp
 )
 ### Specify URDF location ###
 set(URDF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/urdf")
@@ -87,10 +91,26 @@ target_link_libraries(convex_mpc_controller
   pinocchio::pinocchio
 )
 
+target_include_directories(gait_planner PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${GUROBI_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
+)
+
+target_link_libraries(gait_planner
+  ${GUROBI_CXX_LIBRARY}
+  ${GUROBI_LIBRARY}
+  pinocchio::pinocchio
+)
+
+
 ament_target_dependencies(convex_mpc_controller ${DEPENDENCY_LIST})
+ament_target_dependencies(gait_planner ${DEPENDENCY_LIST})
+
 
 install(TARGETS
   convex_mpc_controller
+  gait_planner
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -375,7 +375,7 @@ Vector<double, 3> ConvexMPC::compute_swing_leg_tracking_torques(
 {
 
     Matrix3d I_i_opspace = get_foot_operation_space_inertia_matrix(q, foot_index);
-    Matrix3d J_i_B_dot = ;// Compute the time derivative of the Jacobian (if needed, otherwise can be set to zero)
+    Matrix3d J_i_B_dot = Matrix3d::Zero(); // TODO: Compute the time derivative of the Jacobian (if needed, otherwise can be set to zero)
     Vector3d tau_i_ff = J_i_B.transpose() * I_i_opspace * (a_i_ref_B - J_i_B_dot * q_i_dot) + C_i + G_i;
 
     Vector3d tau_i = J_i_B.transpose() * (Kp * (p_i_ref_B - p_i_B) + Kd * (v_i_ref_B - v_i_B)) + tau_i_ff;
@@ -400,45 +400,3 @@ Matrix3d ConvexMPC::get_foot_operation_space_inertia_matrix(const Vector<double,
 }
 
 
-
-
-
-
-// int main(int, char**)
-// {
-//     // Define the parameters for the MPC and the quadruped
-//     int N_MPC = 5;
-//     double dt = 0.01;
-//     int N_STATES = 13;
-//     int N_CONTROLS = 12;
-
-//     // Define MPC Params
-//     MatrixXd Q = MatrixXd::Identity(N_STATES, N_STATES);
-//     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
-//     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -1.0);
-//     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 1.0);
-//     MPCParams mpc_params = MPCParams(N_MPC, N_CONTROLS, N_STATES,
-//          dt, Q, R, u_lower, u_upper);
-
-//     // Define Quadruped Params
-//     Matrix3d inertiaTensor = Eigen::Matrix3d::Identity();
-//     double mass = 1.0;
-//     double gravity = 9.81;
-//     QuadrupedParams quadruped_params = QuadrupedParams(inertiaTensor, mass, gravity);
-
-//     // Initialize the ConvexMPC object
-//     ConvexMPC convex_mpc = ConvexMPC(mpc_params, quadruped_params);
-
-//     // Example of creating state space prediction matrices
-//     // StateSpace quad_dss = convex_mpc.get_default_dss_model(); // TODO: Implement actual updates to the dss based on yaw and foot position
-//     // auto [A_qp, B_qp] = convex_mpc.create_state_space_prediction_matrices(quad_dss);
-
-//     // // Print the matrices to verify
-
-//     // cout << "A_qp: \n" << A_qp << endl;
-//     // cout << "B_qp: \n" << B_qp << endl;
-//     // cout << "Size of A_qp: " << A_qp.rows() << " x " << A_qp.cols() << endl;
-//     // cout << "Size of B_qp: " << B_qp.rows() << " x " << B_qp.cols() << endl;
-
-//     return 0;
-// }
