@@ -46,6 +46,7 @@ class ConvexMPC
         void update_joint_angles(Vector<double, 12> theta);
 
         Vector<double, 12> solve_joint_torques(); // Returns joint torques based on MPC GRF solution
+        Vector<double, 3> compute_swing_leg_tracking_torques(Matrix3d J_i_B, Vector3d p_i_ref_W, Matrix3d Kp, Matrix3d Kd, Vector3d p_i_B, Vector3d v_i_B, int foot_index);
 
 
     private:
@@ -90,5 +91,10 @@ class ConvexMPC
         MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp);
         VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd x_ref);
 
+        Matrix3d Kp; // Proportional gain for swing leg tracking
+        Matrix3d Kd; // Derivative gain for swing leg tracking
+        // Vector3d get_joint_torques_for_foot()
         vector<Matrix<double, 3, 3>>  get_foot_jacobians(const Vector<double, 12>& q); // Returns the foot jacobians for each foot in the body frame
+        Matrix3d get_foot_operation_space_inertia_matrix(const Vector<double, 3>& q, const Matrix<double, 3, 3>& J_i_B, const Matrix<double, 3, 3>& M_i_B);
+
 };

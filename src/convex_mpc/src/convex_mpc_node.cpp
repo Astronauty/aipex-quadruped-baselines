@@ -51,6 +51,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Set measurement mode
     // TODO: ROS param implementation
     // std::string measurement_mode_str = this->declare_parameter<std::string>("measurement_mode", "lowlevel_ekf");
+    start_time_ = this->now();
 
     state_measurement_mode_ = StateMeasurementMode::SPORTMODE; 
 
