@@ -49,6 +49,8 @@ class QuadConvexMPCNode : public rclcpp::Node
     private:
         std::unique_ptr<ConvexMPC> convex_mpc;
 
+        rclcpp::Time start_time_;
+
         // MPC State Vars
         float theta[3]; // Orientation in roll, pitch, yaw
         float p[3]; // Position in x, y, z
@@ -58,7 +60,7 @@ class QuadConvexMPCNode : public rclcpp::Node
         float foot_positions[4][3]; // Foot positions in x, y, z
         float joint_angles[12]; // Joint angles of Go2
 
-           // Publisher for joint torque commands
+        // Publisher for joint torque commands
         rclcpp::Publisher<unitree_go::msg::LowCmd>::SharedPtr joint_torque_pub_;
 
         // Unitree sportmode vars

@@ -52,6 +52,10 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
+        // Initialize swing leg tracker gains
+        Kp = Matrix3d::Identity() * 10.0; // Proportional gain for swing leg tracking
+        Kd = Matrix3d::Identity() * 1; // Derivative gain for swing leg tracking
+
         // Formulate the QP 
         U = model->addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
         cout << "Number of Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
@@ -348,6 +352,55 @@ vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
 
     return J;
 }
+
+/**
+ * @brief Solves for joint torques per foot to follow a positional reference in the world coordinate system.
+ * @param q Joint configuration vector of the quadruped robot.
+ * @param J_i_B Jacobian for foot i in the body frame.
+ * @param p_i_ref_W Reference to track of foot i position in the world frame.
+ * @param Kp Proportional gain
+ * @param Kd Derivative gain
+ * @param p_i_B Position of foot i in body frame.
+ * @param v_i_B Velocity of foot i in body frame.
+ * @return Vector of joint torques for foot i.
+ */
+Vector<double, 3> ConvexMPC::compute_swing_leg_tracking_torques(
+    const Vector<double, 12>& q, const Vector<double, 12> q_i_dot,
+    Matrix3d J_i_B, 
+    Vector3d p_i_B, Vector3d v_i_B,
+    Vector3d p_i_ref_B, Vector3d v_i_ref_B,
+    Matrix3d Kp, Matrix3d Kd,
+    Vector3d a_i_ref_B, 
+    int foot_index)
+{
+
+    Matrix3d I_i_opspace = get_foot_operation_space_inertia_matrix(q, foot_index);
+    Matrix3d J_i_B_dot = ;// Compute the time derivative of the Jacobian (if needed, otherwise can be set to zero)
+    Vector3d tau_i_ff = J_i_B.transpose() * I_i_opspace * (a_i_ref_B - J_i_B_dot * q_i_dot) + C_i + G_i;
+
+    Vector3d tau_i = J_i_B.transpose() * (Kp * (p_i_ref_B - p_i_B) + Kd * (v_i_ref_B - v_i_B)) + tau_i_ff;
+
+}
+
+/**
+* @brief Computes the operation space inertia matrix for a foot in the world frame.
+* @param q Joint configuration vector of the quadruped robot.
+* @param foot_index Index of the foot for which the operation space inertia matrix is computed.
+* @return The operation space inertia matrix for the specified foot.
+*/
+Matrix3d ConvexMPC::get_foot_operation_space_inertia_matrix(const Vector<double, 12>& q, int foot_index)
+{
+    vector<Matrix3d> J = get_foot_jacobians(this->theta);
+    Matrix3d J_i = J[foot_index];
+
+    Matrix<double, 12, 12> M = pinocchio::computeMassMatrix(pinocchio_model, pinocchio_data, q);
+
+    Matrix3d I_opspace = (J_i * M.inverse() * J_i.transpose()).inverse();
+    return I_opspace;
+}
+
+
+
 
 
 
