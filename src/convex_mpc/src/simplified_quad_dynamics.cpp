@@ -10,7 +10,7 @@ using namespace Eigen;
 Simplified state space quadruped dynamics based on https://dspace.mit.edu/bitstream/handle/1721.1/138000/convex_mpc_2fix.pdf
 x = [theta, p, omega, p_dot, g]
 */
-StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 4, 3>& foot_positions)
+StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3, 4>& foot_positions)
 {   
     // Define relevant transforms and inertial properties
     Matrix3d R_z = eul2rotm(0, 0, yaw);
@@ -49,7 +49,7 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 4,
 };
 
 
-StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 4, 3>& foot_positions, const double& dt)
+StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt)
 {
     StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions);
     StateSpace dss = c2d(ss, dt);

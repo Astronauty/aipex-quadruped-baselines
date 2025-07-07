@@ -46,7 +46,16 @@ class ConvexMPC
         void update_joint_angles(Vector<double, 12> theta);
 
         Vector<double, 12> solve_joint_torques(); // Returns joint torques based on MPC GRF solution
-        Vector<double, 3> compute_swing_leg_tracking_torques(Matrix3d J_i_B, Vector3d p_i_ref_W, Matrix3d Kp, Matrix3d Kd, Vector3d p_i_B, Vector3d v_i_B, int foot_index);
+        Vector<double, 3> compute_swing_leg_tracking_torques(
+            const Vector<double, 12>& q, const Vector<double, 12> q_i_dot,
+            Matrix3d J_i_B, 
+            Vector3d p_i_B, Vector3d v_i_B,
+            Vector3d p_i_ref_B, Vector3d v_i_ref_B,
+            Matrix3d Kp, Matrix3d Kd,
+            Vector3d a_i_ref_B, 
+            int foot_index);
+
+        void update_foot_positions(const Matrix<double, 3, 4>& foot_positions);
 
 
     private:
@@ -69,7 +78,7 @@ class ConvexMPC
         Vector<double, 12> theta; // Joint angles of Go2
         // Vector<double, 13> x0;  // State vector containing information about the rigid body pose: [theta, p, omega, p_dot, g]
         VectorXd x0;
-        Vector<double, 13> x_ref; // Desired rigid body pose of the quadruped
+        VectorXd x_ref; // Desired rigid body pose of the quadruped, size N_STATES * N_MPC
         // Vector<double, 12> u;  // GRFs for the 4 feet of the quadruped robot, represented as a vector of 12 elements (3 for each foot: x, y, z)
         Matrix<double, 3, 4> ground_reaction_forces; // GRFs for the 4 feet of the quadruped robot, rows are x, y, z forces, columns are feet 0, 1, 2, 3
 
@@ -81,6 +90,7 @@ class ConvexMPC
 
         // Vector3d foot_positions[4];
         Matrix<double, 3, 4> foot_positions; // Positions of the feet in the body frame
+        // void update_foot_positions(const Vector<double, 12>& q);
 
         MatrixXd Q_bar; // Diagonal block matrix of quadratic state cost for N_MPC steps
         MatrixXd R_bar; // Diagonal block matrix of quadratic control cost for N_MPC-1 steps
@@ -95,6 +105,7 @@ class ConvexMPC
         Matrix3d Kd; // Derivative gain for swing leg tracking
         // Vector3d get_joint_torques_for_foot()
         vector<Matrix<double, 3, 3>>  get_foot_jacobians(const Vector<double, 12>& q); // Returns the foot jacobians for each foot in the body frame
-        Matrix3d get_foot_operation_space_inertia_matrix(const Vector<double, 3>& q, const Matrix<double, 3, 3>& J_i_B, const Matrix<double, 3, 3>& M_i_B);
+        Matrix3d get_foot_operation_space_inertia_matrix(const Vector<double, 12>& q, int foot_index);
 
+        StateSpace get_quadruped_dss_model(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt);
 };
