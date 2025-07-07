@@ -37,14 +37,14 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         model = make_unique<GRBModel>(*env);
 
         // Initialize robot state
-        x0 = Vector<double, 13>::Zero();
+        x0 = VectorXd::Zero(mpc_params.N_STATES); // Initial state of the robot
         // u = Vector<double, 12>::Zero();
         ground_reaction_forces = Matrix<double, 3, 4>::Zero(); // Initialize GRFs for the 4 feet of the quadruped robot
         x_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC);
-        theta = Vector<double, 12>::Zero(); // Initialize joint angles of the quadruped robot
+        theta = VectorXd::Zero(12); // Initialize joint angles of the quadruped robot
 
         // Initialize pinocchio model & data (for foot jacobian computaiton)
-        string urdf_path = PINOCCHIO_MODEL_DIR "urdf/go2_description.urdf";
+        string urdf_path = PINOCCHIO_MODEL_DIR "/go2_description.urdf";
         pinocchio::urdf::buildModel(urdf_path, pinocchio_model);
         pinocchio_data = pinocchio::Data(pinocchio_model);
         
@@ -148,11 +148,10 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
 
 StateSpace ConvexMPC::get_default_dss_model()
 {
-    Matrix<double, 4, 3> foot_positions;
-    foot_positions << 0.1, 0.1, 0,
-                      0.1, -0.1, 0,
-                      -0.1, 0.1, 0,
-                      -0.1, -0.1, 0;
+    Matrix<double, 3, 4> foot_positions;
+    foot_positions << 0.2, 0.2, -0.2, -0.2,
+                     0.15, -0.15, 0.15, -0.15,
+                     0.0, 0.0, 0.0, 0.0; // Default foot positions in the body frame
 
 
     double yaw = 0.0f;
@@ -164,6 +163,13 @@ StateSpace ConvexMPC::get_default_dss_model()
 
     return quad_dss;
     
+}
+
+StateSpace ConvexMPC::get_quadruped_dss_model(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt)
+{
+    StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, dt);
+    return quad_dss;
+
 }
 
 MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
@@ -246,8 +252,7 @@ void ConvexMPC::update_x0(Vector<double, 13> x0)
     this->x0 = x0;
     this->q = compute_q(Q_bar, A_qp, B_qp, this->x0, x_ref);
 
-    lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
-    this->model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE); // Update the MPC cost with new x0
+
 }
 
 void ConvexMPC::update_joint_angles(Vector<double, 12> theta)
@@ -256,8 +261,34 @@ void ConvexMPC::update_joint_angles(Vector<double, 12> theta)
 
 }
 
+void ConvexMPC::update_foot_positions(const Matrix<double, 3, 4>& foot_positions)
+{
+    // Update the foot positions in the body frame
+    this->foot_positions = foot_positions;
+}
+
 Vector<double, 12> ConvexMPC::solve_joint_torques()
 {
+    // Update the dynamics model to account for changing foot position and yaw
+    // Initialize state space prediction matrices
+    StateSpace quad_dss = get_quadruped_dss_model(x0[2], foot_positions); // TODO: proper initialization, perhaps based on the initial state of robot?
+    tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
+
+
+    // Initialize swing leg tracker gains
+    Kp = Matrix3d::Identity() * 10.0; // Proportional gain for swing leg tracking
+    Kd = Matrix3d::Identity() * 1; // Derivative gain for swing leg tracking
+
+    // Formulate the QP 
+    U = model->addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
+    cout << "Number of Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
+
+    P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
+    q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
+
+    lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
+    quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
+    model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
     model->optimize(); // Resolve to capture any changes made to model
 
     // Extract ground reaction forces from Gurobi solution
@@ -376,10 +407,15 @@ Vector<double, 3> ConvexMPC::compute_swing_leg_tracking_torques(
 
     Matrix3d I_i_opspace = get_foot_operation_space_inertia_matrix(q, foot_index);
     Matrix3d J_i_B_dot = Matrix3d::Zero(); // TODO: Compute the time derivative of the Jacobian (if needed, otherwise can be set to zero)
-    Vector3d tau_i_ff = J_i_B.transpose() * I_i_opspace * (a_i_ref_B - J_i_B_dot * q_i_dot) + C_i + G_i;
+    
+    Matrix3d C_i = Matrix3d::Zero(); // TODO: compute via pinocchio
+    Matrix3d G_i = Matrix3d::Zero(); // TODO: compute via pinocchio
 
-    Vector3d tau_i = J_i_B.transpose() * (Kp * (p_i_ref_B - p_i_B) + Kd * (v_i_ref_B - v_i_B)) + tau_i_ff;
+    // Vector3d tau_i_ff = J_i_B.transpose() * I_i_opspace * (a_i_ref_B - J_i_B_dot * q_i_dot) + C_i + G_i;
+    // Vector3d tau_i = J_i_B.transpose() * (Kp * (p_i_ref_B - p_i_B) + Kd * (v_i_ref_B - v_i_B)) + tau_i_ff;
 
+    Vector3d tau_i = Vector3d::Zero();
+    return tau_i;
 }
 
 /**
@@ -393,7 +429,10 @@ Matrix3d ConvexMPC::get_foot_operation_space_inertia_matrix(const Vector<double,
     vector<Matrix3d> J = get_foot_jacobians(this->theta);
     Matrix3d J_i = J[foot_index];
 
-    Matrix<double, 12, 12> M = pinocchio::computeMassMatrix(pinocchio_model, pinocchio_data, q);
+    cout << "Foot jacobian size " << J_i.rows() << " x " << J_i.cols() << endl;
+
+    // Matrix<double, 12, 12> M = pinocchio::computeMassMatrix(pinocchio_model, pinocchio_data, q);
+    Matrix<double, 3, 3> M = Matrix<double, 3, 3>::Identity(); // TODO: Compute the mass matrix using pinocchio
 
     Matrix3d I_opspace = (J_i * M.inverse() * J_i.transpose()).inverse();
     return I_opspace;

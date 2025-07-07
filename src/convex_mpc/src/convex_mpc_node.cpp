@@ -57,9 +57,9 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     // Publisher for joint torque commands
     joint_torque_pub_ = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);
-    this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&QuadConvexMPCNode::publish_cmd, this));
+    publish_joint_torque_timer_ = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&QuadConvexMPCNode::publish_cmd, this));
 
-    // // Create a lowstate subscriber to update mpc states
+    // Create a lowstate subscriber to update mpc states
     low_state_sub_ = this->create_subscription<unitree_go::msg::LowState>(
         "lowstate", 10, std::bind(&QuadConvexMPCNode::low_state_callback, this, std::placeholders::_1)
     );
@@ -80,10 +80,10 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     int N_MPC = 5; // Number of steps for the horizon length in MPC
     double dt = 0.01; // Time step for the MPC
 
-    MatrixXd Q = MatrixXd::Identity(N_STATES, N_STATES);
+    MatrixXd Q = 100.0 * MatrixXd::Identity(N_STATES, N_STATES);
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
-    VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -1.0);
-    VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 1.0);
+    VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
+    VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
     MPCParams mpc_params = MPCParams(N_MPC, N_CONTROLS, N_STATES,
         dt, Q, R, u_lower, u_upper);
 
@@ -212,14 +212,19 @@ void QuadConvexMPCNode::update_mpc_state()
             p_dot[0], p_dot[1], p_dot[2], // Velocity in x, y, z
             g; // Gravity state
 
-    // RCLCPP_INFO(this->get_logger(), "Setting x0 to [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
-    //     x0(0), x0(1), x0(2), x0(3), x0(4), x0(5), x0(6), x0(7), x0(8), x0(9), x0(10), x0(11), x0(12));
+    RCLCPP_INFO(this->get_logger(), "Setting x0 to [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
+        x0(0), x0(1), x0(2), x0(3), x0(4), x0(5), x0(6), x0(7), x0(8), x0(9), x0(10), x0(11), x0(12));
 
     this->convex_mpc->update_x0(x0); // Update rigid body pose state
     // Convert joint_angles array to Eigen::VectorXd
     Eigen::Map<Eigen::VectorXf> joint_angles_eigen(joint_angles, 12);
     Vector<double, 12> joint_angles_double = joint_angles_eigen.cast<double>(); // Convert to double for MPC compatibility
     this->convex_mpc->update_joint_angles(joint_angles_double); // Update joint angles (used for foot Jacobian computation)
+
+    // Reshape foot_pos (12x1 vector) into a 4x3 matrix for MPC
+    Eigen::Map<Eigen::Matrix<float, 4, 3, Eigen::RowMajor>> mat_map(foot_pos, 4, 3);
+    foot_positions = mat_map.cast<double>();
+    this->convex_mpc->update_foot_positions(foot_positions); // Update foot positions in the body frame
 }
 
 void QuadConvexMPCNode::publish_cmd()
@@ -231,6 +236,9 @@ void QuadConvexMPCNode::publish_cmd()
     {
         low_cmd.motor_cmd[i].tau = joint_torques[i]; // Set the joint torque command
     }
+    RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
+        joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
+        joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
     joint_torque_pub_->publish(low_cmd); // Publish the joint torque commands
 }
 
