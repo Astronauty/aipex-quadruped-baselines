@@ -57,11 +57,13 @@ class QuadConvexMPCNode : public rclcpp::Node
         float omega[3]; // Angular velocity in roll, pitch, yaw
         float p_dot[3]; // Linear velocity in x, y, z
 
-        float foot_positions[4][3]; // Foot positions in x, y, z
+        Matrix<double, 4, 3> foot_positions; // Foot positions in x, y, z
         float joint_angles[12]; // Joint angles of Go2
 
         // Publisher for joint torque commands
         rclcpp::Publisher<unitree_go::msg::LowCmd>::SharedPtr joint_torque_pub_;
+        rclcpp::TimerBase::SharedPtr publish_joint_torque_timer_; // Rate to update x0 in MPC based on lowstate
+
 
         // Unitree sportmode vars
         rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr sport_mode_sub_;
