@@ -56,6 +56,7 @@ class ConvexMPC
             int foot_index);
 
         void update_foot_positions(const Matrix<double, 3, 4>& foot_positions);
+        void update_reference_trajectory(const VectorXd& X_ref);
 
 
     private:
@@ -78,7 +79,7 @@ class ConvexMPC
         Vector<double, 12> theta; // Joint angles of Go2
         // Vector<double, 13> x0;  // State vector containing information about the rigid body pose: [theta, p, omega, p_dot, g]
         VectorXd x0;
-        VectorXd x_ref; // Desired rigid body pose of the quadruped, size N_STATES * N_MPC
+        VectorXd X_ref; // Desired rigid body pose of the quadruped, size N_STATES * N_MPC
         // Vector<double, 12> u;  // GRFs for the 4 feet of the quadruped robot, represented as a vector of 12 elements (3 for each foot: x, y, z)
         Matrix<double, 3, 4> ground_reaction_forces; // GRFs for the 4 feet of the quadruped robot, rows are x, y, z forces, columns are feet 0, 1, 2, 3
 
@@ -99,7 +100,7 @@ class ConvexMPC
         // MatrixXd blkdiag(const vector<MatrixXd>& matrices);
 
         MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp);
-        VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd x_ref);
+        VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd X_ref);
 
         Matrix3d Kp; // Proportional gain for swing leg tracking
         Matrix3d Kd; // Derivative gain for swing leg tracking

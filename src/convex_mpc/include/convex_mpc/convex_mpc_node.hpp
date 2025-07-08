@@ -48,16 +48,19 @@ class QuadConvexMPCNode : public rclcpp::Node
         QuadConvexMPCNode();
     private:
         std::unique_ptr<ConvexMPC> convex_mpc;
+        std::unique_ptr<MPCParams> mpc_params; // Pointer to MPC parameters
 
         rclcpp::Time start_time_;
-
+        
         // MPC State Vars
         float theta[3]; // Orientation in roll, pitch, yaw
         float p[3]; // Position in x, y, z
         float omega[3]; // Angular velocity in roll, pitch, yaw
         float p_dot[3]; // Linear velocity in x, y, z
+        // MPCParams mpc_params; // MPC parameters
 
-        Matrix<double, 4, 3> foot_positions; // Foot positions in x, y, z
+
+        Matrix<double, 3, 4> foot_positions; // Foot positions in x, y, z
         float joint_angles[12]; // Joint angles of Go2
 
         // Publisher for joint torque commands
