@@ -40,7 +40,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         x0 = VectorXd::Zero(mpc_params.N_STATES); // Initial state of the robot
         // u = Vector<double, 12>::Zero();
         ground_reaction_forces = Matrix<double, 3, 4>::Zero(); // Initialize GRFs for the 4 feet of the quadruped robot
-        x_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC);
+        X_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC);
         theta = VectorXd::Zero(12); // Initialize joint angles of the quadruped robot
 
         // Initialize pinocchio model & data (for foot jacobian computaiton)
@@ -70,7 +70,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
         // cout << "Size of P: " << P.rows() << " x " << P.cols() << endl;
 
-        q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
+        q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref);
         // cout << "Size of q: " << q.rows() << " x " << q.cols() << endl;
 
 
@@ -239,10 +239,10 @@ MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
     return P;   
 }
 
-VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd x_ref)
+VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd X_ref)
 {
     // VectorXd q = 2*x0.transpose() * B_qp * Q_bar.transpose() * A_qp; // Zero reference linear cost
-    VectorXd q = 2*(x0.transpose() * B_qp.transpose() * Q_bar * A_qp - x_ref.transpose() * Q_bar * A_qp);
+    VectorXd q = 2*(x0.transpose() * B_qp.transpose() * Q_bar * A_qp - X_ref.transpose() * Q_bar * A_qp);
     return q;
 }
 
@@ -250,7 +250,7 @@ void ConvexMPC::update_x0(Vector<double, 13> x0)
 {
     // Update the initial state vector x0
     this->x0 = x0;
-    this->q = compute_q(Q_bar, A_qp, B_qp, this->x0, x_ref);
+    this->q = compute_q(Q_bar, A_qp, B_qp, this->x0, X_ref);
 
 
 }
@@ -264,16 +264,36 @@ void ConvexMPC::update_joint_angles(Vector<double, 12> theta)
 void ConvexMPC::update_foot_positions(const Matrix<double, 3, 4>& foot_positions)
 {
     // Update the foot positions in the body frame
+    RCLCPP_INFO(logger_, "Updating foot positions in ConvexMPC.");
+    RCLCPP_INFO(logger_, "Foot positions: \n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
+        foot_positions(0, 0), foot_positions(0, 1), foot_positions(0, 2), foot_positions(0, 3),
+        foot_positions(1, 0), foot_positions(1, 1), foot_positions(1, 2), foot_positions(1, 3),
+        foot_positions(2, 0), foot_positions(2, 1), foot_positions(2, 2), foot_positions(2, 3));
+
     this->foot_positions = foot_positions;
+}
+
+void ConvexMPC::update_reference_trajectory(const VectorXd& X_ref)
+{
+    if (X_ref.size() != mpc_params.N_STATES * mpc_params.N_MPC) {
+        RCLCPP_ERROR(logger_, "Reference trajectory size mismatch: expected %d, got %ld",
+                     mpc_params.N_STATES * mpc_params.N_MPC, X_ref.size());
+        throw std::invalid_argument("Reference trajectory size mismatch");
+    }
+    RCLCPP_INFO(logger_, "Updating reference trajectory in ConvexMPC.");
+    RCLCPP_INFO(logger_, "Reference trajectory size: %ld", X_ref.size());
+    RCLCPP_INFO(logger_, "Reference trajectory: \n[%f %f %f %f %f %f %f %f %f %f %f %f]",
+        X_ref(0), X_ref(1), X_ref(2), X_ref(3), X_ref(4), X_ref(5), 
+        X_ref(6), X_ref(7), X_ref(8), X_ref(9), X_ref(10), X_ref(11));
+    
+    this->X_ref = X_ref;
 }
 
 Vector<double, 12> ConvexMPC::solve_joint_torques()
 {
     // Update the dynamics model to account for changing foot position and yaw
-    // Initialize state space prediction matrices
-    StateSpace quad_dss = get_quadruped_dss_model(x0[2], foot_positions); // TODO: proper initialization, perhaps based on the initial state of robot?
+    StateSpace quad_dss = get_quadruped_dss_model(x0[2], foot_positions, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
-
 
     // Initialize swing leg tracker gains
     Kp = Matrix3d::Identity() * 10.0; // Proportional gain for swing leg tracking
@@ -284,12 +304,12 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     cout << "Number of Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
 
     P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
-    q = compute_q(Q_bar, A_qp, B_qp, x0, x_ref);
+    q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref);
 
     lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
     quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
     model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
-    model->optimize(); // Resolve to capture any changes made to model
+    model->optimize(); 
 
     // Extract ground reaction forces from Gurobi solution
     Matrix<double, 3, 4> grf = Matrix<double, 3, 4>::Zero();
@@ -428,7 +448,6 @@ Matrix3d ConvexMPC::get_foot_operation_space_inertia_matrix(const Vector<double,
 {
     vector<Matrix3d> J = get_foot_jacobians(this->theta);
     Matrix3d J_i = J[foot_index];
-
     cout << "Foot jacobian size " << J_i.rows() << " x " << J_i.cols() << endl;
 
     // Matrix<double, 12, 12> M = pinocchio::computeMassMatrix(pinocchio_model, pinocchio_data, q);

@@ -14,7 +14,7 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
 {   
     // Define relevant transforms and inertial properties
     Matrix3d R_z = eul2rotm(0, 0, yaw);
-    double m = 1;
+    double m = 6.9;
     Matrix3d I_b = Matrix3d::Identity(); // TODO: DEFINE GO2 INERTIA HERE
     Matrix3d I_w = R_z*I_b*R_z.transpose(); // Inertia tensor in world body frame for small angles 
     Matrix3d I_w_inv = I_w.inverse(); // Inverse of inertia tensor in world body frame
@@ -30,14 +30,14 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
     A.block<3, 3>(3, 9) = Matrix3d::Identity();
     // A.block<3, 1>(9, 0) = Matrix3d::iden
     A(11, 12) = -1; // Gravity influence on accel
-    A(12, 12) = 1; // Gravity state
+    // A(12, 12) = 1; // Gravity state
 
     // Matrix<double, 13, 13> B;
     MatrixXd B(13, 12);
     B.setZero();
     for (int foot_index = 0; foot_index < 4; foot_index++)
     {
-        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.row(foot_index).transpose());
+        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index).transpose());
         B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/m;
     }
     
