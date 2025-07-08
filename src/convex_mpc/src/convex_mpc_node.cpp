@@ -75,16 +75,16 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
 
     // Define MPC Params
-    int N_STATES = 13;
-    int N_CONTROLS = 12;
-    int N_MPC = 5; // Number of steps for the horizon length in MPC
-    double dt = 0.01; // Time step for the MPC
+    const int N_STATES = 13;
+    const int N_CONTROLS = 12;
+    const int N_MPC = 5; // Number of steps for the horizon length in MPC
+    const double dt = 0.01; // Time step for the MPC
 
-    MatrixXd Q = 100.0 * MatrixXd::Identity(N_STATES, N_STATES);
+    MatrixXd Q = 1000.0 * MatrixXd::Identity(N_STATES, N_STATES);
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
-    MPCParams mpc_params = MPCParams(N_MPC, N_CONTROLS, N_STATES,
+    mpc_params = std::make_unique<MPCParams>(N_MPC, N_CONTROLS, N_STATES,
         dt, Q, R, u_lower, u_upper);
 
     // Define Quadruped Params (from https://github.com/unitreerobotics/unitree_ros/blob/master/robots/go2_description/urdf/go2_description.urdf)
@@ -106,7 +106,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     QuadrupedParams quadruped_params = QuadrupedParams(inertiaTensor, mass, gravity);
 
     // Initialize the ConvexMPC object
-    convex_mpc = std::make_unique<ConvexMPC>(mpc_params, quadruped_params, this->get_logger());
+    convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, quadruped_params, this->get_logger());
 }
 
 
@@ -203,8 +203,8 @@ void QuadConvexMPCNode::update_mpc_state()
 {
     // x = [theta, p, omega, p_dot, g]
     float g = 9.81; // Gravity state
-    
-    Eigen::Matrix<double, 13, 1> x0;
+
+    Eigen::Vector<double, 13> x0;
 
     x0 <<   theta[0], theta[1], theta[2], // Orientation in roll, pitch, yaw
             p[0], p[1], p[2], // Position in x, y, z
@@ -221,10 +221,25 @@ void QuadConvexMPCNode::update_mpc_state()
     Vector<double, 12> joint_angles_double = joint_angles_eigen.cast<double>(); // Convert to double for MPC compatibility
     this->convex_mpc->update_joint_angles(joint_angles_double); // Update joint angles (used for foot Jacobian computation)
 
-    // Reshape foot_pos (12x1 vector) into a 4x3 matrix for MPC
-    Eigen::Map<Eigen::Matrix<float, 4, 3, Eigen::RowMajor>> mat_map(foot_pos, 4, 3);
+    // Reshape foot_pos (12x1 vector) into a 3x4 matrix for MPC
+    Eigen::Map<Eigen::Matrix<float, 3, 4, Eigen::ColMajor>> mat_map(foot_pos, 3, 4);
     foot_positions = mat_map.cast<double>();
     this->convex_mpc->update_foot_positions(foot_positions); // Update foot positions in the body frame
+
+
+    // Update the reference trajectory
+    // Reference state to repeat
+    Eigen::Vector<double, 13> X_ref_single;
+    X_ref_single << 0.000000, 0.000000, 0.000000, -0.025570, 0.000000, 0.312320, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 9.810000;
+
+    // Repeat X_ref_single N_MPC times to form X_ref
+    int N_MPC = mpc_params->N_MPC;
+    VectorXd X_ref = VectorXd::Zero(N_MPC * 13);
+    for (int i = 0; i < N_MPC; ++i) {
+        X_ref.segment<13>(i * 13) = X_ref_single;
+    }
+
+    convex_mpc->update_reference_trajectory(X_ref); // Update the reference trajectory in MPC
 }
 
 void QuadConvexMPCNode::publish_cmd()
