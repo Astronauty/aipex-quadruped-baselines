@@ -77,10 +77,10 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Define MPC Params
     const int N_STATES = 13;
     const int N_CONTROLS = 12;
-    const int N_MPC = 5; // Number of steps for the horizon length in MPC
+    const int N_MPC = 25; // Number of steps for the horizon length in MPC
     const double dt = 0.01; // Time step for the MPC
 
-    MatrixXd Q = 1000.0 * MatrixXd::Identity(N_STATES, N_STATES);
+    MatrixXd Q = 100.0 * MatrixXd::Identity(N_STATES, N_STATES);
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
