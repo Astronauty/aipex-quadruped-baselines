@@ -4,7 +4,10 @@
 #include "convex_mpc/transforms.hpp"
 #include "convex_mpc/state_space.hpp"
 
+#include <iostream>
+
 using namespace Eigen;
+using namespace std;
 
 /* 
 Simplified state space quadruped dynamics based on https://dspace.mit.edu/bitstream/handle/1721.1/138000/convex_mpc_2fix.pdf
@@ -41,6 +44,15 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
         B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/m;
     }
     
+    cout << "Continuous State Space Model" << endl;
+    std::stringstream ssA, ssB;
+
+    ssA << A;
+    ssB << B;
+
+    cout << "A:\n" << ssA.str() << endl;
+    cout << "B:\n" << ssB.str() << endl;
+
     Matrix<double, 12, 13> C = Matrix<double, 12, 13>::Identity(); // Full state feedback, not including gravity state
     // Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Identity();
     Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Zero();
