@@ -192,8 +192,8 @@ MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
         currentCol += mat.cols();
     }
     // cout << "Block diagonal matrix dimensions: " << blockDiagonal.rows() << " x " << blockDiagonal.cols() << endl;
-    // return blockDiagonal;
-    return MatrixXd::Identity(totalRows, totalCols);
+    return blockDiagonal;
+    // return MatrixXd::Identity(totalRows, totalCols);
 }
 
 MatrixXd ConvexMPC::compute_R_bar()
@@ -213,15 +213,10 @@ MatrixXd ConvexMPC::compute_Q_bar()
     int N_MPC = mpc_params.N_MPC;
 
     std::vector<MatrixXd> Q_vec(N_MPC, Q);
-
-    std::cout << "Q vec:\n" << Q_vec[0] << std::endl;
-
+    // std::cout << "Q vec:\n" << Q_vec[0] << std::endl;
     MatrixXd Q_bar = blkdiag(Q_vec);
 
-
-    
-    std::cout << "Q_bar:\n" << Q_bar << std::endl;
-
+    // std::cout << "Q_bar:\n" << Q_bar << std::endl;
     // std::stringstream ss;
     // ss << "Q_bar:\n" << Q_bar;
     // RCLCPP_INFO(logger_, "%s", ss.str().c_str());
@@ -297,14 +292,14 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 {
     // Update the dynamics model to account for changing foot position and yaw
     StateSpace quad_dss = get_quadruped_dss_model(x0[2], foot_positions, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
-    RCLCPP_INFO(logger_, "Discrete State Space Model");
-    RCLCPP_INFO(logger_, "==========================");
+    // RCLCPP_INFO(logger_, "Discrete State Space Model");
+    // RCLCPP_INFO(logger_, "==========================");
 
     std::stringstream ssA, ssB;
     ssA << quad_dss.A;
     ssB << quad_dss.B;
-    RCLCPP_INFO(logger_, "A:\n%s", ssA.str().c_str());
-    RCLCPP_INFO(logger_, "B:\n%s", ssB.str().c_str());
+    // RCLCPP_INFO(logger_, "A:\n%s", ssA.str().c_str());
+    // RCLCPP_INFO(logger_, "B:\n%s", ssB.str().c_str());
 
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
