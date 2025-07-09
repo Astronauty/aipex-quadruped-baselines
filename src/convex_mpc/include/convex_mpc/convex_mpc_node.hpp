@@ -59,6 +59,7 @@ class QuadConvexMPCNode : public rclcpp::Node
         float p_dot[3]; // Linear velocity in x, y, z
         // MPCParams mpc_params; // MPC parameters
 
+        
 
         Matrix<double, 3, 4> foot_positions; // Foot positions in x, y, z
         float joint_angles[12]; // Joint angles of Go2

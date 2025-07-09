@@ -33,6 +33,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         env = make_unique<GRBEnv>(true);
         // env.set("LicenseFile", "/home/daniel/gurobi.lic");
         env->set("LogFile", "convex_mpc.log");
+        env->set("OutputFlag", "0");
         env->start();
         model = make_unique<GRBModel>(*env);
 
@@ -40,7 +41,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         x0 = VectorXd::Zero(mpc_params.N_STATES); // Initial state of the robot
         // u = Vector<double, 12>::Zero();
         ground_reaction_forces = Matrix<double, 3, 4>::Zero(); // Initialize GRFs for the 4 feet of the quadruped robot
-        X_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC);
+        X_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC); // Reference trajectory
         theta = VectorXd::Zero(12); // Initialize joint angles of the quadruped robot
 
         // Initialize pinocchio model & data (for foot jacobian computaiton)
@@ -49,7 +50,8 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         pinocchio_data = pinocchio::Data(pinocchio_model);
         
         // Initialize state space prediction matrices
-        StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
+        // StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
+        StateSpace quad_dss = quadruped_state_space_discrete(0, ground_reaction_forces, mpc_params.dt);
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
         // Initialize swing leg tracker gains
@@ -109,7 +111,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
  * This function generates the state prediction matrices A_qp and B_qp based on the given discrete state space 
  * representation of the quadruped and the specified MPC horizon length. These can be used to generate a vector of 
  * the predicted states X for the next N_MPC timesteps, where U = [u_1... u_N-1] and x0 is the current state:
- * X = A_qp * U + B_qp * x0
+ * X = A_qp * x0 + B_qp * U
  *
  * @param quad_dss The discrete state space representation of the quadruped.
  * @param N_MPC Number of steps for the horizon length in MPC.
@@ -156,9 +158,6 @@ StateSpace ConvexMPC::get_default_dss_model()
 
     double yaw = 0.0f;
     StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, this->mpc_params.dt);
-    RCLCPP_INFO(logger_, "Default discrete state space model created.");
-    RCLCPP_INFO(logger_, "A Size: %ldx%ld", quad_dss.A.rows(), quad_dss.A.cols());
-    RCLCPP_INFO(logger_, "B Size: %ldx%ld", quad_dss.B.rows(), quad_dss.B.cols());
 
 
     return quad_dss;
@@ -211,16 +210,22 @@ MatrixXd ConvexMPC::compute_R_bar()
 MatrixXd ConvexMPC::compute_Q_bar()
 {
     MatrixXd Q = mpc_params.Q;
-    // int N_CONTROLS = mpc_params.N_CONTROLS;
     int N_MPC = mpc_params.N_MPC;
 
-
-    // cout << "Size of Q: " << Q.rows() << " x " << Q.cols() << endl;
-    // cout << "mpc_params.Q:\n" << Q << endl;
     std::vector<MatrixXd> Q_vec(N_MPC, Q);
-    // cout << "here 4" << endl;
+
+    std::cout << "Q vec:\n" << Q_vec[0] << std::endl;
+
     MatrixXd Q_bar = blkdiag(Q_vec);
-    // cout << "here 5" << endl;
+
+
+    
+    std::cout << "Q_bar:\n" << Q_bar << std::endl;
+
+    // std::stringstream ss;
+    // ss << "Q_bar:\n" << Q_bar;
+    // RCLCPP_INFO(logger_, "%s", ss.str().c_str());
+
     return Q_bar;
 }
 
@@ -252,7 +257,6 @@ void ConvexMPC::update_x0(Vector<double, 13> x0)
     this->x0 = x0;
     this->q = compute_q(Q_bar, A_qp, B_qp, this->x0, X_ref);
 
-
 }
 
 void ConvexMPC::update_joint_angles(Vector<double, 12> theta)
@@ -280,11 +284,11 @@ void ConvexMPC::update_reference_trajectory(const VectorXd& X_ref)
                      mpc_params.N_STATES * mpc_params.N_MPC, X_ref.size());
         throw std::invalid_argument("Reference trajectory size mismatch");
     }
-    RCLCPP_INFO(logger_, "Updating reference trajectory in ConvexMPC.");
-    RCLCPP_INFO(logger_, "Reference trajectory size: %ld", X_ref.size());
-    RCLCPP_INFO(logger_, "Reference trajectory: \n[%f %f %f %f %f %f %f %f %f %f %f %f]",
-        X_ref(0), X_ref(1), X_ref(2), X_ref(3), X_ref(4), X_ref(5), 
-        X_ref(6), X_ref(7), X_ref(8), X_ref(9), X_ref(10), X_ref(11));
+    // RCLCPP_INFO(logger_, "Updating reference trajectory in ConvexMPC.");
+    // RCLCPP_INFO(logger_, "Reference trajectory size: %ld", X_ref.size());
+    // RCLCPP_INFO(logger_, "Reference trajectory: \n[%f %f %f %f %f %f %f %f %f %f %f %f]",
+    //     X_ref(0), X_ref(1), X_ref(2), X_ref(3), X_ref(4), X_ref(5), 
+    //     X_ref(6), X_ref(7), X_ref(8), X_ref(9), X_ref(10), X_ref(11));
     
     this->X_ref = X_ref;
 }
@@ -293,16 +297,56 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 {
     // Update the dynamics model to account for changing foot position and yaw
     StateSpace quad_dss = get_quadruped_dss_model(x0[2], foot_positions, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
+    RCLCPP_INFO(logger_, "Discrete State Space Model");
+    RCLCPP_INFO(logger_, "==========================");
+
+    std::stringstream ssA, ssB;
+    ssA << quad_dss.A;
+    ssB << quad_dss.B;
+    RCLCPP_INFO(logger_, "A:\n%s", ssA.str().c_str());
+    RCLCPP_INFO(logger_, "B:\n%s", ssB.str().c_str());
+
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
+
+    VectorXd U_temp = VectorXd::Zero(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)); // Initialize U_temp to zero 
+    // for (int i = 0; i < mpc_params.N_MPC-1; i++)
+    // {
+    //     for (int j = 0; j < 4; j++)
+    //     {
+    //         U_temp(i*12 + j*3 + 2) = 50.0;
+
+    //         U_temp(i*12 + j*3 + 0) = 5.0;
+    //     }
+
+    // }
+
+
+
+    // RCLCPP_INFO(logger_, "U_temp:");
+    // for (int i = 0; i < U_temp.size(); ++i) {
+    //     RCLCPP_INFO(logger_, "U_temp[%d] = %f", i, U_temp(i));
+    // }
+
+    // RCLCPP_INFO(logger_, "A_qp size: %ld x %ld", A_qp.rows(), A_qp.cols());
+    // RCLCPP_INFO(logger_, "B_qp size: %ld x %ld", B_qp.rows(), B_qp.cols());
+
+    // std::ostringstream ssAqp;
+    // ssAqp << A_qp;
+    // RCLCPP_INFO(logger_, "A_qp:\n%s", ssAqp.str().c_str());
+
+    // std::ostringstream ssBqp;
+    // ssBqp << B_qp;
+    // RCLCPP_INFO(logger_, "B_qp:\n%s", ssBqp.str().c_str());
+
+
+
+
 
     // Initialize swing leg tracker gains
     Kp = Matrix3d::Identity() * 10.0; // Proportional gain for swing leg tracking
     Kd = Matrix3d::Identity() * 1; // Derivative gain for swing leg tracking
 
-    // Formulate the QP 
-    U = model->addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
-    cout << "Number of Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
-
+    // Update QP objective function
     P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
     q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref);
 
@@ -320,6 +364,32 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
             RCLCPP_INFO(logger_, "GRF[foot %d, axis %d] = %f", foot, axis, grf(axis, foot));
         }
     }
+
+    // Predict states based on GRB solution
+    for (int i = 0; i < U_temp.size(); i++) {
+        U_temp(i) = U[i].get(GRB_DoubleAttr_X);
+    }
+    VectorXd X_pred = A_qp * U_temp + B_qp * x0;
+    
+    RCLCPP_INFO(logger_, "X_pred size: %ld, %ld", X_pred.rows(), X_pred.cols());
+
+    for (int i = 0; i < mpc_params.N_MPC; i++) 
+    {
+        for (int j = 0; j < 13; ++j) {
+            if (j == 0) {
+                std::ostringstream oss;
+                oss << std::fixed << std::setprecision(6);  // Set precision for consistent formatting
+                oss << "X_pred[" << std::setw(2) << i << "] = [";
+                for (int k = 0; k < 13; ++k) {
+                    oss << std::setw(10) << X_pred(i * 13 + k);  // Fixed width of 10 characters
+                    if (k < 12) oss << ", ";
+                }
+                oss << "]";
+                RCLCPP_INFO(logger_, "%s", oss.str().c_str());
+            }
+        }
+    }
+
 
     // Get the foot jacobian
     vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
