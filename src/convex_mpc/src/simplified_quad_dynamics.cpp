@@ -44,14 +44,14 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
         B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/m;
     }
     
-    cout << "Continuous State Space Model" << endl;
+    // cout << "Continuous State Space Model" << endl;
     std::stringstream ssA, ssB;
 
     ssA << A;
     ssB << B;
 
-    cout << "A:\n" << ssA.str() << endl;
-    cout << "B:\n" << ssB.str() << endl;
+    // cout << "A:\n" << ssA.str() << endl;
+    // cout << "B:\n" << ssB.str() << endl;
 
     Matrix<double, 12, 13> C = Matrix<double, 12, 13>::Identity(); // Full state feedback, not including gravity state
     // Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Identity();
