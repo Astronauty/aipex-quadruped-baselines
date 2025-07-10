@@ -293,7 +293,20 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
               << std::endl;
 
     // Update the dynamics model to account for changing foot position and yaw
+<<<<<<< HEAD
     StateSpace quad_dss = quadruped_state_space_discrete(x0[2], foot_positions, quad_params.inertiaTensor, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
+=======
+    StateSpace quad_dss = get_quadruped_dss_model(x0[2], foot_positions, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
+    // RCLCPP_INFO(logger_, "Discrete State Space Model");
+    // RCLCPP_INFO(logger_, "==========================");
+
+    std::stringstream ssA, ssB;
+    ssA << quad_dss.A;
+    ssB << quad_dss.B;
+    // RCLCPP_INFO(logger_, "A:\n%s", ssA.str().c_str());
+    // RCLCPP_INFO(logger_, "B:\n%s", ssB.str().c_str());
+
+>>>>>>> 0d850b485621ae840c7098f532cdfd7acf2e03ef
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
     VectorXd U_temp = VectorXd::Zero(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)); // Initialize U_temp to zero 
