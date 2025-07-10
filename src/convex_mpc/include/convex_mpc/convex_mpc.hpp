@@ -110,3 +110,5 @@ class ConvexMPC
 
         StateSpace get_quadruped_dss_model(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt);
 };
+
+void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::Logger& logger); // Utility function to print Eigen matrices to the logger
