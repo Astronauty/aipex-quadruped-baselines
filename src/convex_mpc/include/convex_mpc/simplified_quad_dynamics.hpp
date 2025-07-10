@@ -5,5 +5,5 @@
 
 using namespace Eigen;
 
-StateSpace quadruped_state_space_continuous(const double&  yaw, Matrix<double, 3, 4>& foot_positions);
-StateSpace quadruped_state_space_discrete(const double&  yaw, Matrix<double, 3, 4>& foot_positions, const double& t);
+StateSpace quadruped_state_space_continuous(const double&  yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b);
+StateSpace quadruped_state_space_discrete(const double&  yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b, const double& dt);

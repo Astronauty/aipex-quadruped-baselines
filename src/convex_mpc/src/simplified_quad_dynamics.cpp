@@ -13,12 +13,13 @@ using namespace std;
 Simplified state space quadruped dynamics based on https://dspace.mit.edu/bitstream/handle/1721.1/138000/convex_mpc_2fix.pdf
 x = [theta, p, omega, p_dot, g]
 */
-StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3, 4>& foot_positions)
+StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b)
 {   
     // Define relevant transforms and inertial properties
     Matrix3d R_z = eul2rotm(0, 0, yaw);
     double m = 6.9;
-    Matrix3d I_b = Matrix3d::Identity(); // TODO: DEFINE GO2 INERTIA HERE
+    // Matrix3d I_b = Matrix3d::Identity(); // TODO: DEFINE GO2 INERTIA HERE
+    
     Matrix3d I_w = R_z*I_b*R_z.transpose(); // Inertia tensor in world body frame for small angles 
     Matrix3d I_w_inv = I_w.inverse(); // Inverse of inertia tensor in world body frame
     // Vector3f g;
@@ -61,9 +62,9 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
 };
 
 
-StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt)
+StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b,const double& dt)
 {
-    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions);
+    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions, I_b);
     StateSpace dss = c2d(ss, dt);
     return dss;
 };

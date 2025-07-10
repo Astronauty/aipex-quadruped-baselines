@@ -72,15 +72,22 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     // TODO: Set correct rate for the timer
     update_mpc_state_timer_ = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&QuadConvexMPCNode::update_mpc_state, this));
-
+    
+    
+    
 
     // Define MPC Params
+    this->declare_parameter<int>("N_MPC", 10);
+    this->declare_parameter<double>("mpc_dt", 0.050);
+
     const int N_STATES = 13;
     const int N_CONTROLS = 12;
-    const int N_MPC = 5; // Number of steps for the horizon length in MPC
-    const double dt = 0.01; // Time step for the MPC
+    const int N_MPC = this->get_parameter("N_MPC").as_int(); // Number of steps for the horizon length in MPC
 
-    MatrixXd Q = 100000.0 * MatrixXd::Identity(N_STATES, N_STATES);
+    const double dt = this->get_parameter("mpc_dt").as_double();
+
+    this->declare_parameter<double>("Q_scale", 10000.0);
+    MatrixXd Q = this->get_parameter("Q_scale").as_double() * MatrixXd::Identity(N_STATES, N_STATES);
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
@@ -97,13 +104,13 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
 
     // Matrix3d inertiaTensor = Eigen::Matrix3d::Identity();
-    Matrix3d inertiaTensor;
-    inertiaTensor << ixx, ixy, ixz,
-                        ixy, iyy, iyz,
-                        ixz, iyz, izz;
+    Matrix3d I_b; // TODO: extract from URDF
+    I_b << ixx, ixy, ixz,
+            ixy, iyy, iyz,
+            ixz, iyz, izz;
     double mass = 6.921;
     double gravity = 9.81;
-    QuadrupedParams quadruped_params = QuadrupedParams(inertiaTensor, mass, gravity);
+    QuadrupedParams quadruped_params = QuadrupedParams(I_b, mass, gravity);
 
     // Initialize the ConvexMPC object
     convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, quadruped_params, this->get_logger());

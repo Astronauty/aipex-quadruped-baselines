@@ -9,7 +9,6 @@
 /*
 QP Form:
 min 0.5 x^T P x + q^T x
-
 */
 
 ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rclcpp::Logger& logger)
@@ -33,7 +32,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         env = make_unique<GRBEnv>(true);
         // env.set("LicenseFile", "/home/daniel/gurobi.lic");
         env->set("LogFile", "convex_mpc.log");
-        env->set("OutputFlag", "0");
+        env->set("OutputFlag", "1");
         env->start();
         model = make_unique<GRBModel>(*env);
 
@@ -51,7 +50,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         
         // Initialize state space prediction matrices
         // StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
-        StateSpace quad_dss = quadruped_state_space_discrete(0, ground_reaction_forces, mpc_params.dt);
+        StateSpace quad_dss = quadruped_state_space_discrete(0, ground_reaction_forces, quad_params.inertiaTensor, mpc_params.dt);
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
         // Initialize swing leg tracker gains
@@ -96,6 +95,12 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 
 }
 
+void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::Logger& logger) 
+{
+    std::stringstream ss;
+    ss << "\n" << mat;
+    RCLCPP_INFO(logger, "%s: %s", name.c_str(), ss.str().c_str());
+}
 
 // ConvexMPC::~ConvexMPC() {
 //     if (U != nullptr) {
@@ -157,19 +162,13 @@ StateSpace ConvexMPC::get_default_dss_model()
 
 
     double yaw = 0.0f;
-    StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, this->mpc_params.dt);
+    StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, quad_params.inertiaTensor,mpc_params.dt);
 
 
     return quad_dss;
     
 }
 
-StateSpace ConvexMPC::get_quadruped_dss_model(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt)
-{
-    StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, dt);
-    return quad_dss;
-
-}
 
 MatrixXd blkdiag(const std::vector<MatrixXd>& matrices) {
     // Calculate the total size of the block diagonal matrix
@@ -290,20 +289,15 @@ void ConvexMPC::update_reference_trajectory(const VectorXd& X_ref)
 
 Vector<double, 12> ConvexMPC::solve_joint_torques()
 {
+    std::cout << "-------------------------------------------------------------------------"
+              << std::endl;
+
     // Update the dynamics model to account for changing foot position and yaw
-    StateSpace quad_dss = get_quadruped_dss_model(x0[2], foot_positions, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
-    // RCLCPP_INFO(logger_, "Discrete State Space Model");
-    // RCLCPP_INFO(logger_, "==========================");
-
-    std::stringstream ssA, ssB;
-    ssA << quad_dss.A;
-    ssB << quad_dss.B;
-    // RCLCPP_INFO(logger_, "A:\n%s", ssA.str().c_str());
-    // RCLCPP_INFO(logger_, "B:\n%s", ssB.str().c_str());
-
+    StateSpace quad_dss = quadruped_state_space_discrete(x0[2], foot_positions, quad_params.inertiaTensor, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
     VectorXd U_temp = VectorXd::Zero(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)); // Initialize U_temp to zero 
+
     // for (int i = 0; i < mpc_params.N_MPC-1; i++)
     // {
     //     for (int j = 0; j < 4; j++)
@@ -315,8 +309,6 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     // }
 
-
-
     // RCLCPP_INFO(logger_, "U_temp:");
     // for (int i = 0; i < U_temp.size(); ++i) {
     //     RCLCPP_INFO(logger_, "U_temp[%d] = %f", i, U_temp(i));
@@ -324,15 +316,6 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     // RCLCPP_INFO(logger_, "A_qp size: %ld x %ld", A_qp.rows(), A_qp.cols());
     // RCLCPP_INFO(logger_, "B_qp size: %ld x %ld", B_qp.rows(), B_qp.cols());
-
-    // std::ostringstream ssAqp;
-    // ssAqp << A_qp;
-    // RCLCPP_INFO(logger_, "A_qp:\n%s", ssAqp.str().c_str());
-
-    // std::ostringstream ssBqp;
-    // ssBqp << B_qp;
-    // RCLCPP_INFO(logger_, "B_qp:\n%s", ssBqp.str().c_str());
-
 
 
 
@@ -352,18 +335,36 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     // Extract ground reaction forces from Gurobi solution
     Matrix<double, 3, 4> grf = Matrix<double, 3, 4>::Zero();
-    for (int foot = 0; foot < 4; foot++) {
-        for (int axis = 0; axis < 3; axis++) {
-            int idx = foot * 3 + axis;
-            grf(axis, foot) = U[idx].get(GRB_DoubleAttr_X);
-            RCLCPP_INFO(logger_, "GRF[foot %d, axis %d] = %f", foot, axis, grf(axis, foot));
+    // for (int axis = 0; axis < 3; axis++) 
+    // {
+    //     for (int foot = 0; foot < 4; foot++) 
+    //     {
+    //         int idx = foot * 3 + axis;
+    //         grf(axis, foot) = U[idx].get(GRB_DoubleAttr_X);
+    //     }
+    
+    // }
+
+    for (int i = 0; i < mpc_params.N_MPC - 1; ++i) 
+    {
+        std::ostringstream oss;
+        oss << "GRF_z step " << i << ": ";
+        for (int foot = 0; foot < 4; ++foot) {
+            int idx = i * 12 + foot * 3 + 2; // z component for each foot at step i
+            double grf_z = U[idx].get(GRB_DoubleAttr_X);
+            oss << "foot " << foot << ": " << grf_z;
+            if (foot < 3) oss << ", ";
         }
+        RCLCPP_INFO(logger_, "%s", oss.str().c_str());
     }
+    // RCLCPP_INFO(logger_, "GRFs:");
+    // print_eigen_matrix(grf, "GRFs", logger_);
 
     // Predict states based on GRB solution
     for (int i = 0; i < U_temp.size(); i++) {
         U_temp(i) = U[i].get(GRB_DoubleAttr_X);
     }
+
     VectorXd X_pred = A_qp * U_temp + B_qp * x0;
     
     RCLCPP_INFO(logger_, "X_pred size: %ld, %ld", X_pred.rows(), X_pred.cols());
@@ -389,6 +390,11 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // Get the foot jacobian
     vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
 
+    print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
+    print_eigen_matrix(foot_jacobians[1], "Foot Jacobian 1", logger_);
+    print_eigen_matrix(foot_jacobians[2], "Foot Jacobian 2", logger_);
+    print_eigen_matrix(foot_jacobians[3], "Foot Jacobian 3", logger_);
+
     // Compute joint torques by utilizing the foot jacobians
     Vector<double, 12> joint_torques;
 
@@ -396,10 +402,11 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     double pitch = x0[1];
     double yaw = x0[2];
 
-    Matrix3d R_WB = (AngleAxisd(roll, Vector3d::UnitX()) * 
+    Matrix3d R_WB = (AngleAxisd(roll, Vector3d::UnitZ()) * 
            AngleAxisd(pitch, Vector3d::UnitY()) * 
-           AngleAxisd(yaw, Vector3d::UnitZ())).toRotationMatrix(); // Body frame orientation in world frame
+           AngleAxisd(yaw, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
 
+    print_eigen_matrix(R_WB, "R_WB", logger_);
     for (int foot = 0; foot < 4; foot++)
     {
         Vector3d foot_grf = grf.col(foot); // Extract the grf for the current foot (world frame)
@@ -408,7 +415,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
     }
 
-    return joint_torques;
+    return -joint_torques;
 }
 
 
