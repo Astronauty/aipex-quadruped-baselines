@@ -8,15 +8,58 @@ ROS Jazzy
 ### Eigen
 https://eigen.tuxfamily.org/index.php?title=Main_Page#Download
 
+Install eigen by clolning under /opt
+
+'''
+cd /opt
+git clone https://gitlab.com/libeigen/eigen.git
+'''
+
 ### ROS
 https://docs.ros.org/en/humble/Installation.html
 
 ### Unitree
 Make sure to install all of the following repos under the /opt/unitree_robotics directory.
 
-1. https://github.com/unitreerobotics/unitree_sdk
+'''
+mkdir unitree_robotics
+git clone git@github.com:unitreerobotics/unitree_sdk2.git && 
+git clone https://github.com/unitreerobotics/unitree_ros2 && 
+git clone https://github.com/unitreerobotics/unitree_mujoco
+'''
+
+Follow the instructions for each repo to build the unitree dependencies
+1. [https://github.com/unitreerobotics/unitree_sdk](https://github.com/unitreerobotics/unitree_sdk2)
+
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=/opt/unitree_robotics
+sudo make install
+
 2. https://github.com/unitreerobotics/unitree_ros2
-3. https://github.com/unitreerobotics/unitree_mujoco
+sudo apt install ros-humble-rmw-cyclonedds-cpp
+sudo apt install ros-humble-rosidl-generator-dds-idl
+sudo apt install python3-colcon-common-extensions
+
+
+Remove sourcing of the ros environment from .bashrc
+sudo apt install gedit
+sudo gedit ~/.bashrc
+
+Compile cyclonedds
+cd /opt/unitree_robotics/unitree_ros2/cyclonedds_ws/src
+git clone https://github.com/ros2/rmw_cyclonedds -b humble
+git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x 
+cd ..
+colcon build --packages-select cyclonedds
+
+source /opt/ros/humble/setup.bash 
+colcon build
+
+4. https://github.com/unitreerobotics/unitree_mujoco
+
+
+
 
 ### Gurobi Optimizer
 The convex MPC controller requires Gurobi optimization solver:
