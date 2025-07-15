@@ -40,6 +40,7 @@ sudo make install
 sudo apt install ros-humble-rmw-cyclonedds-cpp
 sudo apt install ros-humble-rosidl-generator-dds-idl
 sudo apt install python3-colcon-common-extensions
+sudo apt install ros-humble-rosidl-generator-dds-idl
 
 
 Remove sourcing of the ros environment from .bashrc
@@ -56,10 +57,29 @@ colcon build --packages-select cyclonedds
 source /opt/ros/humble/setup.bash 
 colcon build
 
+Update setup file to work with humble
+gedit setup_local.sh
+replace foxy with humble
+
+replace source $HOME/unitree_ros2/cyclonedds_ws/install/setup.bash with source /opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/setup.bash
+
 4. https://github.com/unitreerobotics/unitree_mujoco
+sudo apt install libglfw3-dev libxinerama-dev libxcursor-dev libxi-dev libyaml-cpp-dev
 
+Install MuJoCo
+cd /opt
+git clone https://github.com/google-deepmind/mujoco.git
+cd /mujoco
+git checkout 3.2.7
+mkdir build && cd build
+cmake ..
+make -j4
+sudo make install
 
-
+cd /opt/unitree_robotics/unitree_mujoco/simulate
+mkdir build && cd build
+cmake ..
+make -j4
 
 ### Gurobi Optimizer
 The convex MPC controller requires Gurobi optimization solver:
