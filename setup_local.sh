@@ -1,6 +1,8 @@
 source /opt/ros/humble/setup.sh
 source /opt/unitree_robotics/unitree_ros2/setup_local.sh
 
+export ROS_DOMAIN_ID=1
+
 # Add Gurobi environment variables
 export GUROBI_HOME=/opt/gurobi1202/linux64
 export PATH=$PATH:$GUROBI_HOME/bin
