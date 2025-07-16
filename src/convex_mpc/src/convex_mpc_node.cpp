@@ -88,7 +88,9 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     this->declare_parameter<double>("Q_scale", 10000.0);
     MatrixXd Q = this->get_parameter("Q_scale").as_double() * MatrixXd::Identity(N_STATES, N_STATES);
-    MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
+    // MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
+    MatrixXd R = MatrixXd::Zero(N_CONTROLS, N_CONTROLS);
+
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
     mpc_params = std::make_unique<MPCParams>(N_MPC, N_CONTROLS, N_STATES,
