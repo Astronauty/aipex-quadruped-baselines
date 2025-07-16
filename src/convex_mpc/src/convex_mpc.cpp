@@ -292,6 +292,11 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     std::cout << "-------------------------------------------------------------------------"
               << std::endl;
 
+    RCLCPP_INFO(logger_, "Solving joint torques using Convex MPC...");
+    print_eigen_matrix(Q_bar, "Q_bar", logger_);
+    print_eigen_matrix(R_bar, "R_bar", logger_);
+
+
     // Update the dynamics model to account for changing foot position and yaw
     StateSpace quad_dss = quadruped_state_space_discrete(x0[2], foot_positions, quad_params.inertiaTensor, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
@@ -326,10 +331,15 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     // Update QP objective function
     P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
-    q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref);
+    P = P + MatrixXd::Identity(P.rows(), P.cols()) * 1e-3; // Add a small regularization term to avoid singularity
+    print_eigen_matrix(P, "P", logger_);
+    q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref); // Linear cost
+    print_eigen_matrix(q, "q", logger_);
+
 
     lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
     quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
+
     model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
     model->optimize(); 
 
@@ -367,24 +377,24 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     VectorXd X_pred = A_qp * U_temp + B_qp * x0;
     
-    RCLCPP_INFO(logger_, "X_pred size: %ld, %ld", X_pred.rows(), X_pred.cols());
+    // RCLCPP_INFO(logger_, "X_pred size: %ld, %ld", X_pred.rows(), X_pred.cols());
 
-    for (int i = 0; i < mpc_params.N_MPC; i++) 
-    {
-        for (int j = 0; j < 13; ++j) {
-            if (j == 0) {
-                std::ostringstream oss;
-                oss << std::fixed << std::setprecision(6);  // Set precision for consistent formatting
-                oss << "X_pred[" << std::setw(2) << i << "] = [";
-                for (int k = 0; k < 13; ++k) {
-                    oss << std::setw(10) << X_pred(i * 13 + k);  // Fixed width of 10 characters
-                    if (k < 12) oss << ", ";
-                }
-                oss << "]";
-                RCLCPP_INFO(logger_, "%s", oss.str().c_str());
-            }
-        }
-    }
+    // for (int i = 0; i < mpc_params.N_MPC; i++) 
+    // {
+    //     for (int j = 0; j < 13; ++j) {
+    //         if (j == 0) {
+    //             std::ostringstream oss;
+    //             oss << std::fixed << std::setprecision(6);  // Set precision for consistent formatting
+    //             oss << "X_pred[" << std::setw(2) << i << "] = [";
+    //             for (int k = 0; k < 13; ++k) {
+    //                 oss << std::setw(10) << X_pred(i * 13 + k);  // Fixed width of 10 characters
+    //                 if (k < 12) oss << ", ";
+    //             }
+    //             oss << "]";
+    //             RCLCPP_INFO(logger_, "%s", oss.str().c_str());
+    //         }
+    //     }
+    // }
 
 
     // Get the foot jacobian

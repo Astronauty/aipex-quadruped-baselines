@@ -1,0 +1,14 @@
+/quad_convex_mpc_publisher:
+  ros__parameters:
+    N_MPC: 10
+    Q_scale: 100000.0
+    mpc_dt: 0.01
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    use_sim_time: false
+

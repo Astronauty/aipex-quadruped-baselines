@@ -1,5 +1,7 @@
 source /opt/ros/humble/setup.sh
 source /opt/unitree_robotics/unitree_ros2/setup_local.sh
+source install/local_setup.sh
+
 
 export ROS_DOMAIN_ID=1
 
