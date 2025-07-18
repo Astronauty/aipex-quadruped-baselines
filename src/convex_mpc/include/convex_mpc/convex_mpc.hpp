@@ -109,6 +109,8 @@ class ConvexMPC
         Matrix3d get_foot_operation_space_inertia_matrix(const Vector<double, 12>& q, int foot_index);
 
         StateSpace get_quadruped_dss_model(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt);
+
+        std::vector<Matrix<double, 3, 4>>  grf_from_mpc_solution(); // Extracts the GRFs from the Gurobi MPC solution and returns as an eigen matrix
 };
 
 void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::Logger& logger); // Utility function to print Eigen matrices to the logger

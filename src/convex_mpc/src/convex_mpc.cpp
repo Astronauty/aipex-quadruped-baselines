@@ -68,7 +68,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
         // cout << "Size of R_bar: " << R_bar.rows() << " x " << R_bar.cols() << endl;
 
-        P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
+        P = compute_P(R_bar, Q_bar, B_qp); // Quadratic cost of linear mpc
         // cout << "Size of P: " << P.rows() << " x " << P.cols() << endl;
 
         q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref);
@@ -97,6 +97,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 
 void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::Logger& logger) 
 {
+    RCLCPP_INFO(logger, "%s size: %ld x %ld", name.c_str(), mat.rows(), mat.cols());
     std::stringstream ss;
     ss << "\n" << mat;
     RCLCPP_INFO(logger, "%s: %s", name.c_str(), ss.str().c_str());
@@ -128,15 +129,15 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
     const int& N_CONTROLS = this->mpc_params.N_CONTROLS;
     const int& N_MPC = this->mpc_params.N_MPC;
 
-    MatrixXd A_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * (N_MPC-1));
-    MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_STATES); 
+    MatrixXd A_qp = MatrixXd::Zero(N_STATES * N_MPC, N_STATES); 
+    MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * (N_MPC-1));
 
     for (int i = 0; i < mpc_params.N_MPC; i++) 
     {
         for (int j = 0; j < i; j++) 
         {
             // cout << i << " x " << j << endl;
-            A_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = quad_dss.A.pow(i - j) * quad_dss.B;
+            B_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = quad_dss.A.pow(i - j) * quad_dss.B;
             // cout << "A_qp accessing: " << i * N_STATES << "x" << j * N_CONTROLS << endl;
             // cout << "A_qp block size: " << N_STATES << "x" << N_CONTROLS << endl;
             // cout << "A_qp End: " << (i+1)*N_STATES << "x" << (j+1)*N_CONTROLS << endl;
@@ -144,7 +145,7 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
         }
         // cout << "pog2 " << i << endl;
         // cout << "\n" << quad_dss.A.pow(0) << endl;
-        B_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1); 
+        A_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1); 
     }
 
     // cout << "state space predict success " << endl;
@@ -159,7 +160,6 @@ StateSpace ConvexMPC::get_default_dss_model()
     foot_positions << 0.2, 0.2, -0.2, -0.2,
                      0.15, -0.15, 0.15, -0.15,
                      0.0, 0.0, 0.0, 0.0; // Default foot positions in the body frame
-
 
     double yaw = 0.0f;
     StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, quad_params.inertiaTensor,mpc_params.dt);
@@ -226,22 +226,28 @@ MatrixXd ConvexMPC::compute_Q_bar()
 
 /*
 Computes the quadratic cost fo the unconstrained linear mpc problem
-P = 2*R_bar + 2*A_qp'*Q_bar*A_qp
+P = 2*R_bar + 2*B_qp'*Q_bar*B_qp
 */
-MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp)
+MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd B_qp)
 {
     assert(R_bar.rows() == R_bar.cols() && "R_bar must be square.");
     assert(Q_bar.rows() == Q_bar.cols() && "Q_bar must be square.");
-    assert(A_qp.cols() == R_bar.rows() && "A_qp and R_bar dimensions must match.");
-    
-    MatrixXd P = 2*R_bar + 2*A_qp.transpose() * Q_bar * A_qp;
+    assert(B_qp.cols() == R_bar.rows() && "B_qp and R_bar dimensions must match.");
+
+
+
+    // MatrixXd P = 2*R_bar + 2*A_qp.transpose() * Q_bar * A_qp;
+    RCLCPP_INFO(logger_, "Computing P matrix for Convex MPC.");
+    MatrixXd P = 2*R_bar + 2*B_qp.transpose() * Q_bar * B_qp;
+    RCLCPP_INFO(logger_, "P size: %ld x %ld", P.rows(), P.cols());
     return P;   
 }
 
 VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd X_ref)
 {
     // VectorXd q = 2*x0.transpose() * B_qp * Q_bar.transpose() * A_qp; // Zero reference linear cost
-    VectorXd q = 2*(x0.transpose() * B_qp.transpose() * Q_bar * A_qp - X_ref.transpose() * Q_bar * A_qp);
+    // VectorXd q = 2*(x0.transpose() * A_qp.transpose() * Q_bar * B_qp - X_ref.transpose() * Q_bar * B_qp); // Old
+    VectorXd q = 2*B_qp.transpose() * Q_bar * (A_qp * x0 - X_ref);
     return q;
 }
 
@@ -286,6 +292,26 @@ void ConvexMPC::update_reference_trajectory(const VectorXd& X_ref)
     
     this->X_ref = X_ref;
 }
+std::vector<Matrix<double, 3, 4>> ConvexMPC::grf_from_mpc_solution()
+{
+    // Each timestep has 12 controls (3 per foot, 4 feet)
+    int num_timesteps = mpc_params.N_MPC - 1;
+    std::vector<Matrix<double, 3, 4>> grf_vec(num_timesteps, Matrix<double, 3, 4>::Zero());
+
+    for (int t = 0; t < num_timesteps; ++t)
+    {
+        Matrix<double, 3, 4>& grf = grf_vec[t];
+        for (int foot = 0; foot < 4; ++foot)
+        {
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                int idx = t * 12 + foot * 3 + axis;
+                grf(axis, foot) = U[idx].get(GRB_DoubleAttr_X);
+            }
+        }
+    }
+    return grf_vec;
+}
 
 Vector<double, 12> ConvexMPC::solve_joint_torques()
 {
@@ -293,13 +319,16 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
               << std::endl;
 
     RCLCPP_INFO(logger_, "Solving joint torques using Convex MPC...");
-    print_eigen_matrix(Q_bar, "Q_bar", logger_);
-    print_eigen_matrix(R_bar, "R_bar", logger_);
+    // print_eigen_matrix(Q_bar, "Q_bar", logger_);
+    // print_eigen_matrix(R_bar, "R_bar", logger_);
 
 
     // Update the dynamics model to account for changing foot position and yaw
     StateSpace quad_dss = quadruped_state_space_discrete(x0[2], foot_positions, quad_params.inertiaTensor, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
+
+    // print_eigen_matrix(A_qp, "A_qp", logger_);
+    // print_eigen_matrix(B_qp, "B_qp", logger_);
 
     VectorXd U_temp = VectorXd::Zero(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)); // Initialize U_temp to zero 
 
@@ -330,9 +359,15 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     Kd = Matrix3d::Identity() * 1; // Derivative gain for swing leg tracking
 
     // Update QP objective function
-    P = compute_P(R_bar, Q_bar, A_qp); // Quadratic cost of linear mpc
+    P = compute_P(R_bar, Q_bar, B_qp); // Quadratic cost of linear mpc
     P = P + MatrixXd::Identity(P.rows(), P.cols()) * 1e-3; // Add a small regularization term to avoid singularity
-    print_eigen_matrix(P, "P", logger_);
+
+    Eigen::SelfAdjointEigenSolver<MatrixXd> es(P);
+    std::cout << "Min Eigenvalue: " << es.eigenvalues().minCoeff() << std::endl;
+    std::cout << "Max Eigenvalue: " << es.eigenvalues().maxCoeff() << std::endl;
+    std::cout << "Condition Number: " << es.eigenvalues().maxCoeff() / es.eigenvalues().minCoeff() << std::endl;
+
+    // print_eigen_matrix(P, "P", logger_);
     q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref); // Linear cost
     print_eigen_matrix(q, "q", logger_);
 
@@ -344,38 +379,23 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     model->optimize(); 
 
     // Extract ground reaction forces from Gurobi solution
-    Matrix<double, 3, 4> grf = Matrix<double, 3, 4>::Zero();
-    // for (int axis = 0; axis < 3; axis++) 
-    // {
-    //     for (int foot = 0; foot < 4; foot++) 
-    //     {
-    //         int idx = foot * 3 + axis;
-    //         grf(axis, foot) = U[idx].get(GRB_DoubleAttr_X);
-    //     }
-    
-    // }
+    vector<Matrix<double, 3, 4>> grf_vec(mpc_params.N_MPC - 1, Matrix<double, 3, 4>::Zero());
+    grf_vec = grf_from_mpc_solution();
 
-    for (int i = 0; i < mpc_params.N_MPC - 1; ++i) 
+
+    for (int i = 0; i < mpc_params.N_MPC - 1; ++i)
     {
-        std::ostringstream oss;
-        oss << "GRF_z step " << i << ": ";
-        for (int foot = 0; foot < 4; ++foot) {
-            int idx = i * 12 + foot * 3 + 2; // z component for each foot at step i
-            double grf_z = U[idx].get(GRB_DoubleAttr_X);
-            oss << "foot " << foot << ": " << grf_z;
-            if (foot < 3) oss << ", ";
-        }
-        RCLCPP_INFO(logger_, "%s", oss.str().c_str());
+        Matrix<double, 3, 4> grf = grf_vec[i];
+        print_eigen_matrix(grf, "GRF at timestep " + std::to_string(i), logger_);
     }
-    // RCLCPP_INFO(logger_, "GRFs:");
-    // print_eigen_matrix(grf, "GRFs", logger_);
+
 
     // Predict states based on GRB solution
     for (int i = 0; i < U_temp.size(); i++) {
         U_temp(i) = U[i].get(GRB_DoubleAttr_X);
     }
 
-    VectorXd X_pred = A_qp * U_temp + B_qp * x0;
+    VectorXd X_pred = A_qp * x0 + B_qp * U_temp;
     
     // RCLCPP_INFO(logger_, "X_pred size: %ld, %ld", X_pred.rows(), X_pred.cols());
 
@@ -396,14 +416,16 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     //     }
     // }
 
+    print_eigen_matrix(X_pred, "X_pred", logger_);
+
 
     // Get the foot jacobian
     vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
 
-    print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
-    print_eigen_matrix(foot_jacobians[1], "Foot Jacobian 1", logger_);
-    print_eigen_matrix(foot_jacobians[2], "Foot Jacobian 2", logger_);
-    print_eigen_matrix(foot_jacobians[3], "Foot Jacobian 3", logger_);
+    // print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
+    // print_eigen_matrix(foot_jacobians[1], "Foot Jacobian 1", logger_);
+    // print_eigen_matrix(foot_jacobians[2], "Foot Jacobian 2", logger_);
+    // print_eigen_matrix(foot_jacobians[3], "Foot Jacobian 3", logger_);
 
     // Compute joint torques by utilizing the foot jacobians
     Vector<double, 12> joint_torques;
@@ -416,10 +438,10 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
            AngleAxisd(pitch, Vector3d::UnitY()) * 
            AngleAxisd(yaw, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
 
-    print_eigen_matrix(R_WB, "R_WB", logger_);
+    // print_eigen_matrix(R_WB, "R_WB", logger_);
     for (int foot = 0; foot < 4; foot++)
     {
-        Vector3d foot_grf = grf.col(foot); // Extract the grf for the current foot (world frame)
+        Vector3d foot_grf = grf_vec[0].col(foot); // Extract the grf for the current foot (world frame)
         
         Vector3d foot_joint_torques = foot_jacobians[foot].transpose() * R_WB.transpose() * foot_grf; // Compute joint torques for the current foot (correpsonding to its 3 actuators)
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
