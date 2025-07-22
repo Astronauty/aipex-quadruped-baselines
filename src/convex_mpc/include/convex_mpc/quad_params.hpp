@@ -9,7 +9,9 @@ struct QuadrupedParams {
     const double mass;
     const double g; // Gravity vector
 
+    const double torque_limit;
+
     // Constructor to initialize parameters
-    QuadrupedParams(const Eigen::Matrix3d& inertiaTensor, const double& mass, const double& gravity)
-        : inertiaTensor(inertiaTensor), mass(mass), g(gravity) {};
+    QuadrupedParams(const Eigen::Matrix3d& inertiaTensor, const double& mass, const double& gravity, const double& torque_limit)
+        : inertiaTensor(inertiaTensor), mass(mass), g(gravity), torque_limit(torque_limit) {};
 };

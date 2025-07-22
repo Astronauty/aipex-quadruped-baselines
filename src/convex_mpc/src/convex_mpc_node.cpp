@@ -79,24 +79,54 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Define MPC Params
     this->declare_parameter<int>("N_MPC", 10);
     this->declare_parameter<double>("mpc_dt", 0.050);
+    this->declare_parameter<std::vector<double>>(
+        "Q_diag", 
+        {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}
+    );
+    this->declare_parameter<double>("Q_scale", 1.0);
+
 
     const int N_STATES = 13;
     const int N_CONTROLS = 12;
     const int N_MPC = this->get_parameter("N_MPC").as_int(); // Number of steps for the horizon length in MPC
-
     const double dt = this->get_parameter("mpc_dt").as_double();
 
-    this->declare_parameter<double>("Q_scale", 10000.0);
-    MatrixXd Q = this->get_parameter("Q_scale").as_double() * MatrixXd::Identity(N_STATES, N_STATES);
+    // Specify the diagonal as a vector first
+    VectorXd Q_diag(N_STATES);
+
+    auto Q_diag_double = this->get_parameter("Q_diag").as_double_array();
+
+    Q_diag = Map<VectorXd>(Q_diag_double.data(), Q_diag_double.size()) * this->get_parameter("Q_scale").as_double();
+
+    // Q_diag << 100.0,    // roll
+    //           100.0,    // pitch
+    //           10.0,     // yaw
+    //           1000.0,   // x position
+    //           1000.0,   // y position
+    //           10000.0,  // z position (height)
+    //           0,     // roll rate
+    //           0,     // pitch rate
+    //           0,      // yaw rate
+    //           0,    // x velocity
+    //           0,    // y velocity
+    //           0,     // z velocity
+    //           0;      // gravity (optional)
+    MatrixXd Q = Q_diag.asDiagonal();
+    // Q = this->get_parameter("Q_scale").as_double() * Q;
+
     // MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
-    MatrixXd R = MatrixXd::Zero(N_CONTROLS, N_CONTROLS);
+    MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
 
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
+
     mpc_params = std::make_unique<MPCParams>(N_MPC, N_CONTROLS, N_STATES,
         dt, Q, R, u_lower, u_upper);
 
     // Define Quadruped Params (from https://github.com/unitreerobotics/unitree_ros/blob/master/robots/go2_description/urdf/go2_description.urdf)
+    this->declare_parameter<double>("mass", 6.921);
+    this->declare_parameter<double>("torque_limit", 45.0);
+
     double ixx=0.02448;
     double ixy=0.00012166;
     double ixz=0.0014849;
@@ -104,15 +134,14 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     double iyz=-3.12E-05;
     double izz=0.107;
 
-
-    // Matrix3d inertiaTensor = Eigen::Matrix3d::Identity();
     Matrix3d I_b; // TODO: extract from URDF
     I_b << ixx, ixy, ixz,
             ixy, iyy, iyz,
             ixz, iyz, izz;
-    double mass = 6.921;
+    double mass = this->get_parameter("mass").as_double();
     double gravity = 9.81;
-    QuadrupedParams quadruped_params = QuadrupedParams(I_b, mass, gravity);
+    double torque_limit = this->get_parameter("torque_limit").as_double();
+    QuadrupedParams quadruped_params = QuadrupedParams(I_b, mass, gravity, torque_limit);
 
     // Initialize the ConvexMPC object
     convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, quadruped_params, this->get_logger());

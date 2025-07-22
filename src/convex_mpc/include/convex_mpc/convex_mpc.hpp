@@ -99,7 +99,7 @@ class ConvexMPC
         MatrixXd compute_Q_bar();
         // MatrixXd blkdiag(const vector<MatrixXd>& matrices);
 
-        MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp);
+        MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp, double regularization = 0.0);
         VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd X_ref);
 
         Matrix3d Kp; // Proportional gain for swing leg tracking
@@ -111,6 +111,10 @@ class ConvexMPC
         StateSpace get_quadruped_dss_model(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt);
 
         std::vector<Matrix<double, 3, 4>>  grf_from_mpc_solution(); // Extracts the GRFs from the Gurobi MPC solution and returns as an eigen matrix
+
+        void add_friction_cone_constraints(GRBModel& model, GRBVar* U, const double& mu);
+        Vector<double,12> clamp_joint_torques(Vector<double, 12>& joint_torques);
+
 };
 
 void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::Logger& logger); // Utility function to print Eigen matrices to the logger
