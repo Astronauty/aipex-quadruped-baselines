@@ -254,6 +254,7 @@ void QuadConvexMPCNode::update_mpc_state()
         x0(0), x0(1), x0(2), x0(3), x0(4), x0(5), x0(6), x0(7), x0(8), x0(9), x0(10), x0(11), x0(12));
 
     this->convex_mpc->update_x0(x0); // Update rigid body pose state
+
     // Convert joint_angles array to Eigen::VectorXd
     Eigen::Map<Eigen::VectorXf> joint_angles_eigen(joint_angles, 12);
     Vector<double, 12> joint_angles_double = joint_angles_eigen.cast<double>(); // Convert to double for MPC compatibility

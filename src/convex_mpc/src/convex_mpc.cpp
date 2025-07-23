@@ -34,6 +34,9 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         env->start();
         model = make_unique<GRBModel>(*env);
 
+        model->set(GRB_DoubleParam_FeasibilityTol, 1E-8);
+        model->set(GRB_DoubleParam_OptimalityTol, 1E-8);
+
         // Initialize robot state
         x0 = VectorXd::Zero(mpc_params.N_STATES); // Initial state of the robot
         ground_reaction_forces = Matrix<double, 3, 4>::Zero(); // Initialize GRFs for the 4 feet of the quadruped robot
@@ -47,7 +50,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         
         // Initialize state space prediction matrices
         // StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
-        StateSpace quad_dss = quadruped_state_space_discrete(0, ground_reaction_forces, quad_params.inertiaTensor, mpc_params.dt);
+        StateSpace quad_dss = quadruped_state_space_discrete(0, ground_reaction_forces, quad_params.inertiaTensor, quad_params.mass, mpc_params.dt);
         tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
 
         // Initialize swing leg tracker gains
@@ -61,7 +64,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
         R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
 
-        // add_friction_cone_constraints(*model, U, 0.5);
+        add_friction_cone_constraints(*model, U, 0.5);
 
         this->solve_joint_torques();
     } 
@@ -77,7 +80,14 @@ void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::L
 {
     RCLCPP_INFO(logger, "%s size: %ld x %ld", name.c_str(), mat.rows(), mat.cols());
     std::stringstream ss;
-    ss << "\n" << mat;
+    ss << "\n";
+    for (int i = 0; i < mat.rows(); ++i) {
+        for (int j = 0; j < mat.cols(); ++j) {
+            ss << std::fixed << std::setprecision(3) << mat(i, j);
+            if (j < mat.cols() - 1) ss << " ";
+        }
+        ss << "\n";
+    }
     RCLCPP_INFO(logger, "%s: %s", name.c_str(), ss.str().c_str());
 }
 
@@ -140,8 +150,7 @@ StateSpace ConvexMPC::get_default_dss_model()
                      0.0, 0.0, 0.0, 0.0; // Default foot positions in the body frame
 
     double yaw = 0.0f;
-    StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, quad_params.inertiaTensor,mpc_params.dt);
-
+    StateSpace quad_dss = quadruped_state_space_discrete(yaw, foot_positions, quad_params.inertiaTensor, quad_params.mass, mpc_params.dt);
 
     return quad_dss;
     
@@ -302,7 +311,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
 
     // Update the dynamics model to account for changing foot position and yaw
-    StateSpace quad_dss = quadruped_state_space_discrete(x0[2], foot_positions, quad_params.inertiaTensor, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
+    StateSpace quad_dss = quadruped_state_space_discrete(x0[2], foot_positions, quad_params.inertiaTensor, quad_params.mass, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
     // print_eigen_matrix(quad_dss.A, "A", logger_);
     // print_eigen_matrix(quad_dss.B, "B", logger_);
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
@@ -324,6 +333,13 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     std::cout << "Min Eigenvalue: " << es.eigenvalues().minCoeff() << std::endl;
     std::cout << "Max Eigenvalue: " << es.eigenvalues().maxCoeff() << std::endl;
     std::cout << "Condition Number: " << es.eigenvalues().maxCoeff() / es.eigenvalues().minCoeff() << std::endl;
+
+
+    print_eigen_matrix(x0, "x0", logger_);
+    print_eigen_matrix(X_ref, "X_ref", logger_);
+
+    print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
+
 
     q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref); // Linear cost
     // print_eigen_matrix(q, "q", logger_);
@@ -387,9 +403,11 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     double pitch = x0[1];
     double yaw = x0[2];
 
-    Matrix3d R_WB = (AngleAxisd(roll, Vector3d::UnitZ()) * 
+    Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) * 
            AngleAxisd(pitch, Vector3d::UnitY()) * 
-           AngleAxisd(yaw, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
+           AngleAxisd(roll, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
+
+    R_WB = Matrix3d::Identity(); // TODO: remove this line, just for testing purposes
 
     // print_eigen_matrix(R_WB, "R_WB", logger_);
     for (int foot = 0; foot < 4; foot++)
@@ -398,7 +416,15 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
         
         Vector3d foot_joint_torques = foot_jacobians[foot].transpose() * R_WB.transpose() * foot_grf; // Compute joint torques for the current foot (correpsonding to its 3 actuators)
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
-        joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; 
+
+        // joint_torques[foot * 3] = -joint_torques[foot * 3]; 
+        joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; 
+        joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; // Invert sign of calf joint?
+
+        // // Test
+        Vector3d test_foot_grf;
+        test_foot_grf << 1, 0 , 1;
+        print_eigen_matrix(foot_jacobians[foot].transpose() * R_WB.transpose() * test_foot_grf, "Foot " + std::to_string(foot) + " Joint Torques", logger_);
     }
 
 
@@ -426,7 +452,7 @@ vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
         "RR_foot"  // Foot 3
     };
 
-    vector<Matrix<double, 3, 3>> J(4); // Initialize a vector of 4 matrices for the foot jacobians
+    vector<Matrix<double, 3, 3>> J(4, Matrix3d::Zero()); // Initialize a vector of 4 matrices for the foot jacobians
 
 
     // Update the pinocchio model config q with the joint angles (doing this to make sure joint indices match)
