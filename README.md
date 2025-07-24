@@ -5,6 +5,8 @@
 Tested on Ubuntu 22.04.05 Humble
 ROS Jazzy
 
+sudo apt install ros-humble-joy
+
 ### Eigen
 https://eigen.tuxfamily.org/index.php?title=Main_Page#Download
 
