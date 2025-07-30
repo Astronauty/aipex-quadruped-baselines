@@ -20,6 +20,7 @@ set (
   rclcpp
   std_msgs
   pinocchio
+  sensor_msgs
 )
 
 # find dependencies
@@ -32,6 +33,8 @@ find_package(unitree_hg REQUIRED)
 find_package(GUROBI REQUIRED)
 include_directories(${GUROBI_INCLUDE_DIRS})
 find_package(pinocchio REQUIRED)
+find_package(sensor_msgs REQUIRED)
+
 
 message(STATUS "GUROBI_INCLUDE_DIRS: ${GUROBI_INCLUDE_DIRS}")
 message(STATUS "GUROBI_LIBRARY: ${GUROBI_LIBRARY}")

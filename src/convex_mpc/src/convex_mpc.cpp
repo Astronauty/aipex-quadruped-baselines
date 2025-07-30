@@ -335,11 +335,18 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     std::cout << "Condition Number: " << es.eigenvalues().maxCoeff() / es.eigenvalues().minCoeff() << std::endl;
 
 
-    print_eigen_matrix(x0, "x0", logger_);
-    print_eigen_matrix(X_ref, "X_ref", logger_);
+    // print_eigen_matrix(x0, "x0", logger_);
+    // print_eigen_matrix(X_ref.segment(0, mpc_params.N_STATES), "X_ref", logger_);
+    // print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
+    // RCLCPP_INFO(logger_, "(x0 - X_ref)^T Q (x0 - X_ref): %f", ((x0 - X_ref.segment(0, mpc_params.N_STATES)).transpose() * mpc_params.Q * (x0 - X_ref.segment(0, mpc_params.N_STATES)))(0,0));
 
-    print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
+    // VectorXd x0_repeated = VectorXd::Zero(mpc_params.N_STATES * mpc_params.N_MPC);
+    // for (int i = 0; i < mpc_params.N_MPC; ++i) {
+    //     x0_repeated.segment(i * mpc_params.N_STATES, mpc_params.N_STATES) = x0;
+    // }
 
+    // RCLCPP_INFO(logger_, "(x0 - X_ref)^T Q_bar (x0 - X_ref): %f",
+    //     ((x0_repeated - X_ref).transpose() * Q_bar * (x0_repeated - X_ref))(0,0));
 
     q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref); // Linear cost
     // print_eigen_matrix(q, "q", logger_);
@@ -357,11 +364,14 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     grf_vec = grf_from_mpc_solution();
 
     // GRF print
-    for (int i = 0; i < mpc_params.N_MPC - 1; ++i)
-    {
-        Matrix<double, 3, 4> grf = grf_vec[i];
-        print_eigen_matrix(grf, "GRF at timestep " + std::to_string(i), logger_);
-    }
+    // for (int i = 0; i < mpc_params.N_MPC - 1; ++i)
+    // {
+    //     Matrix<double, 3, 4> grf = grf_vec[i];
+    //     print_eigen_matrix(grf, "GRF at timestep " + std::to_string(i), logger_);
+    // }
+
+    Matrix<double, 3, 4> grf = grf_vec[0];
+    print_eigen_matrix(grf, "GRF at k = 0", logger_);
 
 
     // Predict states based on GRB solution
@@ -373,28 +383,28 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     
 
     // Print predicted states
-    // print_eigen_matrix(X_pred, "X_pred", logger_);
-    std::ostringstream oss;
-    oss << "X_pred (rows: timesteps, cols: states):\n";
-    int num_timesteps = mpc_params.N_MPC;
-    int num_states = mpc_params.N_STATES;
-    for (int t = 0; t < num_timesteps; ++t) {
-        oss << "Timestep " << std::setw(2) << t << ": [";
-        for (int s = 0; s < num_states; ++s) {
-            oss << std::fixed << std::setprecision(4) << std::setw(8) << X_pred(t * num_states + s);
-            if (s < num_states - 1) oss << ", ";
-        }
-        oss << "]\n";
-    }
-    RCLCPP_INFO(logger_, "%s", oss.str().c_str());
+    // std::ostringstream oss;
+    // oss << "X_pred (rows: timesteps, cols: states):\n";
+    // int num_timesteps = mpc_params.N_MPC;
+    // int num_states = mpc_params.N_STATES;
+    // for (int t = 0; t < num_timesteps; ++t) {
+    //     oss << "Timestep " << std::setw(2) << t << ": [";
+    //     for (int s = 0; s < num_states; ++s) {
+    //         oss << std::fixed << std::setprecision(4) << std::setw(8) << X_pred(t * num_states + s);
+    //         if (s < num_states - 1) oss << ", ";
+    //     }
+    //     oss << "]\n";
+    // }
+    // RCLCPP_INFO(logger_, "%s", oss.str().c_str());
 
     // Get the foot jacobian
+    update_foot_positions(foot_positions); // Update the foot positions in the body frame
     vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
 
-    // print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
-    // print_eigen_matrix(foot_jacobians[1], "Foot Jacobian 1", logger_);
-    // print_eigen_matrix(foot_jacobians[2], "Foot Jacobian 2", logger_);
-    // print_eigen_matrix(foot_jacobians[3], "Foot Jacobian 3", logger_);
+    print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
+    print_eigen_matrix(foot_jacobians[1], "Foot Jacobian 1", logger_);
+    print_eigen_matrix(foot_jacobians[2], "Foot Jacobian 2", logger_);
+    print_eigen_matrix(foot_jacobians[3], "Foot Jacobian 3", logger_);
 
     // Compute joint torques by utilizing the foot jacobians
     Vector<double, 12> joint_torques;
@@ -403,29 +413,40 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     double pitch = x0[1];
     double yaw = x0[2];
 
+    RCLCPP_INFO(logger_, "Roll: %.3f, Pitch: %.3f, Yaw: %.3f", roll, pitch, yaw);
     Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) * 
            AngleAxisd(pitch, Vector3d::UnitY()) * 
            AngleAxisd(roll, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
 
-    R_WB = Matrix3d::Identity(); // TODO: remove this line, just for testing purposes
+    // R_WB = Matrix3d::Identity(); // TODO: remove this line, just for testing purposes
 
-    // print_eigen_matrix(R_WB, "R_WB", logger_);
+    print_eigen_matrix(R_WB, "R_WB", logger_);
+    print_eigen_matrix(R_WB.transpose(), "R_BW", logger_);
+
+
+    MatrixXd grf_body_frame = R_WB.transpose() * grf; // Transform GRF to body frame
+    print_eigen_matrix(grf_body_frame, "GRF in Body Frame", logger_);
+
+
     for (int foot = 0; foot < 4; foot++)
     {
         Vector3d foot_grf = grf_vec[0].col(foot); // Extract the grf for the current foot (world frame)
         
-        Vector3d foot_joint_torques = foot_jacobians[foot].transpose() * R_WB.transpose() * foot_grf; // Compute joint torques for the current foot (correpsonding to its 3 actuators)
+        Vector3d foot_joint_torques = foot_jacobians[foot].transpose() * R_WB.transpose() * (-foot_grf); // Compute joint torques for the current foot (correpsonding to its 3 actuators)
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
 
-        // joint_torques[foot * 3] = -joint_torques[foot * 3]; 
-        joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; 
-        joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; // Invert sign of calf joint?
+        joint_torques[foot * 3] = -joint_torques[foot * 3];  // Hip
+        // joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; // Thigh
+        // joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; // Invert sign of calf joint?
 
+        // print_eigen_matrix(R_WB.transpose() * foot_grf, "Foot " + std::to_string(foot) + " GRF in Body Frame", logger_);
         // // Test
-        Vector3d test_foot_grf;
-        test_foot_grf << 1, 0 , 1;
-        print_eigen_matrix(foot_jacobians[foot].transpose() * R_WB.transpose() * test_foot_grf, "Foot " + std::to_string(foot) + " Joint Torques", logger_);
+        // Vector3d test_foot_grf;
+        // test_foot_grf << 1, 0 , 1;
+        // print_eigen_matrix(foot_jacobians[foot].transpose() * R_WB.transpose() * test_foot_grf, "Foot " + std::to_string(foot) + " Joint Torques", logger_);
     }
+
+    
 
 
     joint_torques = clamp_joint_torques(joint_torques); // Clamp the joint torques to the limits
@@ -482,6 +503,14 @@ vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
             for (int j = 0; j < 3; j++)
             {
                 int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][j]);
+
+
+                int v_idx = pinocchio_model.joints[joint_id].idx_v();
+                
+                // std::cout << "  Joint: " << joint_names_by_foot[foot_index][j] << " (velocity index " << v_idx << ")\n";
+                // std::cout << "  Linear part:\n" << J_temp.block<3,1>(0, v_idx) << "\n";
+                // std::cout << "  Angular part:\n" << J_temp.block<3,1>(3, v_idx) << "\n";
+
                 J[foot_index](i, j) = J_temp(i, pinocchio_model.joints[joint_id].idx_v());
             }
 
@@ -554,7 +583,7 @@ void ConvexMPC::add_friction_cone_constraints(GRBModel& model, GRBVar* U, const 
             // Create the friction cone constraints
             model.addConstr(U[k*12 +3*i] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
             model.addConstr(U[k*12 +3*i + 1] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
-            model.addConstr(U[k*12 +3*i + 2] >= 5); // Ensure the vertical force is greater than 5N
+            model.addConstr(U[k*12 +3*i + 2] >= 10); // Ensure the vertical force is greater than 5N
 
         }
     }

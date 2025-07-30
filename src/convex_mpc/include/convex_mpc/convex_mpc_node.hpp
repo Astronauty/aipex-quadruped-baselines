@@ -17,6 +17,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "convex_mpc/convex_mpc.hpp"
+#include "sensor_msgs/msg/joy.hpp"
 
 
 
@@ -89,9 +90,18 @@ class QuadConvexMPCNode : public rclcpp::Node
         // Unitree lowcmd
         unitree_go::msg::LowCmd low_cmd;
         rclcpp::TimerBase::SharedPtr cmd_timer_; // Lowcmd publish frequency
-
         size_t count_;
         StateMeasurementMode state_measurement_mode_;
+
+        // Joystick parsing
+        rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+        sensor_msgs::msg::Joy::SharedPtr joy_msg; // Joystick message
+
+        void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg); 
+        VectorXd reference_traj_from_joy(const sensor_msgs::msg::Joy::SharedPtr msg);
+
+
+    
 
         void init_cmd(); // Set motors to torque mode and initialize the low_cmd message with default values
         void low_state_callback(const unitree_go::msg::LowState::SharedPtr msg);

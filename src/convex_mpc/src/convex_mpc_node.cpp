@@ -55,26 +55,44 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     state_measurement_mode_ = StateMeasurementMode::SPORTMODE; 
 
+    float theta[3] = {0.0, 0.0, 0.0}; // Orientation in roll, pitch, yaw
+    float p[3] = {0.0, 0.0, 0.0}; // Position in x, y, z
+    float omega[3] = {0.0, 0.0, 0.0}; // Angular velocity in roll, pitch, yaw
+    float p_dot[3] = {0.0, 0.0, 0.0}; // Linear velocity in x, y, z
+
+    joy_msg = std::make_shared<sensor_msgs::msg::Joy>();
+    joy_msg->axes.resize(8, 0.0);  // Initialize with 8 axes, all zero
+    joy_msg->buttons.resize(11, 0); // Initialize with 11 buttons, all zero
+    
+
     // Publisher for joint torque commands
+    this->declare_parameter<int>("JOINT_TORQUE_PUBLISH_RATE_MS", 10);
+    const int JOINT_TORQUE_PUBLISH_RATE_MS = this->get_parameter("JOINT_TORQUE_PUBLISH_RATE_MS").as_int();
+
     joint_torque_pub_ = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);
-    publish_joint_torque_timer_ = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&QuadConvexMPCNode::publish_cmd, this));
+    publish_joint_torque_timer_ = this->create_wall_timer(std::chrono::milliseconds(JOINT_TORQUE_PUBLISH_RATE_MS), std::bind(&QuadConvexMPCNode::publish_cmd, this));
 
     // Create a lowstate subscriber to update mpc states
     low_state_sub_ = this->create_subscription<unitree_go::msg::LowState>(
-        "lowstate", 10, std::bind(&QuadConvexMPCNode::low_state_callback, this, std::placeholders::_1)
+        "lowstate", 1, std::bind(&QuadConvexMPCNode::low_state_callback, this, std::placeholders::_1)
     );
 
     // Sport mode state subscriber
     // TODO: switch between subscriber callbacks based on measurement_mode
     sport_mode_sub_ = this->create_subscription<unitree_go::msg::SportModeState>(
-        "sportmodestate", 10, std::bind(&QuadConvexMPCNode::sport_mode_callback, this, std::placeholders::_1)
+        "sportmodestate", 1, std::bind(&QuadConvexMPCNode::sport_mode_callback, this, std::placeholders::_1)
+    );
+
+    //Joystick subscriber
+    joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
+        "joy", 10, std::bind(&QuadConvexMPCNode::joy_callback, this, std::placeholders::_1)
     );
 
     // TODO: Set correct rate for the timer
-    update_mpc_state_timer_ = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&QuadConvexMPCNode::update_mpc_state, this));
-    
-    
-    
+    this->declare_parameter<int>("MPC_STATE_UPDATE_RATE_MS", 10);
+    const int MPC_STATE_UPDATE_RATE_MS = this->get_parameter("MPC_STATE_UPDATE_RATE_MS").as_int();
+    update_mpc_state_timer_ = this->create_wall_timer(std::chrono::milliseconds(MPC_STATE_UPDATE_RATE_MS), std::bind(&QuadConvexMPCNode::update_mpc_state, this));
+
 
     // Define MPC Params
     this->declare_parameter<int>("N_MPC", 10);
@@ -93,28 +111,10 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     // Specify the diagonal as a vector first
     VectorXd Q_diag(N_STATES);
-
     auto Q_diag_double = this->get_parameter("Q_diag").as_double_array();
-
     Q_diag = Map<VectorXd>(Q_diag_double.data(), Q_diag_double.size()) * this->get_parameter("Q_scale").as_double();
-
-    // Q_diag << 100.0,    // roll
-    //           100.0,    // pitch
-    //           10.0,     // yaw
-    //           1000.0,   // x position
-    //           1000.0,   // y position
-    //           10000.0,  // z position (height)
-    //           0,     // roll rate
-    //           0,     // pitch rate
-    //           0,      // yaw rate
-    //           0,    // x velocity
-    //           0,    // y velocity
-    //           0,     // z velocity
-    //           0;      // gravity (optional)
     MatrixXd Q = Q_diag.asDiagonal();
-    // Q = this->get_parameter("Q_scale").as_double() * Q;
 
-    // MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
 
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
@@ -237,6 +237,63 @@ void QuadConvexMPCNode::sport_mode_callback(const unitree_go::msg::SportModeStat
     
 }
 
+void QuadConvexMPCNode::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
+{
+    this->joy_msg = msg; // Store the joystick message
+}
+
+VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy::SharedPtr msg)
+{
+    VectorXd X_ref = VectorXd::Zero(mpc_params->N_MPC * mpc_params->N_STATES);
+
+    double max_translation_vel = 0.5;
+    double max_yaw_vel = 0.5;
+
+    double height = 0.3; // Desired height above ground
+
+    double pitch = 0.0; 
+    double roll = 0.0; 
+    double current_yaw = theta[2]; // Current yaw angle from IMU
+
+    // Extract axes from the joystick message
+    std::vector<float> axes = msg->axes; // Use '->' to access members of the object pointed to by msg
+    Eigen::VectorXd axes_double = Eigen::Map<Eigen::VectorXf>(axes.data(), axes.size()).cast<double>();
+
+    // Calculate the desired translation and rotation velocities
+    cout << "Axes: " << axes_double.transpose() << endl;
+
+    std::unordered_map<std::string, int> controller_axis_indices;
+    controller_axis_indices["x"] = 1;
+    controller_axis_indices["y"] = 0;
+    controller_axis_indices["yaw"] = 3;
+
+    double vx = max_translation_vel * axes_double[controller_axis_indices["x"]]; // Forward/backward movement
+    double vy = max_translation_vel * axes_double[controller_axis_indices["y"]]; // Left/right movement
+    double wz = max_yaw_vel * axes_double[controller_axis_indices["yaw"]]; // Yaw rotation
+
+    for (int k=0; k < mpc_params->N_MPC; k++)
+    {
+        X_ref.segment<13>(k * mpc_params->N_STATES) = (Eigen::Matrix<double, 13, 1>() <<
+            roll, 
+            pitch,
+            current_yaw + wz * k * mpc_params->dt, // Fixed yaw rate interpolation
+            p[0], // x position (forward/backward movement)
+            p[1], // y position (left/right movement)
+            height, // z position (height above ground)
+            0.0, // Roll rate (fixed for now)
+            0.0, // Pitch rate (fixed for now)
+            wz, // Yaw rate
+            vx, // x velocity
+            vy, // y velocity
+            0.0, // z velocity (fixed for now)
+            9.81 // Gravity state
+        ).finished();
+    }
+
+    return X_ref;
+}
+
+
 void QuadConvexMPCNode::update_mpc_state()
 {
     // x = [theta, p, omega, p_dot, g]
@@ -273,10 +330,16 @@ void QuadConvexMPCNode::update_mpc_state()
 
     // Repeat X_ref_single N_MPC times to form X_ref
     int N_MPC = mpc_params->N_MPC;
-    VectorXd X_ref = VectorXd::Zero(N_MPC * 13);
+    
+    VectorXd X_ref = VectorXd::Zero(mpc_params->N_MPC * mpc_params->N_STATES);
     for (int i = 0; i < N_MPC; ++i) {
         X_ref.segment<13>(i * 13) = X_ref_single;
     }
+
+    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(joy_msg); // Get the reference trajectory from joystick input
+    RCLCPP_INFO(this->get_logger(), "Reference trajectory from joystick: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
+        X_ref_joy[0], X_ref_joy[1], X_ref_joy[2], X_ref_joy[3], X_ref_joy[4], X_ref_joy[5],
+        X_ref_joy[6], X_ref_joy[7], X_ref_joy[8], X_ref_joy[9], X_ref_joy[10], X_ref_joy[11], X_ref_joy[12]);
 
     convex_mpc->update_reference_trajectory(X_ref); // Update the reference trajectory in MPC
 }
