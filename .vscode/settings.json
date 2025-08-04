@@ -114,5 +114,6 @@
         "matrixfunctions": "cpp",
         "format": "cpp",
         "stdfloat": "cpp"
-    }
+    },
+    "ros.distro": "humble"
 }
