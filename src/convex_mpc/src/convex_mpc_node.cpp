@@ -45,7 +45,7 @@ StateMeasurementMode measurement_mode_from_string(const std::string& mode_str) {
 
 
 QuadConvexMPCNode::QuadConvexMPCNode()
-    : Node("quad_convex_mpc_publisher"), count_(0)
+    : Node("convex_mpc_controller"), count_(0)
 {
     init_cmd();
     // Set measurement mode
@@ -249,7 +249,7 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     double max_translation_vel = 0.5;
     double max_yaw_vel = 0.5;
 
-    double height = 0.3; // Desired height above ground
+    double height = 0.312; // Desired height above ground
 
     double pitch = 0.0; 
     double roll = 0.0; 
@@ -277,8 +277,10 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
             roll, 
             pitch,
             current_yaw + wz * k * mpc_params->dt, // Fixed yaw rate interpolation
-            p[0], // x position (forward/backward movement)
-            p[1], // y position (left/right movement)
+            // p[0] + vx * k * mpc_params->dt, // x position (forward/backward movement)
+            // p[1] + vy * k * mpc_params->dt, // y position (left/right movement)
+            -0.025570 + vx * k * mpc_params->dt, // x position (forward/backward movement)
+            vy * k * mpc_params->dt, // y position (left/right movement)
             height, // z position (height above ground)
             0.0, // Roll rate (fixed for now)
             0.0, // Pitch rate (fixed for now)
@@ -341,7 +343,7 @@ void QuadConvexMPCNode::update_mpc_state()
         X_ref_joy[0], X_ref_joy[1], X_ref_joy[2], X_ref_joy[3], X_ref_joy[4], X_ref_joy[5],
         X_ref_joy[6], X_ref_joy[7], X_ref_joy[8], X_ref_joy[9], X_ref_joy[10], X_ref_joy[11], X_ref_joy[12]);
 
-    convex_mpc->update_reference_trajectory(X_ref); // Update the reference trajectory in MPC
+    convex_mpc->update_reference_trajectory(X_ref_joy); // Update the reference trajectory in MPC
 }
 
 void QuadConvexMPCNode::publish_cmd()
@@ -365,7 +367,12 @@ int main(int argc, char * argv[])
 {
     try{
         rclcpp::init(argc, argv);
+
+        rclcpp::NodeOptions options;
+        options.automatically_declare_parameters_from_overrides(true);
+        // auto node = std::make_shared<QuadConvexMPCNode>(options);
         auto node = std::make_shared<QuadConvexMPCNode>();
+        
         rclcpp::spin(node);
         rclcpp::shutdown();
     }
