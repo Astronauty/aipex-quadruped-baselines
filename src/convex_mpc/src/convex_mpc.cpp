@@ -337,7 +337,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     // print_eigen_matrix(x0, "x0", logger_);
     // print_eigen_matrix(X_ref.segment(0, mpc_params.N_STATES), "X_ref", logger_);
-    // print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
+    print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
     // RCLCPP_INFO(logger_, "(x0 - X_ref)^T Q (x0 - X_ref): %f", ((x0 - X_ref.segment(0, mpc_params.N_STATES)).transpose() * mpc_params.Q * (x0 - X_ref.segment(0, mpc_params.N_STATES)))(0,0));
 
     // VectorXd x0_repeated = VectorXd::Zero(mpc_params.N_STATES * mpc_params.N_MPC);
@@ -398,7 +398,6 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // RCLCPP_INFO(logger_, "%s", oss.str().c_str());
 
     // Get the foot jacobian
-    update_foot_positions(foot_positions); // Update the foot positions in the body frame
     vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
 
     print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
@@ -458,7 +457,6 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
 {
 
-    // TODO: check joint order
     vector<vector<string>> joint_names_by_foot = {
         {"FL_hip_joint", "FL_thigh_joint", "FL_calf_joint"}, // Foot 0
         {"FR_hip_joint", "FR_thigh_joint", "FR_calf_joint"}, // Foot 1

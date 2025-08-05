@@ -47,6 +47,7 @@ class QuadConvexMPCNode : public rclcpp::Node
 {
     public:
         QuadConvexMPCNode();
+        explicit QuadConvexMPCNode(const rclcpp::NodeOptions & options);
     private:
         std::unique_ptr<ConvexMPC> convex_mpc;
         std::unique_ptr<MPCParams> mpc_params; // Pointer to MPC parameters
@@ -99,9 +100,6 @@ class QuadConvexMPCNode : public rclcpp::Node
 
         void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg); 
         VectorXd reference_traj_from_joy(const sensor_msgs::msg::Joy::SharedPtr msg);
-
-
-    
 
         void init_cmd(); // Set motors to torque mode and initialize the low_cmd message with default values
         void low_state_callback(const unitree_go::msg::LowState::SharedPtr msg);

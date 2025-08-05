@@ -1,0 +1,40 @@
+/convex_mpc_controller:
+  ros__parameters:
+    N_MPC: 10
+    Q_scale: 1.0
+    mpc_dt: 0.100
+    mass: 15.7
+    JOINT_TORQUE_PUBLISH_RATE_MS: 15
+    MPC_STATE_UPDATE_RATE_MS: 15
+    mu_static_friction: 10.0
+    Q_diag: [0.0, 20.0, 0.0, 10.0, 0.0, 80.0, 2.0, 5.0, 0.0, 10.0, 0.0, 3.0, 0.0]
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    use_sim_time: false
+
+
+# # N_MPC 5 roll pitch unstable
+# /convex_mpc_controller:
+#   ros__parameters:
+#     N_MPC: 5
+#     Q_scale: 1000.0
+#     mpc_dt: 0.025
+#     mass: 15.7
+#     JOINT_TORQUE_PUBLISH_RATE_MS: 15
+#     MPC_STATE_UPDATE_RATE_MS: 15
+#     mu_static_friction: 0.5
+#     Q_diag: [1.0, 15.0, 0.1, 400.0, 200.0, 60.0, 0.0, 0.2, 0.001, 1000.0, 0.1, 2.0, 0.0]
+#     qos_overrides:
+#       /parameter_events:
+#         publisher:
+#           depth: 1000
+#           durability: volatile
+#           history: keep_last
+#           reliability: reliable
+#     use_sim_time: false
+
