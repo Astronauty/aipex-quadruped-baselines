@@ -51,7 +51,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Set measurement mode
     // TODO: ROS param implementation
     // std::string measurement_mode_str = this->declare_parameter<std::string>("measurement_mode", "lowlevel_ekf");
-    start_time_ = this->now();
+    start_time_s = this->now().seconds();
 
     state_measurement_mode_ = StateMeasurementMode::SPORTMODE; 
 
@@ -145,6 +145,15 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     // Initialize the ConvexMPC object
     convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, quadruped_params, this->get_logger());
+
+
+    // TODO: implement parameter loading for gait planner
+    gait_planner = std::make_unique<GaitPlanner>(
+        GaitPlanner::GaitType::TROT, 
+        0.5, // Duty factor
+        1.0, // Gait duration in seconds
+        0.08 // Swing height in meters
+    );
 }
 
 
@@ -359,9 +368,20 @@ void QuadConvexMPCNode::publish_cmd()
         joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
         joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
     joint_torque_pub_->publish(low_cmd); // Publish the joint torque commands
+
 }
 
+/*
+* Compute the gait phase based on the 
+*
+*/
+void QuadConvexMPCNode::update_gait_phase()
+{
+    elapsed_time_s = this->now().seconds() - start_time_s;
 
+    gait_phase_ = fmod(elapsed_time_s, gait_duration_s_) / gait_duration_s_;
+
+}
 
 int main(int argc, char * argv[])
 {
