@@ -22,7 +22,7 @@ class GaitPlanner
             BOUND
         };
 
-        GaitPlanner(GaitType gait_type, double duty_factor = 0.5, double gait_duration_s = 1.0, double swing_height_m = 0.08);
+        GaitPlanner(GaitType gait_type, double duty_factor = 0.5, double gait_duration_s = 1.0, double swing_height_m = 0.08, double footstep_planning_horizon = 2.0);
 
         std::unordered_map<std::string, int> get_contact_state(double phase);
         void set_gait_type(GaitType gait_type);
@@ -55,7 +55,19 @@ class GaitPlanner
         Eigen::Vector3d compute_desired_footstep_position(const Eigen::Vector3f& v_CoM, const string& foot_index);
 
         void update_swing_leg_trajectories(double current_time_s, unordered_map<string, Vector3d> current_footstep_positions);
-        double time_to_next_stance(double current_time_s, const std::string& leg);
+        // double time_to_next_stance(double current_time_s, const std::string& leg);
+        
+        double footstep_planning_horizon_s_; // The horizon length (in seconds) for which to compute future footsteps
+        double footstep_planning_horizon_phase_; // The horizon length (in phases) for which to compute future footsteps
+        std::unordered_map<std::string, std::vector<std::pair<double, double>>> get_future_stance_times(double current_time_s, double footstep_planning_horizon_phases);
 
 };
 
+
+class SwingLegTrajectory
+{
+    public:
+        SwingLegTrajectory
+
+
+}

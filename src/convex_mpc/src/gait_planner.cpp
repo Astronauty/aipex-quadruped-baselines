@@ -3,8 +3,8 @@
 using namespace std;
 using namespace Eigen;
 
-GaitPlanner::GaitPlanner(GaitType gait_type, double duty_factor, double gait_duration_s, double swing_height_m)
-    : gait_type_(gait_type), duty_factor_(duty_factor), gait_duration_s_(gait_duration_s), swing_height_m_(swing_height_m)
+GaitPlanner::GaitPlanner(GaitType gait_type, double duty_factor, double gait_duration_s, double swing_height_m, double footstep_planning_horizon)
+    : gait_type_(gait_type), duty_factor_(duty_factor), gait_duration_s_(gait_duration_s), swing_height_m_(swing_height_m), footstep_planning_horizon_s_(footstep_planning_horizon_s_)
 {
     this->set_phase_offsets(); // Define gait types based on phase offsets
 
@@ -13,6 +13,7 @@ GaitPlanner::GaitPlanner(GaitType gait_type, double duty_factor, double gait_dur
     swing_leg_trajectories_["FR"] = {};
     swing_leg_trajectories_["RL"] = {};
     swing_leg_trajectories_["RR"] = {};
+
 }
 
 /**
@@ -62,6 +63,7 @@ unordered_map<std::string, int> GaitPlanner::get_contact_state(double phase)
 
     return contact_state;
 }
+
 
 void GaitPlanner::set_gait_type(GaitType gait_type)
 {

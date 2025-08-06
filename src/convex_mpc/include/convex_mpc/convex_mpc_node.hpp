@@ -16,9 +16,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "convex_mpc/convex_mpc.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 
+#include "convex_mpc/convex_mpc.hpp"
+#include "convex_mpc/gait_planner.hpp"
 
 
 using namespace std;
@@ -52,8 +53,9 @@ class QuadConvexMPCNode : public rclcpp::Node
         std::unique_ptr<ConvexMPC> convex_mpc;
         std::unique_ptr<MPCParams> mpc_params; // Pointer to MPC parameters
 
-        rclcpp::Time start_time_;
-        
+        double start_time_s;
+        double elapsed_time_s;
+
         // MPC State Vars
         float theta[3]; // Orientation in roll, pitch, yaw
         float p[3]; // Position in x, y, z
@@ -61,15 +63,12 @@ class QuadConvexMPCNode : public rclcpp::Node
         float p_dot[3]; // Linear velocity in x, y, z
         // MPCParams mpc_params; // MPC parameters
 
-        
-
         Matrix<double, 3, 4> foot_positions; // Foot positions in x, y, z
         float joint_angles[12]; // Joint angles of Go2
 
         // Publisher for joint torque commands
         rclcpp::Publisher<unitree_go::msg::LowCmd>::SharedPtr joint_torque_pub_;
         rclcpp::TimerBase::SharedPtr publish_joint_torque_timer_; // Rate to update x0 in MPC based on lowstate
-
 
         // Unitree sportmode vars
         rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr sport_mode_sub_;
@@ -106,5 +105,11 @@ class QuadConvexMPCNode : public rclcpp::Node
         void sport_mode_callback(const unitree_go::msg::SportModeState::SharedPtr data);
         void update_mpc_state();
         void publish_cmd();
-        
+
+        // Gait parameters
+        float gait_phase_;
+        float gait_duration_s_;
+
+        std::unique_ptr<GaitPlanner> gait_planner;
+        void update_gait_phase(float dt);
 };
