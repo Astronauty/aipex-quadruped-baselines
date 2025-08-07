@@ -3,8 +3,8 @@
 using namespace std;
 using namespace Eigen;
 
-GaitPlanner::GaitPlanner(GaitType gait_type, double duty_factor, double gait_duration_s, double swing_height_m, double footstep_planning_horizon)
-    : gait_type_(gait_type), duty_factor_(duty_factor), gait_duration_s_(gait_duration_s), swing_height_m_(swing_height_m), footstep_planning_horizon_s_(footstep_planning_horizon_s_)
+GaitPlanner::GaitPlanner(GaitType gait_type, double duty_factor, double gait_duration_s, double swing_height_m, double footstep_planning_horizon, double start_time_s)
+    : gait_type_(gait_type), duty_factor_(duty_factor), gait_duration_s_(gait_duration_s), swing_height_m_(swing_height_m), footstep_planning_horizon_s_(footstep_planning_horizon_s), start_time_s_(start_time_s)
 {
     this->set_phase_offsets(); // Define gait types based on phase offsets
 
@@ -16,12 +16,6 @@ GaitPlanner::GaitPlanner(GaitType gait_type, double duty_factor, double gait_dur
 
 }
 
-/**
- * @brief Set the phase offsets for each leg based on the selected gait type.
- * 
- * @param void The current phase of the gait (0 to 1).
- * @return A map with leg names as keys and contact state (0 or 1) as values.
- */
 void GaitPlanner::set_phase_offsets()
 {
     switch (gait_type_)
@@ -49,6 +43,12 @@ void GaitPlanner::set_phase_offsets()
             throw std::invalid_argument("Selected gait type is not implemented.");
             
     }   
+}
+
+void GaitPlanner::update_time_and_phase(double current_time_s)
+{
+    this->current_time_s_ = current_time_s;
+    this->gait_phase_ = time_to_phase(current_time_s);
 }
 
 unordered_map<std::string, int> GaitPlanner::get_contact_state(double phase)
@@ -97,7 +97,9 @@ double GaitPlanner::phase_to_time(double phase)
     if (phase < 0.0 || phase > 1.0)
         throw std::out_of_range("Phase must be in the range [0, 1]");
 
-    return phase * gait_duration_s_;
+    gait_cycle_start_time_s_ = current_time_s_ - fmod((current_time_s_ - start_time_s_), gait_duration_s_);
+
+    return phase * gait_duration_s_ + gait_cycle_start_time_s_;
 }
 
 void GaitPlanner::update_swing_leg_trajectories(double current_time_s, unordered_map<string, Vector3d> current_footstep_positions)
@@ -142,7 +144,7 @@ void GaitPlanner::update_swing_leg_trajectories(double current_time_s, unordered
                     ++it;
                 }
             }
-
+            
         };
     }
 }
@@ -153,15 +155,42 @@ double GaitPlanner::time_to_next_stance(double current_time_s, const std::string
     double phase = get_phase(current_time_s);
     double leg_phase = fmod(phase + phase_offsets_[leg], 1.0);
 
-    if (leg_phase >= duty_factor_) {
-        // Already in swing, next stance at phase = 0 (next cycle)
-        return (1.0 - leg_phase) * gait_duration_s_;
-    } 
-    else 
+    return (1.0 - leg_phase)*gait_duration_s_;
+}
+
+std::unordered_map<std::string, std::vector<std::pair<double, double>>> GaitPlanner::get_future_stance_times(double current_time_s, double footstep_planning_horizon_s)
+{
+    std::unordered_map<std::string, std::vector<std::pair<double, double>>> future_stance_times;
+
+    for (const auto& leg : {"FL", "FR", "RL", "RR"})
     {
-        // In stance, next stance after completing swing
-        return (duty_factor_ - leg_phase) * gait_duration_s_;
+        future_stance_times[leg] = std::vector<std::pair<double, double>>();
     }
+
+    double end_time = current_time_s + footstep_planning_horizon_s; // End time to find future stance entry times
+
+
+    for (const auto& [leg, leg_phase_offset] : phase_offsets_)
+    {
+        vector<pair<double, double>>& leg_stance_times = future_stance_times[leg];
+
+        double time_cursor = current_time_s + time_to_next_stance(current_time_s, leg); // Get the time to the next stance phase for the leg
+
+        while (time_cursor < end_time)
+        {
+            double stance_start = time_cursor;
+            double stance_end = stance_start + duty_factor_ * gait_duration_s_;
+            
+            if (time_cursor < end_time)
+            {
+                double clipped_stance_end = min(stance_end, end_time); // If the planning horizon ends before stance phase ends, clip the end time
+                leg_stance_times.emplace_back(stance_start, clipped_stance_end);
+            }
+
+            time_cursor += gait_duration_s_;
+        }
+    }
+    return future_stance_times;
 }
 
 int main(int, char**)
