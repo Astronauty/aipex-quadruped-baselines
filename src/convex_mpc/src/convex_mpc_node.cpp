@@ -146,7 +146,6 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Initialize the ConvexMPC object
     convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, quadruped_params, this->get_logger());
 
-
     // TODO: implement parameter loading for gait planner
     gait_planner = std::make_unique<GaitPlanner>(
         GaitPlanner::GaitType::TROT, 
@@ -304,7 +303,6 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     return X_ref;
 }
 
-
 void QuadConvexMPCNode::update_mpc_state()
 {
     // x = [theta, p, omega, p_dot, g]
@@ -357,6 +355,30 @@ void QuadConvexMPCNode::update_mpc_state()
 
 void QuadConvexMPCNode::publish_cmd()
 {
+    // Check whether each leg is scheduled to be in swing or stance
+    unordered_map<std::string, int> contact_states;
+
+    gait_planner->update_time_and_phase(this->now().seconds());
+    contact_states = gait_planner->get_contact_state();
+
+    // Solve GRFs from MPC
+
+
+    // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
+    for (const auto& [leg, contact_state] : contact_states)
+    {
+        if(contact_state == 1)
+        {
+            // Apply MPC GRF for stance legs
+
+        }
+        else
+        {
+            // Apply PD control for swing legs
+        }
+
+    }
+
     // Get the optimized control inputs from the MPC
     Vector<double, 12> joint_torques = convex_mpc->solve_joint_torques();
 
@@ -371,17 +393,6 @@ void QuadConvexMPCNode::publish_cmd()
 
 }
 
-/*
-* Compute the gait phase based on the 
-*
-*/
-void QuadConvexMPCNode::update_gait_phase()
-{
-    elapsed_time_s = this->now().seconds() - start_time_s;
-
-    gait_phase_ = fmod(elapsed_time_s, gait_duration_s_) / gait_duration_s_;
-
-}
 
 int main(int argc, char * argv[])
 {

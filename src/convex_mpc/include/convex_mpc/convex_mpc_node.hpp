@@ -107,7 +107,7 @@ class QuadConvexMPCNode : public rclcpp::Node
         void publish_cmd();
 
         // Gait parameters
-        float gait_phase_;
+        // float gait_phase_;
         float gait_duration_s_;
 
         std::unique_ptr<GaitPlanner> gait_planner;
