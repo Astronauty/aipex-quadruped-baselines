@@ -51,13 +51,14 @@ class GaitPlanner
          * It will update the phase offsets accordingly.
          */
         void set_gait_type(GaitType gait_type);
+        double get_phase(double current_time) const;
 
         /** Update the current time and phase of the gait planner.
          * @param current_time_s The current time in seconds.
          */
         void update_time_and_phase(double current_time_s);
+        void update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, const MPCParams& mpc_params);
 
-        double get_phase(double current_time) const;
 
 
     private:
@@ -93,15 +94,14 @@ class GaitPlanner
         void set_phase_offsets(); // Defines gaits based on their phase offsets
 
 
-        Eigen::Vector3d compute_desired_footstep_position(const Eigen::Vector3f& v_CoM, const string& foot_index);
+        Eigen::Vector3d compute_desired_footstep_position(const Eigen::VectorXd& x, const string& foot_index);
 
         /**
          * @brief Update the swing leg trajectories based on the current time and footstep positions.
          * @param current_time_s The current time in seconds.
          * @param current_footstep_positions A map of the current footstep positions for each leg, where the key is the leg identifier ("FL", "FR", "RL", "RR") and the value is the 3D position of the foot in body coordinates.
          */
-        void update_swing_leg_trajectories(double current_time_s, unordered_map<string, Vector3d> current_footstep_positions);
-    
+        // void update_swing_leg_trajectories(double current_time_s, unordered_map<string, Vector3d> current_footstep_positions);
 
         /**
          * @brief Computes the time in seconds until the next stance phase for a given leg.
@@ -114,13 +114,21 @@ class GaitPlanner
         double footstep_planning_horizon_s_; // The horizon length (in seconds) for which to compute future footsteps
         double footstep_planning_horizon_phase_; // The horizon length (in phases) for which to compute future footsteps
 
+        // /**
+        //  * @brief Get the future stance times for each leg within the planning horizon.
+        //  * @param current_time_s The current time in seconds.
+        //  * @param footstep_planning_horizon_s The planning horizon in seconds.
+        //  * @return A map with leg names ("FL", "FR", "RL", "RR") as keys and a vector of pairs (start_time, end_time) as values.
+        //  */
+        // std::unordered_map<std::string, std::vector<std::pair<double, double>>> get_future_stance_times(double current_time_s, double footstep_planning_horizon_s);
+        
         /**
          * @brief Get the future stance times for each leg within the planning horizon.
          * @param current_time_s The current time in seconds.
          * @param footstep_planning_horizon_s The planning horizon in seconds.
          * @return A map with leg names ("FL", "FR", "RL", "RR") as keys and a vector of pairs (start_time, end_time) as values.
          */
-        std::unordered_map<std::string, std::vector<std::pair<double, double>>> get_future_stance_times(double current_time_s, double footstep_planning_horizon_s);
+        std::unordered_map<std::string, std::vector<std::pair<double, double>>> GaitPlanner::get_future_swing_times(double current_time_s, double footstep_planning_horizon_s)
 
 };
 

@@ -1,5 +1,8 @@
 #include "convex_mpc/gait_planner.hpp"
 #include "convex_mpc/swing_trajectory.hpp"
+#include "convex_mpc/trajectory_utils.hpp"
+#include "convex_mpc/mpc_params.hpp"
+
 using namespace std;
 using namespace Eigen;
 
@@ -112,7 +115,7 @@ double GaitPlanner::phase_to_time(double phase)
     if (phase < 0.0 || phase > 1.0)
         throw std::out_of_range("Phase must be in the range [0, 1]");
 
-    gait_cycle_start_time_s_ = current_time_s_ - fmod((current_time_s_ - start_time_s_), gait_duration_s_);
+    double gait_cycle_start_time_s_ = current_time_s_ - fmod((current_time_s_ - start_time_s_), gait_duration_s_);
 
     return phase * gait_duration_s_ + gait_cycle_start_time_s_;
 }
@@ -126,7 +129,7 @@ void GaitPlanner::update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, co
         for (const auto& [start_time, end_time] : swing_times)
         {
             // Create a swing leg trajectory for each swing phase
-            SwingLegTrajectory trajectory(start_time, end_time, swing_height_m_);
+            SwingLegTrajectory trajectory = SwingLegTrajectory(start_time, end_time, swing_height_m_, leg);
             VectorXd x = get_state_at_time_from_ref_traj(X_ref, mpc_params, current_time_s_, start_time);
             Vector3d p_des = compute_desired_footstep_position(x, leg); // Compute desired footstep position based on reference traj and Raibert heuristic
          
@@ -135,7 +138,7 @@ void GaitPlanner::update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, co
     }
 }
 
-Get the time in seconds corresponding to the next time the given leg enters stance
+// Get the time in seconds corresponding to the next time the given leg enters stance
 double GaitPlanner::time_to_next_stance(double current_time_s, const std::string& leg)
 {
     double phase = time_to_phase(current_time_s);
@@ -221,7 +224,7 @@ int main(int, char**)
     double footstep_planning_horizon = 2.0;
     double start_time_s = 0.0;
 
-    GaitPlanner gait_planner(GaitType::TROT, duty_factor, gait_duration_s, swing_height_m, footstep_planning_horizon);
+    GaitPlanner gait_planner = GaitPlanner(GaitType::TROT, duty_factor, gait_duration_s, swing_height_m, footstep_planning_horizon, start_time_s);
     gait_planner.update_time_and_phase(start_time_s);
 
     vector<double> phases = {0.0};
