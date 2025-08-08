@@ -40,25 +40,14 @@ struct SwingLegTrajectory
     Eigen::Vector3d start_position;
     Eigen::Vector3d end_position;
     double swing_height;
-    SwingTrajectorySpline spline;
+    // SwingTrajectorySpline spline;
     
     SwingLegTrajectory(double start_time, double end_time, 
                    const Eigen::Vector3d& start_pos, const Eigen::Vector3d& end_pos,
                    double height = 0.08)
         : start_time_s(start_time), end_time_s(end_time),
-          start_position(start_pos), end_position(end_pos), swing_height(height),
-          spline(start_pos, end_pos, height, start_time, end_time) {}
+          start_position(start_pos), end_position(end_pos), swing_height(height) {}
+        //   spline(start_pos, end_pos, height, start_time, end_time) {}
     
-    Eigen::Vector3d get_position(double t) const {
-        return spline.get_position(t);
-    }
-    
-    Eigen::Vector3d get_velocity(double t) const {
-        return spline.get_velocity(t);
-    }
-
-    Eigen::Vector3d get_acceleration(double t) const {
-        return spline.get_acceleration(t);
-    }
 };
 
