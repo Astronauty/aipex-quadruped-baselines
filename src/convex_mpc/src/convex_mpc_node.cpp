@@ -148,10 +148,12 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     // TODO: implement parameter loading for gait planner
     gait_planner = std::make_unique<GaitPlanner>(
-        GaitPlanner::GaitType::TROT, 
+        GaitType::TROT, 
         0.5, // Duty factor
         1.0, // Gait duration in seconds
-        0.08 // Swing height in meters
+        0.08, // Swing height in meters
+        2.0, // Footstep planning horizon
+        0.0  // Start time
     );
 }
 
@@ -355,29 +357,33 @@ void QuadConvexMPCNode::update_mpc_state()
 
 void QuadConvexMPCNode::publish_cmd()
 {
-    // Check whether each leg is scheduled to be in swing or stance
-    unordered_map<std::string, int> contact_states;
+    // // Check whether each leg is scheduled to be in swing or stance
+    // unordered_map<std::string, int> contact_states;
 
-    gait_planner->update_time_and_phase(this->now().seconds());
-    contact_states = gait_planner->get_contact_state();
+    // gait_planner->update_time_and_phase(this->now().seconds());
+    // contact_states = gait_planner->get_contact_state();
 
-    // Solve GRFs from MPC
+    // // Solve GRFs from MPC
 
 
-    // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
-    for (const auto& [leg, contact_state] : contact_states)
-    {
-        if(contact_state == 1)
-        {
-            // Apply MPC GRF for stance legs
+    // // Solve for swing leg trajectories within the gait planning horizon
+    // gait_planner->update_swing_leg_trajectories(XRef)
 
-        }
-        else
-        {
-            // Apply PD control for swing legs
-        }
 
-    }
+    // // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
+    // for (const auto& [leg, contact_state] : contact_states)
+    // {
+    //     if(contact_state == 1)
+    //     {
+    //         // Apply MPC GRF for stance legs
+
+    //     }
+    //     else
+    //     {
+    //         // Apply PD control for swing legs
+    //     }
+
+    // }
 
     // Get the optimized control inputs from the MPC
     Vector<double, 12> joint_torques = convex_mpc->solve_joint_torques();

@@ -8,31 +8,56 @@
 #include <functional>
 #include <deque>
 
+#include "convex_mpc/swing_trajectory.hpp"
+
 using namespace std;
+
+enum class GaitType
+{
+    TROT,
+    WALK,
+    GALLOP,
+    PRONK,
+    BOUND
+};
 
 class GaitPlanner
 {
     public:
-        enum class GaitType
-        {
-            TROT,
-            WALK,
-            GALLOP,
-            PRONK,
-            BOUND
-        };
 
-        GaitPlanner(GaitType gait_type, double duty_factor = 0.5, double gait_duration_s = 1.0, double swing_height_m = 0.08, double footstep_planning_horizon = 2.0);
 
-        std::unordered_map<std::string, int> get_contact_state();
+        /** Define a gait planner for quadruped robots. Based on specified gait type, solves for footstep timings/locations in addition to generating swing leg trajectories.
+         * @param gait_type The type of gait to use (e.g., TROT, WALK, GALLOP, PRONK, BOUND).
+         * @param duty_factor The duty factor for the gait which describes the phase duration for stance, default is 0.5.
+         * @param gait_duration_s The duration of the gait in seconds, default is 1.0.
+         * @param swing_height_m The height of the swing trajectory in meters, default is 0.08.
+         * @param footstep_planning_horizon The planning horizon in seconds for future footsteps, default is 2.0.
+         */
+        GaitPlanner(GaitType gait_type, double duty_factor = 0.5, double gait_duration_s = 1.0, double swing_height_m = 0.08, double footstep_planning_horizon = 2.0, double start_time_s);
+
+        /**
+         * @brief 
+         * @param phase The phase of the gait cycle, between 0 and 1.
+         * @return A map with leg names as keys and contact state (0 or 1) as values.
+         * 0 indicates the leg is in swing, 1 indicates the leg is in stance.
+         */
+        std::unordered_map<std::string, int> get_contact_state(double phase);
+
+        /**
+         * @brief Set the gait type for the planner.
+         * @param gait_type The type of gait to set.
+         * 
+         * This method allows changing the gait type after the planner has been initialized.
+         * It will update the phase offsets accordingly.
+         */
         void set_gait_type(GaitType gait_type);
 
         /** Update the current time and phase of the gait planner.
          * @param current_time_s The current time in seconds.
          */
         void update_time_and_phase(double current_time_s);
-        
-        double get_phase(double current_time);
+
+        double get_phase(double current_time) const;
 
 
     private:
@@ -50,7 +75,7 @@ class GaitPlanner
         std::unordered_map<std::string, double> phase_offsets_; // Phase offsets for each leg in the gait
         // double gait_planning_phase_horizon_; // The horizon length (in phase) for which to compute future footsteps
 
-        std::unordered_map<string, deque<SwingTrajectory>>  swing_leg_trajectories_;
+        std::unordered_map<string, deque<SwingLegTrajectory>>  swing_leg_trajectories_;
  
         std::unordered_map<std::string, Eigen::MatrixXd> desired_footstep_locations_; // Desired footstep locations for each foot in world frame
         const std::unordered_map<std::string, Eigen::Vector3d> HIP_POSITIONS = {
@@ -76,6 +101,7 @@ class GaitPlanner
          * @param current_footstep_positions A map of the current footstep positions for each leg, where the key is the leg identifier ("FL", "FR", "RL", "RR") and the value is the 3D position of the foot in body coordinates.
          */
         void update_swing_leg_trajectories(double current_time_s, unordered_map<string, Vector3d> current_footstep_positions);
+    
 
         /**
          * @brief Computes the time in seconds until the next stance phase for a given leg.
