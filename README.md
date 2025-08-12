@@ -2,10 +2,9 @@
 
 
 ## Dependency Installation
-Tested on Ubuntu 22.04.05 Humble
-ROS Jazzy
+Tested on Ubuntu 22.04.05 with ROS Humble
 
-sudo apt install ros-humble-joy
+
 
 ### Eigen
 https://eigen.tuxfamily.org/index.php?title=Main_Page#Download
@@ -19,6 +18,11 @@ git clone https://gitlab.com/libeigen/eigen.git
 
 ### ROS
 https://docs.ros.org/en/humble/Installation.html
+
+#### ROS Packages
+```bash
+sudo apt install ros-humble-joy
+```
 
 ### Unitree
 Make sure to install all of the following repos under the /opt/unitree_robotics directory.
