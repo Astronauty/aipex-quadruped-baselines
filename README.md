@@ -37,42 +37,54 @@ git clone https://github.com/unitreerobotics/unitree_mujoco
 Follow the instructions for each repo to build the unitree dependencies
 1. [https://github.com/unitreerobotics/unitree_sdk](https://github.com/unitreerobotics/unitree_sdk2)
 
+```bash
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=/opt/unitree_robotics
 sudo make install
+```
 
 2. https://github.com/unitreerobotics/unitree_ros2
+```bash
 sudo apt install ros-humble-rmw-cyclonedds-cpp
 sudo apt install ros-humble-rosidl-generator-dds-idl
 sudo apt install python3-colcon-common-extensions
 sudo apt install ros-humble-rosidl-generator-dds-idl
+```
 
 
 Remove sourcing of the ros environment from .bashrc
+```bash
 sudo apt install gedit
 sudo gedit ~/.bashrc
+```
 
 Compile cyclonedds
+```bash
 cd /opt/unitree_robotics/unitree_ros2/cyclonedds_ws/src
 git clone https://github.com/ros2/rmw_cyclonedds -b humble
 git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x 
 cd ..
 colcon build --packages-select cyclonedds
+```
 
+```bash
 source /opt/ros/humble/setup.bash 
 colcon build
+```
 
 Update setup file to work with humble
+```bash
 gedit setup_local.sh
 replace foxy with humble
-
+```
 replace source $HOME/unitree_ros2/cyclonedds_ws/install/setup.bash with source /opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/setup.bash
 
 4. https://github.com/unitreerobotics/unitree_mujoco
 sudo apt install libglfw3-dev libxinerama-dev libxcursor-dev libxi-dev libyaml-cpp-dev
 
 Install MuJoCo
+```bash
 cd /opt
 git clone https://github.com/google-deepmind/mujoco.git
 cd /mujoco
@@ -81,11 +93,13 @@ mkdir build && cd build
 cmake ..
 make -j4
 sudo make install
-
+```
+```bash
 cd /opt/unitree_robotics/unitree_mujoco/simulate
 mkdir build && cd build
 cmake ..
 make -j4
+```
 
 ### Gurobi Optimizer
 The convex MPC controller requires Gurobi optimization solver:
