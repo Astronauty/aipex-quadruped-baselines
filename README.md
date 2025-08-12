@@ -12,10 +12,10 @@ https://eigen.tuxfamily.org/index.php?title=Main_Page#Download
 
 Install eigen by clolning under /opt
 
-'''bash
+```bash
 cd /opt
 git clone https://gitlab.com/libeigen/eigen.git
-'''
+```
 
 ### ROS
 https://docs.ros.org/en/humble/Installation.html
@@ -23,12 +23,12 @@ https://docs.ros.org/en/humble/Installation.html
 ### Unitree
 Make sure to install all of the following repos under the /opt/unitree_robotics directory.
 
-'''bash
+```bash
 mkdir unitree_robotics
 git clone git@github.com:unitreerobotics/unitree_sdk2.git && 
 git clone https://github.com/unitreerobotics/unitree_ros2 && 
 git clone https://github.com/unitreerobotics/unitree_mujoco
-'''
+```
 
 Follow the instructions for each repo to build the unitree dependencies
 1. [https://github.com/unitreerobotics/unitree_sdk](https://github.com/unitreerobotics/unitree_sdk2)
@@ -106,13 +106,13 @@ sudo apt install ros-$ROS_DISTRO-pinocchio
 
 ### Sourcing ROS and Unitree WS
 Run
-'''bash
+```bash
 source setup_local.sh
-'''
+```
 to source ROS and unitree ROS WS for use (i.e. with a simulator). 
 
 Use 
-'''bash
+```bash
 source setup.sh
-'''
+```
 for deployment on the physical robot.
