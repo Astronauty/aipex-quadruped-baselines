@@ -1,7 +1,5 @@
 #include "convex_mpc/gait_planner.hpp"
-#include "convex_mpc/swing_trajectory.hpp"
-#include "convex_mpc/trajectory_utils.hpp"
-#include "convex_mpc/mpc_params.hpp"
+
 
 using namespace std;
 using namespace Eigen;
@@ -133,8 +131,9 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
 
     Vector3d p_des_start;
     Vector3d p_des_end;
+    
 
-    for (const auto &[leg, swing_times] : future_swing_times)
+    for (const auto &[leg, swing_times] : future_swing_times)            
     {
         for (const auto &[start_time, end_time] : swing_times)
         {
@@ -148,21 +147,23 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
                 // If no previous trajectory, use current foot position as the start for the first swing
                 p_des_start = current_foot_positions.at(leg); 
                 // start_time = current_time_s_; // The start time from get_future_swing_times returns the start of the swing phase by default, but use the current time if no previous trajectory exists
+    
                 SwingLegTrajectory trajectory = SwingLegTrajectory(start_time, end_time, p_des_start, p_des_end, swing_height_m_);
+
                 swing_leg_trajectories_[leg].emplace_back(trajectory);
 
             }
             else 
-            if (swing_leg_trajectories_[leg].back().start_time_s < current_time_s_ && swing_leg_trajectories_[leg].back().end_time_s > current_time_s_) 
+            if (swing_leg_trajectories_[leg].back().get_start_time() < current_time_s_ && swing_leg_trajectories_[leg].back().get_end_time() > current_time_s_) 
             {
                 // If a previously planned swing trajectory is active, only update the end position based on the raibert heuristic
-                swing_leg_trajectories_[leg].back().end_position = p_des_end; // Update the end position of the last trajectory
+                swing_leg_trajectories_[leg].back().set_end_position(p_des_end); // Update the end position of the last trajectory
 
 
             }
             else
             {
-                p_des_start = swing_leg_trajectories_[leg].back().end_position; // Use the last end position as the start position (stays the same in stance)
+                p_des_start = swing_leg_trajectories_[leg].back().get_end_position(); // Use the last end position as the start position (stays the same in stance)
                 SwingLegTrajectory trajectory = SwingLegTrajectory(start_time, end_time, p_des_start, p_des_end, swing_height_m_);
                 swing_leg_trajectories_[leg].emplace_back(trajectory);
 
@@ -183,7 +184,7 @@ void GaitPlanner::clear_expired_swing_leg_trajectories()
         trajectories.erase(
             std::remove_if(trajectories.begin(), trajectories.end(),
                 [this](const SwingLegTrajectory& traj) {
-                    return traj.end_time_s < current_time_s_;
+                    return traj.get_end_time() < current_time_s_;
                 }),
             trajectories.end()
         );
@@ -327,8 +328,8 @@ int main(int, char **)
         cout << "\nSwing trajectories for leg: " << leg << endl;
         for (const auto &traj : trajectories)
         {
-            cout << "Start time: " << traj.start_time_s << ", End time: " << traj.end_time_s << endl;
-            cout << "Start position: " << traj.start_position.transpose() << ", End position: " << traj.end_position.transpose() << endl;
+            cout << "Start time: " << traj.get_start_time() << ", End time: " << traj.get_end_time() << endl;
+            cout << "Start position: " << traj.get_start_position().transpose() << ", End position: " << traj.get_end_position().transpose() << endl;
             // cout << "Apex position: " << traj.apex_position.transpose() << endl;
         }
     }
