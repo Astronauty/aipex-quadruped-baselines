@@ -370,20 +370,20 @@ void QuadConvexMPCNode::publish_cmd()
     // gait_planner->update_swing_leg_trajectories(XRef)
 
 
-    // // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
-    // for (const auto& [leg, contact_state] : contact_states)
-    // {
-    //     if(contact_state == 1)
-    //     {
-    //         // Apply MPC GRF for stance legs
+    // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
+    for (const auto& [leg, contact_state] : contact_states)
+    {
+        if(contact_state == 1)
+        {
+            // Apply MPC GRF for stance legs
 
-    //     }
-    //     else
-    //     {
-    //         // Apply PD control for swing legs
-    //     }
+        }
+        else
+        {
+            // Apply PD control for swing legs
+        }
 
-    // }
+    }
 
     // Get the optimized control inputs from the MPC
     Vector<double, 12> joint_torques = convex_mpc->solve_joint_torques();
