@@ -56,6 +56,12 @@ class GaitPlanner
          * @param current_time_s The current time in seconds.
          */
         void update_time_and_phase(double current_time_s);
+
+        /**
+         * @brief Update the swing leg trajectories based on the current time and footstep positions.
+         * @param current_time_s The current time in seconds.
+         * @param current_footstep_positions A map of the current footstep positions for each leg, where the key is the leg identifier ("FL", "FR", "RL", "RR") and the value is the 3D position of the foot in body coordinates.
+         */
         std::unordered_map<std::string, std::deque<SwingLegTrajectory>> update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, const MPCParams& mpc_params, const unordered_map<string, Eigen::Vector3d>& current_foot_positions);
 
         /**
@@ -107,12 +113,13 @@ class GaitPlanner
 
         Eigen::Vector3d compute_desired_footstep_position(const Eigen::VectorXd& x, const string& foot_index);
 
+
         /**
-         * @brief Update the swing leg trajectories based on the current time and footstep positions.
-         * @param current_time_s The current time in seconds.
-         * @param current_footstep_positions A map of the current footstep positions for each leg, where the key is the leg identifier ("FL", "FR", "RL", "RR") and the value is the 3D position of the foot in body coordinates.
+         * @brief Clear swing leg trajectories that have expired based on the current time.
+         * This method iterates through the swing leg trajectories and removes those that have ended before the current time.
+         * It ensures that only active trajectories are kept in the planner.
          */
-        // void update_swing_leg_trajectories(double current_time_s, unordered_map<string, Vector3d> current_footstep_positions);
+        void clear_expired_swing_leg_trajectories();
 
         /**
          * @brief Computes the time in seconds until the next stance phase for a given leg.

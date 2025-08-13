@@ -125,6 +125,9 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
     cout << "\nUpdating swing leg trajectories..." << endl;
     cout << "Current time: " << current_time_s_ << ", Current phase: " << gait_phase_ << endl;
     cout << "Footstep planning horizon: " << footstep_planning_horizon_s_ << " seconds" << endl;
+
+    clear_expired_swing_leg_trajectories();
+
     auto future_swing_times = get_future_swing_times(current_time_s_, footstep_planning_horizon_s_);
     unordered_map<std::string, int> contact_state = get_contact_state(gait_phase_);
 
@@ -136,34 +139,55 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
         for (const auto &[start_time, end_time] : swing_times)
         {
             cout << "\nLeg: " << leg << ", Swing start time: " << start_time << ", Swing end time: " << end_time << endl;
-            // Create a swing leg trajectory for each swing phase
+
             VectorXd x = get_state_at_time_from_ref_traj(X_ref, mpc_params, current_time_s_, end_time); // End of swing corresponds to start of stance
-
-            // If the foot is currently in swing, use the current foot position as the start position.
-            // if (contact_state[leg] == 0)
-            // {
-            //     cout << "Leg " << leg << " is in swing. Using current foot position as start position." << endl;
-            //     p_des_start = current_foot_positions.at(leg);
-            // }
-            // else
-            // {
-            //     cout << "Leg " << leg << " is in stance. Using last end position as start position." << endl;
-            //     p_des_start = swing_leg_trajectories_[leg].back().end_position; // Use the last end position as the start position (stays the same in stance)
-            // }
-
-            if (swing_leg_trajectories_[leg].size() == 0)
-                p_des_start = current_foot_positions.at(leg); // If no previous trajectory, use current foot position
-            else
-                p_des_start = swing_leg_trajectories_[leg].back().end_position; // Use the last end position as the start position (stays the same in stance)
-
             Vector3d p_des_end = compute_desired_footstep_position(x, leg); // Compute desired footstep position based on reference traj and Raibert heuristic
 
-            SwingLegTrajectory trajectory = SwingLegTrajectory(start_time, end_time, p_des_start, p_des_end, swing_height_m_);
-            swing_leg_trajectories_[leg].emplace_back(trajectory);
+            if (swing_leg_trajectories_[leg].size() == 0)
+            {
+                // If no previous trajectory, use current foot position as the start for the first swing
+                p_des_start = current_foot_positions.at(leg); 
+                // start_time = current_time_s_; // The start time from get_future_swing_times returns the start of the swing phase by default, but use the current time if no previous trajectory exists
+                SwingLegTrajectory trajectory = SwingLegTrajectory(start_time, end_time, p_des_start, p_des_end, swing_height_m_);
+                swing_leg_trajectories_[leg].emplace_back(trajectory);
+
+            }
+            else 
+            if (swing_leg_trajectories_[leg].back().start_time_s < current_time_s_ && swing_leg_trajectories_[leg].back().end_time_s > current_time_s_) 
+            {
+                // If a previously planned swing trajectory is active, only update the end position based on the raibert heuristic
+                swing_leg_trajectories_[leg].back().end_position = p_des_end; // Update the end position of the last trajectory
+
+
+            }
+            else
+            {
+                p_des_start = swing_leg_trajectories_[leg].back().end_position; // Use the last end position as the start position (stays the same in stance)
+                SwingLegTrajectory trajectory = SwingLegTrajectory(start_time, end_time, p_des_start, p_des_end, swing_height_m_);
+                swing_leg_trajectories_[leg].emplace_back(trajectory);
+
+            }
+
+
         }
     }
 
     return swing_leg_trajectories_;
+}
+
+void GaitPlanner::clear_expired_swing_leg_trajectories()
+{
+    for (auto &[leg, trajectories] : swing_leg_trajectories_)
+    {
+        // Remove trajectories that have ended before the current time
+        trajectories.erase(
+            std::remove_if(trajectories.begin(), trajectories.end(),
+                [this](const SwingLegTrajectory& traj) {
+                    return traj.end_time_s < current_time_s_;
+                }),
+            trajectories.end()
+        );
+    }
 }
 
 // Get the time in seconds corresponding to the next time the given leg enters stance
@@ -212,9 +236,11 @@ std::unordered_map<std::string, std::vector<std::pair<double, double>>> GaitPlan
         // If currently in swing, add remaining portion of swing
         if (leg_phase >= duty_factor_)
         {
+            double current_swing_start = current_time_s - (leg_phase - duty_factor_) * gait_duration_s_; // Start of current swing phase
             double current_swing_end = current_time_s + (1.0 - leg_phase) * gait_duration_s_;
-            double clipped_swing_end = min(current_swing_end, end_time); // If the planning horizon ends before swing phase ends, clip the end time
-            leg_swing_times.emplace_back(current_time_s, clipped_swing_end);
+            leg_swing_times.emplace_back(current_swing_start, current_swing_end);
+            // double clipped_swing_end = min(current_swing_end, end_time); // If the planning horizon ends before swing phase ends, clip the end time
+            // leg_swing_times.emplace_back(current_time_s, clipped_swing_end);
 
             // Move cursor to start of next swing
             time_cursor = current_time_s + (1.0 - leg_phase) * gait_duration_s_ + duty_factor_ * gait_duration_s_; // Move cursor to the end of the current swing phase
