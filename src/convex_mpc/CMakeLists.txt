@@ -63,15 +63,15 @@ endif()
 set(MY_EXECUTABLES convex_mpc_controller gait_planner)
 
 
-# add_executable(convex_mpc_controller
-#   src/convex_mpc_node.cpp
-#   src/convex_mpc.cpp
-#   src/gurobi_utils.cpp
-#   src/simplified_quad_dynamics.cpp
-#   src/state_space.cpp
-#   src/transforms.cpp
-#   src/gait_planner.cpp
-# )
+add_executable(convex_mpc_controller
+  src/convex_mpc_node.cpp
+  src/convex_mpc.cpp
+  src/gurobi_utils.cpp
+  src/simplified_quad_dynamics.cpp
+  src/state_space.cpp
+  src/transforms.cpp
+  src/gait_planner.cpp
+)
 
 add_executable(gait_planner
   src/gait_planner.cpp
@@ -80,23 +80,23 @@ add_executable(gait_planner
 ### Specify URDF location ###
 set(URDF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/urdf")
 
-# # Pass it as a compile definition
-# target_compile_definitions(convex_mpc_controller PRIVATE
-#     PINOCCHIO_MODEL_DIR="${URDF_DIR}"
-# )
+# Pass it as a compile definition
+target_compile_definitions(convex_mpc_controller PRIVATE
+    PINOCCHIO_MODEL_DIR="${URDF_DIR}"
+)
 
-# ### Link Libraries for Executables ###
-# target_include_directories(convex_mpc_controller PRIVATE
-#   ${CMAKE_CURRENT_SOURCE_DIR}/include
-#   ${GUROBI_INCLUDE_DIRS}
-#   ${EIGEN3_INCLUDE_DIRS}
-# )
+### Link Libraries for Executables ###
+target_include_directories(convex_mpc_controller PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${GUROBI_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
+)
 
-# target_link_libraries(convex_mpc_controller
-#   ${GUROBI_CXX_LIBRARY}
-#   ${GUROBI_LIBRARY}
-#   pinocchio::pinocchio
-# )
+target_link_libraries(convex_mpc_controller
+  ${GUROBI_CXX_LIBRARY}
+  ${GUROBI_LIBRARY}
+  pinocchio::pinocchio
+)
 
 target_include_directories(gait_planner PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -111,12 +111,12 @@ target_link_libraries(gait_planner
 )
 
 
-# ament_target_dependencies(convex_mpc_controller ${DEPENDENCY_LIST})
+ament_target_dependencies(convex_mpc_controller ${DEPENDENCY_LIST})
 ament_target_dependencies(gait_planner ${DEPENDENCY_LIST})
 
 
 install(TARGETS
-  # convex_mpc_controller
+  convex_mpc_controller
   gait_planner
   DESTINATION lib/${PROJECT_NAME}
 )

@@ -54,13 +54,13 @@ void GaitPlanner::update_time_and_phase(double current_time_s)
     this->gait_phase_ = time_to_phase(current_time_s);
 }
 
-unordered_map<std::string, int> GaitPlanner::get_contact_state(double phase)
+unordered_map<std::string, int> GaitPlanner::get_contact_state()
 {
     unordered_map<std::string, int> contact_state;
 
     for (const auto &[leg, offset] : phase_offsets_)
     {
-        double adjusted_phase = fmod(phase + offset, 1.0);
+        double adjusted_phase = fmod(gait_phase_ + offset, 1.0);
         contact_state[leg] = (adjusted_phase < duty_factor_) ? 1 : 0;
     }
 
@@ -269,71 +269,71 @@ std::unordered_map<std::string, std::vector<std::pair<double, double>>> GaitPlan
     return future_swing_times;
 }
 
-int main(int, char **)
-{
-    // GaitPlanner gait_planner(GaitPlanner::GaitType::TROT, 0.5, 1.0);
-    double duty_factor = 0.5;
-    double gait_duration_s = 1.0;
-    double swing_height_m = 0.08;
-    double footstep_planning_horizon = 0.8;
-    double start_time_s = 0.0;
+// int main(int, char **)
+// {
+//     // GaitPlanner gait_planner(GaitPlanner::GaitType::TROT, 0.5, 1.0);
+//     double duty_factor = 0.5;
+//     double gait_duration_s = 1.0;
+//     double swing_height_m = 0.08;
+//     double footstep_planning_horizon = 0.8;
+//     double start_time_s = 0.0;
 
-    GaitPlanner gait_planner = GaitPlanner(GaitType::TROT, duty_factor, gait_duration_s, swing_height_m, footstep_planning_horizon, start_time_s);
-    gait_planner.update_time_and_phase(start_time_s);
+//     GaitPlanner gait_planner = GaitPlanner(GaitType::TROT, duty_factor, gait_duration_s, swing_height_m, footstep_planning_horizon, start_time_s);
+//     gait_planner.update_time_and_phase(start_time_s);
 
-    vector<double> phases = {0.0};
+//     vector<double> phases = {0.0};
 
-    for (double phase : phases)
-    {
-        cout << "Contact states at phase: " << phase << endl;
-        unordered_map<std::string, int> contact_state = gait_planner.get_contact_state(phase);
-        for (const auto &[leg, state] : contact_state)
-            cout << "Leg: " << leg << ", Contact State: " << state << endl;
-    }
+//     for (double phase : phases)
+//     {
+//         cout << "Contact states at phase: " << phase << endl;
+//         unordered_map<std::string, int> contact_state = gait_planner.get_contact_state(phase);
+//         for (const auto &[leg, state] : contact_state)
+//             cout << "Leg: " << leg << ", Contact State: " << state << endl;
+//     }
 
-    // Dummy reference trajectory for testing
-    int MPC_HORIZON = 10;
-    int N_STATES = 12;
+//     // Dummy reference trajectory for testing
+//     int MPC_HORIZON = 10;
+//     int N_STATES = 12;
 
-    VectorXd X_ref = Eigen::VectorXd::Zero(N_STATES * MPC_HORIZON);
+//     VectorXd X_ref = Eigen::VectorXd::Zero(N_STATES * MPC_HORIZON);
 
-    for (int i = 0; i < MPC_HORIZON; ++i)
-    {
-        VectorXd state = VectorXd::Zero(12); // Initialize with zeros
-        state(3) = 1.0 * i;                  // Add 1.0 to the x position at each step (x position is at index 3)
-        X_ref.segment<12>(i * 12) = state;
-    }
+//     for (int i = 0; i < MPC_HORIZON; ++i)
+//     {
+//         VectorXd state = VectorXd::Zero(12); // Initialize with zeros
+//         state(3) = 1.0 * i;                  // Add 1.0 to the x position at each step (x position is at index 3)
+//         X_ref.segment<12>(i * 12) = state;
+//     }
 
-    MPCParams mpc_params = MPCParams(
-        MPC_HORIZON,                            // N_MPC
-        12,                                     // N_CONTROLS
-        N_STATES,                               // N_STATES
-        0.1,                                    // dt
-        MatrixXd::Identity(N_STATES, N_STATES), // Q
-        MatrixXd::Identity(12, 12),             // R
-        VectorXd::Constant(12, -1.0),           // u_lower
-        VectorXd::Constant(12, 1.0)             // u_upper
-    );
+//     MPCParams mpc_params = MPCParams(
+//         MPC_HORIZON,                            // N_MPC
+//         12,                                     // N_CONTROLS
+//         N_STATES,                               // N_STATES
+//         0.1,                                    // dt
+//         MatrixXd::Identity(N_STATES, N_STATES), // Q
+//         MatrixXd::Identity(12, 12),             // R
+//         VectorXd::Constant(12, -1.0),           // u_lower
+//         VectorXd::Constant(12, 1.0)             // u_upper
+//     );
 
-    unordered_map<string, Vector3d> current_footstep_positions = {
-        {"FL", Vector3d(0.3, 0.2, 0.0)},
-        {"FR", Vector3d(0.3, -0.2, 0.0)},
-        {"RL", Vector3d(-0.3, 0.2, 0.0)},
-        {"RR", Vector3d(-0.3, -0.2, 0.0)}};
+//     unordered_map<string, Vector3d> current_footstep_positions = {
+//         {"FL", Vector3d(0.3, 0.2, 0.0)},
+//         {"FR", Vector3d(0.3, -0.2, 0.0)},
+//         {"RL", Vector3d(-0.3, 0.2, 0.0)},
+//         {"RR", Vector3d(-0.3, -0.2, 0.0)}};
 
-    std::unordered_map<std::string, std::deque<SwingLegTrajectory>> swing_leg_trajectories = gait_planner.update_swing_leg_trajectories(X_ref, mpc_params, current_footstep_positions);
+//     std::unordered_map<std::string, std::deque<SwingLegTrajectory>> swing_leg_trajectories = gait_planner.update_swing_leg_trajectories(X_ref, mpc_params, current_footstep_positions);
 
-    for (const auto &[leg, trajectories] : swing_leg_trajectories)
-    {
-        cout << "\nSwing trajectories for leg: " << leg << endl;
-        for (const auto &traj : trajectories)
-        {
-            cout << "Start time: " << traj.get_start_time() << ", End time: " << traj.get_end_time() << endl;
-            cout << "Start position: " << traj.get_start_position().transpose() << ", End position: " << traj.get_end_position().transpose() << endl;
-            // cout << "Apex position: " << traj.apex_position.transpose() << endl;
-        }
-    }
+//     for (const auto &[leg, trajectories] : swing_leg_trajectories)
+//     {
+//         cout << "\nSwing trajectories for leg: " << leg << endl;
+//         for (const auto &traj : trajectories)
+//         {
+//             cout << "Start time: " << traj.get_start_time() << ", End time: " << traj.get_end_time() << endl;
+//             cout << "Start position: " << traj.get_start_position().transpose() << ", End position: " << traj.get_end_position().transpose() << endl;
+//             // cout << "Apex position: " << traj.apex_position.transpose() << endl;
+//         }
+//     }
 
 
-    return 0;
-}
+//     return 0;
+// }
