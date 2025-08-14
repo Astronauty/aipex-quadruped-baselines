@@ -357,17 +357,17 @@ void QuadConvexMPCNode::update_mpc_state()
 
 void QuadConvexMPCNode::publish_cmd()
 {
-    // // Check whether each leg is scheduled to be in swing or stance
-    // unordered_map<std::string, int> contact_states;
+    // Check whether each leg is scheduled to be in swing or stance
+    unordered_map<std::string, int> contact_states;
 
-    // gait_planner->update_time_and_phase(this->now().seconds());
-    // contact_states = gait_planner->get_contact_state();
+    gait_planner->update_time_and_phase(this->now().seconds());
+    contact_states = gait_planner->get_contact_state();
 
-    // // Solve GRFs from MPC
+    // Solve GRFs from MPC
 
 
-    // // Solve for swing leg trajectories within the gait planning horizon
-    // gait_planner->update_swing_leg_trajectories(XRef)
+    // Solve for swing leg trajectories within the gait planning horizon
+    gait_planner->update_swing_leg_trajectories(XRef, mpc_params, foot_positions);
 
 
     // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
