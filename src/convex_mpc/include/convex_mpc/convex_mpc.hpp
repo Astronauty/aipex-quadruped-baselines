@@ -58,7 +58,6 @@ class ConvexMPC
         void update_foot_positions(const Matrix<double, 3, 4>& foot_positions);
         void update_reference_trajectory(const VectorXd& X_ref);
 
-
     private:
         MPCParams mpc_params;
         QuadrupedParams quad_params;
@@ -72,8 +71,23 @@ class ConvexMPC
         GRBVar* U; // Decision variables for MPC, GRFs for the next N_MPC-1 timesteps
         GRBQuadExpr quad_expr;
         GRBLinExpr lin_expr;
+        std::vector<GRBConstr> contact_constraints_; // Store constraint references
 
         rclcpp::Logger logger_;
+
+        const unordered_map<std::string, int> LEG_NAME_TO_INDEX = {
+            {"FL", 0},
+            {"FR", 1},
+            {"RL", 2},
+            {"RR", 3}
+        };
+
+        const unordered_map<int, std::string> LEG_INDEX_TO_NAME = {
+            {0, "FL"},
+            {1, "FR"},
+            {2, "RL"},
+            {3, "RR"}
+        };
 
         //Robot states (updated from the ROS2 node wrapper - see convex_mpc_node.hpp)
         Vector<double, 12> theta; // Joint angles of Go2
@@ -115,6 +129,9 @@ class ConvexMPC
         void add_friction_cone_constraints(GRBModel& model, GRBVar* U, const double& mu);
         Vector<double,12> clamp_joint_torques(Vector<double, 12>& joint_torques);
 
-};
+        void set_contact_constraints(unordered_map<std::string, int>& contact_states); // Allows nonzero GRFs for legs in contact, forces zero GRFs for swing legs
+
+        
+    };
 
 void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::Logger& logger); // Utility function to print Eigen matrices to the logger

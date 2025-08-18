@@ -40,11 +40,10 @@ class GaitPlanner
 
         /**
          * @brief 
-         * @param phase The phase of the gait cycle, between 0 and 1.
          * @return A map with leg names as keys and contact state (0 or 1) as values.
          * 0 indicates the leg is in swing, 1 indicates the leg is in stance.
          */
-        std::unordered_map<std::string, int> get_contact_state(double phase);
+        std::unordered_map<std::string, int> get_contact_state();
 
         /**
          * @brief Set the gait type for the planner.
@@ -60,8 +59,30 @@ class GaitPlanner
          * @param current_time_s The current time in seconds.
          */
         void update_time_and_phase(double current_time_s);
+
+
         std::unordered_map<std::string, std::deque<SwingLegTrajectory>> update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, const MPCParams& mpc_params, const unordered_map<string, Vector3d> &current_foot_positions);
  
+        /**
+         * @brief Get the current footstep target position and velocity for a specific leg
+         * @param leg The leg identifier ("FL", "FR", "RL", "RR")
+         * @param current_time_s The current time in seconds
+         * @param target_position Output parameter for the target position
+         * @param target_velocity Output parameter for the target velocity
+         * @return true if a valid trajectory is found and evaluated, false otherwise
+         */
+        bool get_current_footstep_target(const std::string& leg, double current_time_s,
+                                        Eigen::Vector3d& target_position,
+                                        Eigen::Vector3d& target_velocity) const;
+
+        /**
+         * @brief Get current footstep targets for all legs
+         * @param current_time_s The current time in seconds
+         * @return A map with leg names as keys and pairs of (position, velocity) as values
+         */
+        std::unordered_map<std::string, std::pair<Eigen::Vector3d, Eigen::Vector3d>> 
+        get_all_current_footstep_targets(double current_time_s) const;
+
 
     private:
         double start_time_s_; // Start time of the gait planning in seconds

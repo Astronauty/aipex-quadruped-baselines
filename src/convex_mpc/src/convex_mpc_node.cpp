@@ -141,7 +141,9 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     double mass = this->get_parameter("mass").as_double();
     double gravity = 9.81;
     double torque_limit = this->get_parameter("torque_limit").as_double();
-    QuadrupedParams quadruped_params = QuadrupedParams(I_b, mass, gravity, torque_limit);
+    double mu = 0.5; // Static coefficient of friction between foot and ground
+    // QuadrupedParams quadruped_params = QuadrupedParams(I_b, mass, gravity, torque_limit, mu);
+    quadruped_params = std::make_unique<QuadrupedParams>(I_b, mass, gravity, torque_limit, mu);
 
     // Initialize the ConvexMPC object
     convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, quadruped_params, this->get_logger());
@@ -364,34 +366,42 @@ void QuadConvexMPCNode::publish_cmd()
     contact_states = gait_planner->get_contact_state();
 
     // Solve GRFs from MPC
+    convex_mpc->set_contact_constraints(contact_states); // Enable complementarity constraints
+    Vector<double, 12> mpc_joint_torques = convex_mpc->solve_joint_torques();
 
+    unordered_map<string, Vector3d> foot_positions_map = matrix_to_foot_positions_map(foot_positions);
 
     // Solve for swing leg trajectories within the gait planning horizon
-    gait_planner->update_swing_leg_trajectories(XRef, mpc_params, foot_positions);
-
+    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(joy_msg); // Get the reference trajectory from joystick input
+    gait_planner->update_swing_leg_trajectories(X_ref_joy, *mpc_params, foot_positions_map);
+    
 
     // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
+    Vector<double, 12> joint_torques = Vector<double, 12>::Zero();
     for (const auto& [leg, contact_state] : contact_states)
     {
         if(contact_state == 1)
         {
-            // Apply MPC GRF for stance legs
+            int leg_index = quadruped_params->LEG_NAME_TO_INDEX.at(leg);
+            int joint_start_idx = leg_index * 3;
 
+            joint_torques[joint_start_idx] = mpc_joint_torques[joint_start_idx];
+            joint_torques[joint_start_idx+1] = mpc_joint_torques[joint_start_idx+1];
+            joint_torques[joint_start_idx+2] = mpc_joint_torques[joint_start_idx+2];
         }
         else
         {
             // Apply PD control for swing legs
+            
         }
 
     }
-
-    // Get the optimized control inputs from the MPC
-    Vector<double, 12> joint_torques = convex_mpc->solve_joint_torques();
 
     for (int i = 0; i < 12; i++)
     {
         low_cmd.motor_cmd[i].tau = joint_torques[i]; // Set the joint torque command
     }
+
     RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
         joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
         joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
@@ -399,6 +409,17 @@ void QuadConvexMPCNode::publish_cmd()
 
 }
 
+unordered_map<string, Vector3d> QuadConvexMPCNode::matrix_to_foot_positions_map(const Eigen::Matrix<double, 3, 4>& foot_matrix)
+{
+    unordered_map<string, Vector3d> foot_map;
+    const std::array<std::string, 4> leg_names = {"FL", "FR", "RL", "RR"};
+    
+    for (int i = 0; i < 4; ++i) {
+        foot_map[leg_names[i]] = foot_matrix.col(i);
+    }
+    
+    return foot_map;
+}
 
 int main(int argc, char * argv[])
 {
