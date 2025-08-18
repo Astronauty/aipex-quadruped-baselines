@@ -20,7 +20,7 @@
 
 #include "convex_mpc/convex_mpc.hpp"
 #include "convex_mpc/gait_planner.hpp"
-
+#include "convex_mpc/quad_params.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -52,6 +52,7 @@ class QuadConvexMPCNode : public rclcpp::Node
     private:
         std::unique_ptr<ConvexMPC> convex_mpc;
         std::unique_ptr<MPCParams> mpc_params; // Pointer to MPC parameters
+        std::unique_ptr<QuadrupedParams> quadruped_params;
 
         double start_time_s;
         double elapsed_time_s;
@@ -112,4 +113,6 @@ class QuadConvexMPCNode : public rclcpp::Node
 
         std::unique_ptr<GaitPlanner> gait_planner;
         void update_gait_phase(float dt);
+
+        unordered_map<string, Vector3d> matrix_to_foot_positions_map(const Eigen::Matrix<double, 3, 4>& foot_matrix);
 };

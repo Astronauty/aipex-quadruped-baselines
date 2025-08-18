@@ -127,7 +127,7 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
     clear_expired_swing_leg_trajectories();
 
     auto future_swing_times = get_future_swing_times(current_time_s_, footstep_planning_horizon_s_);
-    unordered_map<std::string, int> contact_state = get_contact_state(gait_phase_);
+    unordered_map<std::string, int> contact_state = get_contact_state();
 
     Vector3d p_des_start;
     Vector3d p_des_end;
@@ -267,6 +267,92 @@ std::unordered_map<std::string, std::vector<std::pair<double, double>>> GaitPlan
         }
     }
     return future_swing_times;
+}
+
+
+
+bool GaitPlanner::get_current_footstep_target(const std::string &leg, double current_time_s,
+                                               Eigen::Vector3d &target_position,
+                                               Eigen::Vector3d &target_velocity) const
+{
+
+    // Check if leg exists in trajectories
+    auto leg_it = swing_leg_trajectories_.find(leg);
+    if (leg_it == swing_leg_trajectories_.end() || leg_it->second.empty()) {
+        // No trajectories for this leg
+        return false;
+    }
+    
+    const auto& trajectories = leg_it->second;
+    
+    // Find the active trajectory for the current time
+    for (const auto& trajectory : trajectories) {
+        if (current_time_s >= trajectory.get_start_time() && 
+            current_time_s <= trajectory.get_end_time()) {
+            
+            // Found active trajectory - evaluate at current time
+            Eigen::Vector3d acceleration; // We don't need this, but evaluate() requires it
+            trajectory.evaluate(current_time_s, target_position, target_velocity, acceleration);
+            
+            std::cout << "Active trajectory found for leg " << leg 
+                      << " at time " << current_time_s 
+                      << ", position: " << target_position.transpose()
+                      << ", velocity: " << target_velocity.transpose() << std::endl;
+            
+            return true;
+        }
+    }
+    
+    // Check if we're before the first trajectory starts
+    if (!trajectories.empty() && current_time_s < trajectories.front().get_start_time()) {
+        // Return start position of first trajectory with zero velocity
+        target_position = trajectories.front().get_start_position();
+        target_velocity = Eigen::Vector3d::Zero();
+        
+        std::cout << "Before first trajectory for leg " << leg 
+                  << ", using start position: " << target_position.transpose() << std::endl;
+        
+        return true;
+    }
+    
+    // Check if we're after the last trajectory ends
+    if (!trajectories.empty() && current_time_s > trajectories.back().get_end_time()) {
+        // Return end position of last trajectory with zero velocity
+        target_position = trajectories.back().get_end_position();
+        target_velocity = Eigen::Vector3d::Zero();
+        
+        std::cout << "After last trajectory for leg " << leg 
+                  << ", using end position: " << target_position.transpose() << std::endl;
+        
+        return true;
+    }
+    
+    // No valid trajectory found
+    std::cout << "Warning: No valid trajectory found for leg " << leg 
+              << " at time " << current_time_s << std::endl;
+    
+    return false;
+}
+
+            
+std::unordered_map<std::string, std::pair<Eigen::Vector3d, Eigen::Vector3d>> 
+GaitPlanner::get_all_current_footstep_targets(double current_time_s) const
+{
+    std::unordered_map<std::string, std::pair<Eigen::Vector3d, Eigen::Vector3d>> targets;
+    
+    for (const auto& leg : {"FL", "FR", "RL", "RR"}) {
+        Eigen::Vector3d position, velocity;
+        
+        if (get_current_footstep_target(leg, current_time_s, position, velocity)) {
+            targets[leg] = std::make_pair(position, velocity);
+        } else {
+            // If no trajectory available, use zero position and velocity as fallback
+            targets[leg] = std::make_pair(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
+            std::cout << "Warning: Using zero fallback for leg " << leg << std::endl;
+        }
+    }
+    
+    return targets;
 }
 
 // int main(int, char **)

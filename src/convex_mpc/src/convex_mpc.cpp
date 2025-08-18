@@ -501,8 +501,6 @@ vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
             for (int j = 0; j < 3; j++)
             {
                 int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][j]);
-
-
                 int v_idx = pinocchio_model.joints[joint_id].idx_v();
                 
                 // std::cout << "  Joint: " << joint_names_by_foot[foot_index][j] << " (velocity index " << v_idx << ")\n";
@@ -581,7 +579,7 @@ void ConvexMPC::add_friction_cone_constraints(GRBModel& model, GRBVar* U, const 
             // Create the friction cone constraints
             model.addConstr(U[k*12 +3*i] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
             model.addConstr(U[k*12 +3*i + 1] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
-            model.addConstr(U[k*12 +3*i + 2] >= 10); // Ensure the vertical force is greater than 5N
+            model.addConstr(U[k*12 +3*i + 2] >= 10); // Ensure the vertical force is greater than 10N
 
         }
     }
@@ -601,4 +599,48 @@ Vector<double, 12> ConvexMPC::clamp_joint_torques(Vector<double, 12>& joint_torq
     }
 
     return clamped_torques;
+}
+
+void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact_states)
+{
+    // Remove previous contact constraints
+    for (const auto& constr : contact_constraints_) {
+        model->remove(constr);
+    }
+
+    contact_constraints_.clear();
+
+    for (int k = 0; k < mpc_params.N_MPC - 1; k++) // For each timestep
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            int contact_state = contact_states[quad_params.LEG_INDEX_TO_NAME.at(i)];
+
+            if (contact_state == 1) // If the leg is in stance
+            {
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                );
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                );
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 +3*i + 2] >= 10) // Ensure the vertical force is greater than 10N
+                );
+            }
+            else // If the leg is in swing(add_friction_constraints handles stance)
+            {
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 + 3*i] == 0)
+                );
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 + 3*i + 1] == 0)
+                );
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 + 3*i + 2] == 0)
+                );
+            }
+
+        }
+    }
 }
