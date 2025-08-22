@@ -17,6 +17,7 @@ using namespace std;
 
 enum class GaitType
 {
+    STAND,
     TROT,
     WALK,
     GALLOP,
