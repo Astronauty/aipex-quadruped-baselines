@@ -18,8 +18,13 @@ inline Eigen::VectorXd get_state_at_time_from_ref_traj(const Eigen::VectorXd& X_
     Eigen::Vector3d p_COM;
     Eigen::Vector3d V_COM;
 
+    // cout << "desired_time_s "
+
+    cout << "desired_time_s: " << desired_time_s - current_time_s << ", current_time_s: " << current_time_s << endl;
+    cout << "gait planning time limit" << mpc_params.dt * (mpc_params.N_MPC - 1)<< endl;
+
     assert(desired_time_s >= current_time_s && "Desired time must be greater than or equal to current time");
-    assert(desired_time_s <= current_time_s + mpc_params.dt * mpc_params.N_STATES && "Desired time must be within the reference trajectory horizon.");
+    assert(desired_time_s <= current_time_s + mpc_params.dt * (mpc_params.N_MPC - 1) && "Desired time must be within the reference trajectory horizon.");
 
     double timesteps_to_go = (desired_time_s - current_time_s) / mpc_params.dt;
 

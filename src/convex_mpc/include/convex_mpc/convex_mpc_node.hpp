@@ -115,4 +115,6 @@ class QuadConvexMPCNode : public rclcpp::Node
         void update_gait_phase(float dt);
 
         unordered_map<string, Vector3d> matrix_to_foot_positions_map(const Eigen::Matrix<double, 3, 4>& foot_matrix);
+
+        Eigen::VectorXd constrain_reference_trajectory_size(const Eigen::VectorXd& X_ref_input, MPCParams& mpc_params);
 };

@@ -146,16 +146,28 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     quadruped_params = std::make_unique<QuadrupedParams>(I_b, mass, gravity, torque_limit, mu);
 
     // Initialize the ConvexMPC object
-    convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, quadruped_params, this->get_logger());
+    convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, *quadruped_params, this->get_logger());
 
     // TODO: implement parameter loading for gait planner
-    gait_planner = std::make_unique<GaitPlanner>(
-        GaitType::TROT, 
-        0.5, // Duty factor
+    // gait_planner = std::make_unique<GaitPlanner>(
+    //     GaitType::TROT, 
+    //     0.5, // Duty factor
+    //     1.0, // Gait duration in seconds
+    //     0.08, // Swing height in meters
+    //     2.0, // Footstep planning horizon
+    //     0.0  // Start time
+    // );
+
+    this->declare_parameter("footstep_planning_horizon_s", 0.2);
+    double footstep_planning_horizon_s = this->get_parameter("footstep_planning_horizon_s").as_double();
+    gait_planner = std::make_unique<GaitPlanner>
+    (
+        GaitType::STAND,
+        1.0, // Duty factor
         1.0, // Gait duration in seconds
         0.08, // Swing height in meters
-        2.0, // Footstep planning horizon
-        0.0  // Start time
+        footstep_planning_horizon_s, // Footstep planning horizon
+        this->start_time_s  // Start time
     );
 }
 
@@ -262,7 +274,7 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     double max_yaw_vel = 0.5;
 
     double height = 0.312; // Desired height above ground
-
+    // double height = 0.2;
     double pitch = 0.0; 
     double roll = 0.0; 
     double current_yaw = theta[2]; // Current yaw angle from IMU
@@ -286,8 +298,8 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     for (int k=0; k < mpc_params->N_MPC; k++)
     {
         X_ref.segment<13>(k * mpc_params->N_STATES) = (Eigen::Matrix<double, 13, 1>() <<
-            roll, 
-            pitch,
+            0.0, 
+            0.0,
             current_yaw + wz * k * mpc_params->dt, // Fixed yaw rate interpolation
             // p[0] + vx * k * mpc_params->dt, // x position (forward/backward movement)
             // p[1] + vy * k * mpc_params->dt, // y position (left/right movement)
@@ -354,7 +366,25 @@ void QuadConvexMPCNode::update_mpc_state()
         X_ref_joy[0], X_ref_joy[1], X_ref_joy[2], X_ref_joy[3], X_ref_joy[4], X_ref_joy[5],
         X_ref_joy[6], X_ref_joy[7], X_ref_joy[8], X_ref_joy[9], X_ref_joy[10], X_ref_joy[11], X_ref_joy[12]);
 
-    convex_mpc->update_reference_trajectory(X_ref_joy); // Update the reference trajectory in MPC
+
+    X_ref = constrain_reference_trajectory_size(X_ref_joy, *mpc_params);
+    convex_mpc->update_reference_trajectory(X_ref); // Update the reference trajectory in MPC
+}
+
+
+Eigen::VectorXd QuadConvexMPCNode::constrain_reference_trajectory_size(const Eigen::VectorXd& X_ref, MPCParams& mpc_params)
+{
+    int expected_size = mpc_params.N_MPC * mpc_params.N_STATES;
+    if (X_ref.size() < expected_size)
+    {
+        throw std::invalid_argument("Reference trajectory is too short.");
+    }
+    else if (X_ref.size() > expected_size)
+    {
+        RCLCPP_WARN(this->get_logger(), "Reference trajectory is longer than expected. Truncating to fit MPC horizon.");
+        return X_ref.head(expected_size);
+    }
+    return X_ref;
 }
 
 void QuadConvexMPCNode::publish_cmd()
