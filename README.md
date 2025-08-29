@@ -38,6 +38,7 @@ Follow the instructions for each repo to build the unitree dependencies
 1. [https://github.com/unitreerobotics/unitree_sdk](https://github.com/unitreerobotics/unitree_sdk2)
 
 ```bash
+cd unitree_sdk2
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=/opt/unitree_robotics
