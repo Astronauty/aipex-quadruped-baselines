@@ -29,7 +29,7 @@ Make sure to install all of the following repos under the /opt/unitree_robotics 
 
 ```bash
 mkdir unitree_robotics
-git clone git@github.com:unitreerobotics/unitree_sdk2.git && 
+git clone https://github.com/unitreerobotics/unitree_sdk2.git &&
 git clone https://github.com/unitreerobotics/unitree_ros2 && 
 git clone https://github.com/unitreerobotics/unitree_mujoco
 ```
