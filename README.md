@@ -1,4 +1,7 @@
+## Code Structure Overview
 
+Based on the [MIT Cheetah 3 Convex MPC Paper](https://dspace.mit.edu/bitstream/handle/1721.1/138000/convex_mpc_2fix.pdf)
+<img width="850" height="722" alt="convex_mpc drawio" src="https://github.com/user-attachments/assets/653ca62d-42d8-4f11-9472-3d542dfe1611" />
 
 
 ## Dependency Installation
