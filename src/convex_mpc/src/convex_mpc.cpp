@@ -621,15 +621,15 @@ void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact
                 contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
-                contact_constraints_.push_back(
-                    model->addConstr(-U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
-                );
+                // contact_constraints_.push_back(
+                //     model->addConstr(-U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                // );
                 contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
-                contact_constraints_.push_back(
-                    model->addConstr(-U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
-                );
+                // contact_constraints_.push_back(
+                //     model->addConstr(-U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                // );
                 contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i + 2] >= 10) // Ensure the vertical force is greater than 10N
                 );
