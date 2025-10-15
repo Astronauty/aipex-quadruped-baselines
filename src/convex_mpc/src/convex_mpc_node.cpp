@@ -367,7 +367,8 @@ void QuadConvexMPCNode::update_mpc_state()
         X_ref_joy[6], X_ref_joy[7], X_ref_joy[8], X_ref_joy[9], X_ref_joy[10], X_ref_joy[11], X_ref_joy[12]);
 
 
-    X_ref = constrain_reference_trajectory_size(X_ref_joy, *mpc_params);
+
+    X_ref = constrain_reference_trajectory_size(X_ref_joy, *mpc_params); // Truncate the reference trajectory passed to MPC if the joystick 
     convex_mpc->update_reference_trajectory(X_ref); // Update the reference trajectory in MPC
 }
 
