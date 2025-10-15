@@ -40,7 +40,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         // Initialize robot state
         x0 = VectorXd::Zero(mpc_params.N_STATES); // Initial state of the robot
         ground_reaction_forces = Matrix<double, 3, 4>::Zero(); // Initialize GRFs for the 4 feet of the quadruped robot
-        X_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC); // Reference trajectory
+        X_ref = VectorXd::Zero(mpc_params.N_STATES * mpc_params.N_MPC); // Reference trajectory
         theta = VectorXd::Zero(12); // Initialize joint angles of the quadruped robot
 
         // Initialize pinocchio model & data (for foot jacobian computaiton)
@@ -622,7 +622,13 @@ void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact
                     model->addConstr(U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
                 contact_constraints_.push_back(
+                    model->addConstr(-U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                );
+                contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                );
+                contact_constraints_.push_back(
+                    model->addConstr(-U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
                 contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i + 2] >= 10) // Ensure the vertical force is greater than 10N
