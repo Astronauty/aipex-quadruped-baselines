@@ -279,6 +279,7 @@ void ConvexMPC::update_reference_trajectory(const VectorXd& X_ref)
     
     this->X_ref = X_ref;
 }
+
 std::vector<Matrix<double, 3, 4>> ConvexMPC::grf_from_mpc_solution()
 {
     // Each timestep has 12 controls (3 per foot, 4 feet)
@@ -435,7 +436,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
 
         joint_torques[foot * 3] = -joint_torques[foot * 3];  // Hip
-        // joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; // Thigh
+        // joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; // Thigh 
         // joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; // Invert sign of calf joint?
 
         // print_eigen_matrix(R_WB.transpose() * foot_grf, "Foot " + std::to_string(foot) + " GRF in Body Frame", logger_);
@@ -511,7 +512,10 @@ vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
             }
 
         }
+        // J[foot_index](2, 1) = -J[foot_index](2, 1); // Thigh to z GRF mapping
     }
+
+    
 
     return J;
 }
