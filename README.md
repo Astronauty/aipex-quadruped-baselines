@@ -86,7 +86,8 @@ replace foxy with humble
 ```
 replace source $HOME/unitree_ros2/cyclonedds_ws/install/setup.bash with source /opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/setup.bash
 
-3. https://github.com/unitreerobotics/unitree_mujoco
+3. Unitree MuJoCo
+Follow the setup instructions under the README at: [[https://github.com/unitreerobotics/unitree_ros2](https://github.com/unitreerobotics/unitree_mujoco)]
 
 ```bash
 sudo apt install libglfw3-dev libxinerama-dev libxcursor-dev libxi-dev libyaml-cpp-dev
