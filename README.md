@@ -221,7 +221,7 @@ The controller uses ROS parameters via the launch file to configure various sett
 
 Brief explanation of the variables:
 - N_MPC: # of timesteps in the MPC planning horizon
-- Q_scale: Scaling factor on the quadratic state cost in LQR, where $'Q = Q_scale*diag(Q_diag)'$
+- Q_scale: Scaling factor on the quadratic state cost in LQR, where $' Q = Q_{scale} \times diag(Q_diag) '$
 - mpc_dt: Rate in seconds that MPC resolves for GRFs
 - q_diag: Diagonal terms in the quadratic state cost for LQR, where $Q = Q_scale*diag(Q_diag)$
 - MPC_STATE_UPDATE_RATE_MS: Rate at which the current robot state $\bf{x_0}$ is updated within the controller (the initial state for the dynamics rollout within the solver)
