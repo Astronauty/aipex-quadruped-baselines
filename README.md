@@ -28,7 +28,9 @@ sudo apt install ros-humble-joy
 ```
 
 ### Unitree
-Make sure to install all of the following repos under the /opt/unitree_robotics directory.
+
+
+There are now several unitree dependencies that we need to clone and setup. Clone all of the following repos under the /opt/unitree_robotics directory (necessary for cmake to properly link the packages).
 
 ```bash
 mkdir unitree_robotics
@@ -37,7 +39,9 @@ git clone https://github.com/unitreerobotics/unitree_ros2 &&
 git clone https://github.com/unitreerobotics/unitree_mujoco
 ```
 
-Follow the instructions for each repo to build the unitree dependencies
+Within each of the cloned repos, follow the instructions below to build from source and install other third party dependencies.
+
+
 1. [https://github.com/unitreerobotics/unitree_sdk](https://github.com/unitreerobotics/unitree_sdk2)
 
 ```bash
@@ -85,7 +89,9 @@ replace foxy with humble
 replace source $HOME/unitree_ros2/cyclonedds_ws/install/setup.bash with source /opt/unitree_robotics/unitree_ros2/cyclonedds_ws/install/setup.bash
 
 4. https://github.com/unitreerobotics/unitree_mujoco
+```bash
 sudo apt install libglfw3-dev libxinerama-dev libxcursor-dev libxi-dev libyaml-cpp-dev
+```
 
 Install MuJoCo
 ```bash
