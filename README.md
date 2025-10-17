@@ -20,11 +20,15 @@ git clone https://gitlab.com/libeigen/eigen.git
 ```
 
 ### ROS
-https://docs.ros.org/en/humble/Installation.html
+If you don't yet have ROS Humble installed, follow the instructions at [https://docs.ros.org/en/humble/Installation.html].
 
 #### ROS Packages
 ```bash
 sudo apt install ros-humble-joy
+sudo apt install ros-humble-rmw-cyclonedds-cpp
+sudo apt install ros-humble-rosidl-generator-dds-idl
+sudo apt install python3-colcon-common-extensions
+sudo apt install ros-humble-rosidl-generator-dds-idl
 ```
 
 ### Unitree
@@ -54,14 +58,6 @@ sudo make install
 
 2. Unitree ROS2
 Follow the setup instructions under the README at: [https://github.com/unitreerobotics/unitree_ros2]
-
-Install the following additional dependencies for humble:
-```bash
-sudo apt install ros-humble-rmw-cyclonedds-cpp
-sudo apt install ros-humble-rosidl-generator-dds-idl
-sudo apt install python3-colcon-common-extensions
-sudo apt install ros-humble-rosidl-generator-dds-idl
-```
 
 Remove sourcing of your default ROS workspace from .bashrc if it exists. Make sure that no active workspace is sourced before running the rest of the commands.
 
