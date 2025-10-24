@@ -33,8 +33,6 @@ using namespace Eigen;
 // using namespace unitree::common;
 // using namespace unitree::robot;
 
-
-
 // Helper function to convert string to MeasurementMode
 StateMeasurementMode measurement_mode_from_string(const std::string& mode_str) {
     if (mode_str == "lowlevel_ekf") return StateMeasurementMode::LOWLEVEL_EKF;
@@ -102,6 +100,9 @@ QuadConvexMPCNode::QuadConvexMPCNode()
         {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}
     );
     this->declare_parameter<double>("Q_scale", 1.0);
+    this->declare_parameter<double>("Q_n_scale", 1.0);
+    this->declare_parameter<double>("min_vertical_grf", 10.0);
+
 
 
     const int N_STATES = 13;
@@ -112,20 +113,29 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Specify the diagonal as a vector first
     VectorXd Q_diag(N_STATES);
     auto Q_diag_double = this->get_parameter("Q_diag").as_double_array();
+
     Q_diag = Map<VectorXd>(Q_diag_double.data(), Q_diag_double.size()) * this->get_parameter("Q_scale").as_double();
+    double Q_n_scale = this->get_parameter("Q_n_scale").as_double();
+    double min_vertical_grf = this->get_parameter("min_vertical_grf").as_double();
+
     MatrixXd Q = Q_diag.asDiagonal();
-
     MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
-
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
 
     mpc_params = std::make_unique<MPCParams>(N_MPC, N_CONTROLS, N_STATES,
-        dt, Q, R, u_lower, u_upper);
+        dt, Q, Q_n_scale, R, u_lower, u_upper, min_vertical_grf);
 
     // Define Quadruped Params (from https://github.com/unitreerobotics/unitree_ros/blob/master/robots/go2_description/urdf/go2_description.urdf)
     this->declare_parameter<double>("mass", 6.921);
+    double mass = this->get_parameter("mass").as_double();
+
     this->declare_parameter<double>("torque_limit", 45.0);
+    double torque_limit = this->get_parameter("torque_limit").as_double();
+
+    this->declare_parameter<double>("mu_static_friction", 1.0);
+    double mu = this->get_parameter("mu_static_friction").as_double();
+
 
     double ixx=0.02448;
     double ixy=0.00012166;
@@ -138,10 +148,9 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     I_b << ixx, ixy, ixz,
             ixy, iyy, iyz,
             ixz, iyz, izz;
-    double mass = this->get_parameter("mass").as_double();
     double gravity = 9.81;
-    double torque_limit = this->get_parameter("torque_limit").as_double();
-    double mu = 0.5; // Static coefficient of friction between foot and ground
+
+
     // QuadrupedParams quadruped_params = QuadrupedParams(I_b, mass, gravity, torque_limit, mu);
     quadruped_params = std::make_unique<QuadrupedParams>(I_b, mass, gravity, torque_limit, mu);
 
@@ -397,7 +406,7 @@ void QuadConvexMPCNode::publish_cmd()
     contact_states = gait_planner->get_contact_state();
 
     // Solve GRFs from MPC
-    convex_mpc->set_contact_constraints(contact_states); // Enable complementarity constraints
+    convex_mpc->set_contact_constraints(contact_states); // Enforce friction constraints or zero GRF constraints based on contact state
     Vector<double, 12> mpc_joint_torques = convex_mpc->solve_joint_torques();
 
     unordered_map<string, Vector3d> foot_positions_map = matrix_to_foot_positions_map(foot_positions);

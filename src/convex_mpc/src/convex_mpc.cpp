@@ -64,7 +64,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
         R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
 
-        add_friction_cone_constraints(*model, U, 0.5);
+        // add_friction_cone_constraints(*model, U, 0.5);
 
         this->solve_joint_torques();
     } 
@@ -338,6 +338,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     // print_eigen_matrix(x0, "x0", logger_);
     // print_eigen_matrix(X_ref.segment(0, mpc_params.N_STATES), "X_ref", logger_);
+
     print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
     // RCLCPP_INFO(logger_, "(x0 - X_ref)^T Q (x0 - X_ref): %f", ((x0 - X_ref.segment(0, mpc_params.N_STATES)).transpose() * mpc_params.Q * (x0 - X_ref.segment(0, mpc_params.N_STATES)))(0,0));
 
@@ -352,13 +353,17 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     q = compute_q(Q_bar, A_qp, B_qp, x0, X_ref); // Linear cost
     // print_eigen_matrix(q, "q", logger_);
 
+    // Set QP objective
     lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
     quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
 
     model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
-    // model->setObjective(quad_expr, GRB_MINIMIZE); // Set the objective function to minimize
     model->optimize(); 
     RCLCPP_INFO(logger_, "Gurobi solve time: %.6f seconds", model->get(GRB_DoubleAttr_Runtime));
+
+    // Set terminal constraint based on reference trajectory
+    // VectorXd xN_ref = X_ref.segment(mpc_params.N_STATES * (mpc_params.N_MPC - 1), mpc_params.N_STATES);
+    // RCLCPP_INFO(logger_, "Terminal reference state xN_ref: \n%f", xN_ref);
 
     // Extract ground reaction forces from Gurobi solution
     vector<Matrix<double, 3, 4>> grf_vec(mpc_params.N_MPC - 1, Matrix<double, 3, 4>::Zero());
@@ -573,22 +578,22 @@ Matrix3d ConvexMPC::get_foot_operation_space_inertia_matrix(const Vector<double,
     return I_opspace;
 }
 
-void ConvexMPC::add_friction_cone_constraints(GRBModel& model, GRBVar* U, const double& mu)
-{
-    for (int k = 0; k < mpc_params.N_MPC - 1; k++) // For each timestep
-    {
-        // TODO: Friction cone constraints
-        for (int i = 0; i < 4; i++) // Legs
-        {
-            // Create the friction cone constraints
-            model.addConstr(U[k*12 +3*i] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
-            model.addConstr(U[k*12 +3*i + 1] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
-            model.addConstr(U[k*12 +3*i + 2] >= 10); // Ensure the vertical force is greater than 10N
+// void ConvexMPC::add_friction_cone_constraints(GRBModel& model, GRBVar* U, const double& mu)
+// {
+//     for (int k = 0; k < mpc_params.N_MPC - 1; k++) // For each timestep
+//     {
+//         // TODO: Friction cone constraints
+//         for (int i = 0; i < 4; i++) // Legs
+//         {
+//             // Create the friction cone constraints
+//             model.addConstr(U[k*12 +3*i] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
+//             model.addConstr(U[k*12 +3*i + 1] <= mu * U[k*12 +3*i + 2]); // Ensure the horizontal force is within the friction cone
+//             model.addConstr(U[k*12 +3*i + 2] >= 10); // Ensure the vertical force is greater than 10N
 
-        }
-    }
+//         }
+//     }
 
-}
+// }
 
 Vector<double, 12> ConvexMPC::clamp_joint_torques(Vector<double, 12>& joint_torques)
 {
@@ -620,8 +625,9 @@ void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact
         {
             int contact_state = contact_states[quad_params.LEG_INDEX_TO_NAME.at(i)];
 
-            if (contact_state == 1) // If the leg is in stance
+            if (contact_state == 1) // If the leg is in stance, add friction cone constraints
             {
+                // Friction cone constraints
                 contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
@@ -632,8 +638,9 @@ void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact
                     model->addConstr(U[k*12 +3*i + 2] >= 10) // Ensure the vertical force is greater than 10N
                 );
             }
-            else // If the leg is in swing(add_friction_constraints handles stance)
+            else
             {
+                // If the leg is in swing, set the ground reaction forces to zero
                 contact_constraints_.push_back(
                     model->addConstr(U[k*12 + 3*i] == 0)
                 );

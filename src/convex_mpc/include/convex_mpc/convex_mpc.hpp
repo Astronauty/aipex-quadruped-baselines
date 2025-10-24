@@ -57,7 +57,14 @@ class ConvexMPC
 
         void update_foot_positions(const Matrix<double, 3, 4>& foot_positions);
         void update_reference_trajectory(const VectorXd& X_ref);
-
+        
+        /**
+         * @brief Sets contact constraints in the MPC problem based on the provided contact states. Enforces friction cone constraints for legs in contact (pyramidal approximation of the friction cone) and zero forces for swing legs.
+         * 
+         * @note Friction coefficient is set by quad_params.mu which is passed to the ConvexMPC constructor.
+         * @param contact_states An unordered map mapping leg names ("FL", "FR", "RL", "RR") to contact states (1 for contact, 0 for swing).
+         * @return void
+         */
         void set_contact_constraints(unordered_map<std::string, int>& contact_states); // Allows nonzero GRFs for legs in contact, forces zero GRFs for swing legs
 
     private:
@@ -114,7 +121,7 @@ class ConvexMPC
 
         std::vector<Matrix<double, 3, 4>>  grf_from_mpc_solution(); // Extracts the GRFs from the Gurobi MPC solution and returns as an eigen matrix
 
-        void add_friction_cone_constraints(GRBModel& model, GRBVar* U, const double& mu);
+        // void add_friction_cone_constraints(GRBModel& model, GRBVar* U, const double& mu);
         Vector<double,12> clamp_joint_torques(Vector<double, 12>& joint_torques);
 
 
