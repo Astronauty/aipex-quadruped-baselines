@@ -199,7 +199,7 @@ MatrixXd ConvexMPC::compute_Q_bar()
     int N_MPC = mpc_params.N_MPC;
 
     std::vector<MatrixXd> Q_vec(N_MPC, Q);
-    Q_vec[N_MPC - 1] = 100 * Q;
+    Q_vec[N_MPC - 1] = mpc_params.Q_n_scale * Q;
 
     // std::cout << "Q vec:\n" << Q_vec[0] << std::endl;
     MatrixXd Q_bar = blkdiag(Q_vec);
@@ -208,6 +208,7 @@ MatrixXd ConvexMPC::compute_Q_bar()
     // std::stringstream ss;
     // ss << "Q_bar:\n" << Q_bar;
     // RCLCPP_INFO(logger_, "%s", ss.str().c_str());
+
 
     return Q_bar;
 }
@@ -632,10 +633,18 @@ void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact
                     model->addConstr(U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
                 contact_constraints_.push_back(
+                    model->addConstr(U[k*12 +3*i] >= -quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                );
+
+                contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
                 contact_constraints_.push_back(
-                    model->addConstr(U[k*12 +3*i + 2] >= 10) // Ensure the vertical force is greater than 10N
+                    model->addConstr(U[k*12 +3*i + 1] >= -quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                );
+
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 +3*i + 2] >= mpc_params.min_vertical_grf) // Ensure the vertical force is greater than the minimum
                 );
             }
             else
