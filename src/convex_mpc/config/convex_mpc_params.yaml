@@ -1,0 +1,67 @@
+# /convex_mpc_controller:
+#   ros__parameters:
+#     N_MPC: 5
+#     Q_scale: 25.0
+#     mpc_dt: 0.02
+#     mass: 15.7
+#     JOINT_TORQUE_PUBLISH_RATE_MS: 15
+#     MPC_STATE_UPDATE_RATE_MS: 15
+#     mu_static_friction: 10.0
+#     footstep_planning_horizon_s: 0.01
+#     Q_diag: [0.0, 50.0, 0.0, 100.0, 0.0, 80.0, 2.0, 5.0, 0.0, 10.0, 0.0, 3.0, 0.0]
+#     qos_overrides:
+#       /parameter_events:
+#         publisher:
+#           depth: 1000
+#           durability: volatile
+#           history: keep_last
+#           reliability: reliable
+#     use_sim_time: false
+
+
+# N_MPC 5 roll pitch unstable
+# /convex_mpc_controller:
+#   ros__parameters:
+#     N_MPC: 10
+#     Q_scale: 50.0
+#     mpc_dt: 0.025
+#     mass: 15.7
+#     JOINT_TORQUE_PUBLISH_RATE_MS: 2
+#     MPC_STATE_UPDATE_RATE_MS: 25
+#     mu_static_friction: 0.25
+#     footstep_planning_horizon_s: 0.1
+#     # Q_diag: [1.0, 0.0, 1.0, 0.0, 1.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0]
+#     Q_diag: [0.0, 5.0, 0.0, 50.0, 0.0, 100.0, 0.0, 0.0, 0.0, 5.0, 0.0, 5.0, 0.0]
+#     qos_overrides:
+#       /parameter_events:
+#         publisher:
+#           depth: 1000
+#           durability: volatile
+#           history: keep_last
+#           reliability: reliable
+#     use_sim_time: false
+
+
+/convex_mpc_controller:
+  ros__parameters:
+    N_MPC: 10 # Number of timesteps for mpc horizon
+    mpc_dt: 0.025 # Discretization timestep for MPC
+    mass: 15.7 # Mass in kg of quadruped
+    JOINT_TORQUE_PUBLISH_RATE_MS: 2 # Rate in ms to publish joint torques, reusing previous MPC solutions.
+    MPC_STATE_UPDATE_RATE_MS: 25
+    mu_static_friction: 0.25
+    footstep_planning_horizon_s: 0.1
+    # Q_diag: [0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0]
+    Q_diag: [1.0, 5.0, 1.0, 1.0, 1.0, 100.0, 1.0, 1.0, 1.0, 1.0, 1.0, 8.0, 0.0]
+    Q_scale: 50.0 # Weighting factor where Q = Q_scale * diag(Q_diag)
+    Q_N_scale: 100.0 # Weighting factor Q_N for final state in horizon
+    min_vertical_grf: 10.0 # Minimum vertical GRF in Newtons for each foot when in stance
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    use_sim_time: false
+
