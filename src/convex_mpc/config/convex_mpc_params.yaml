@@ -58,7 +58,7 @@
     Q_diag: [13.0, 22.0, 15.0, 16.0, 1.0, 100.0, 2.0, 1.5, 2.0, 1.5, 4.0, 10.0, 0.0]
     Q_scale: 5.0 # Weighting factor where Q = Q_scale * diag(Q_diag) - moderate for stability
     Q_n_scale: 12.0 # Weighting factor Q_N for final state in horizon - kept same
-    min_vertical_grf: 23.0 # Minimum vertical GRF - kept moderate to allow proper contact
+    min_vertical_grf: 10.0 # Minimum vertical GRF - kept moderate to allow proper contact
     qos_overrides:
       /parameter_events:
         publisher:

@@ -65,7 +65,7 @@ GRBLinExpr create_lin_obj(const GRBVar* x, const VectorXd& p, int n)
  * @brief Create a Gurobi linear equality constraint in the form:
  Ax = b;
  */
-void add_lin_eq_constr(GRBModel model, const GRBVar* x, const MatrixXd& A, const VectorXd b)
+void add_lin_eq_constr(GRBModel& model, const GRBVar* x, const MatrixXd& A, const VectorXd b)
 {
     // int n = static_cast<int>(b.size());
     // if (A.rows() != b.size()) {

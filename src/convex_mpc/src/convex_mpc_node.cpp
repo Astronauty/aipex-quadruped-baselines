@@ -26,6 +26,7 @@
 #include "convex_mpc/mpc_params.hpp"
 #include "convex_mpc/quad_params.hpp"
 #include "convex_mpc/convex_mpc.hpp"
+#include "convex_mpc/transforms.hpp"
 
 // #include "common/motor_crc_hg.h"
 
@@ -64,7 +65,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     this->declare_parameter<int>("JOINT_TORQUE_PUBLISH_RATE_MS", 5);
     const int JOINT_TORQUE_PUBLISH_RATE_MS = this->get_parameter("JOINT_TORQUE_PUBLISH_RATE_MS").as_int();
 
-    joint_torque_pub_ = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);
+    joint_torque_pub_ = this->create_publisher<unitree_go::msg::LowCmd>("rt/lowcmd", 10);
     publish_joint_torque_timer_ = this->create_wall_timer(std::chrono::milliseconds(JOINT_TORQUE_PUBLISH_RATE_MS), std::bind(&QuadConvexMPCNode::publish_cmd, this));
 
     // Create a lowstate subscriber to update mpc states
@@ -124,7 +125,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
         dt, Q, Q_n_scale, R, u_lower, u_upper, min_vertical_grf);
 
     // Define Quadruped Params (from https://github.com/unitreerobotics/unitree_ros/blob/master/robots/go2_description/urdf/go2_description.urdf)
-    this->declare_parameter<double>("mass", 6.921);
+    this->declare_parameter<double>("mass", 15.7);
     double mass = this->get_parameter("mass").as_double();
 
     this->declare_parameter<double>("torque_limit", 45.0);
@@ -440,6 +441,29 @@ void QuadConvexMPCNode::update_mpc_state()
     foot_positions = mat_map.cast<double>();
     this->convex_mpc->update_foot_positions(foot_positions); // Update foot positions in the body frame
 
+    // ----- WORLD/BODY frame wiring for MPC -----
+    const Eigen::Matrix3d Rwb = eul2rotm(theta[0], theta[1], theta[2]);  // ZYX
+    const Eigen::Vector3d p_base_W(p[0], p[1], p[2]);
+
+    // foot_positions currently carries r_i^w (lever arms in WORLD) from the bridge,
+    // but if you ever switch the bridge back to true BODY, compute r_i^w = Rwb * r_i^b.
+    // Here, to be explicit, reconstruct absolute WORLD foot positions:
+    Eigen::Matrix<double,3,4> foot_W;
+    for (int i = 0; i < 4; ++i) {
+        // If bridge provides WORLD lever arms r_i^w:
+        foot_W.col(i) = p_base_W + foot_positions.col(i);
+
+        // If instead you later switch bridge to BODY r_i^b, use:
+        // foot_W.col(i) = p_base_W + Rwb * foot_positions.col(i);
+    }
+
+    // Push to MPC
+    convex_mpc->update_base_world(p_base_W);
+    convex_mpc->update_foot_positions_world(foot_W);
+
+    // Optional (if CoM != base origin in BODY)
+    static const Eigen::Vector3d r_com_B(0.0, 0.0, 0.0);
+    convex_mpc->update_com_offset_body(r_com_B);
 
     // Update the reference trajectory
     // Reference state to repeat
@@ -526,15 +550,31 @@ void QuadConvexMPCNode::publish_cmd()
 
     }
 
-    for (int i = 0; i < 12; i++)
-    {
-        low_cmd.motor_cmd[i].tau = joint_torques[i]; // Set the joint torque command
+    // Build LowCmd fresh each tick (explicit modes/flags)
+    unitree_go::msg::LowCmd cmd{};
+    cmd.level_flag = 1;            // LOWLEVEL
+    cmd.bms_cmd.off = 0;           // keep on
+
+    for (int i = 0; i < 12; ++i) {
+        float tau = static_cast<float>(
+            std::clamp(joint_torques[i],
+                       -quadruped_params->torque_limit,
+                        quadruped_params->torque_limit));
+
+        cmd.motor_cmd[i].mode = 0x0A;   // current/torque mode (use the SDK constant if available)
+        cmd.motor_cmd[i].kp   = 0.0f;
+        cmd.motor_cmd[i].kd   = 0.0f;
+        cmd.motor_cmd[i].q    = 0.0f;
+        cmd.motor_cmd[i].dq   = 0.0f;
+        cmd.motor_cmd[i].tau  = tau;    // if firmware wants current (A), convert via Kt
     }
 
-    RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
-        joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
-        joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
-    joint_torque_pub_->publish(low_cmd); // Publish the joint torque commands
+    RCLCPP_INFO(this->get_logger(),
+     "Publishing joint torques: [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f]",
+     joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
+     joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
+
+    joint_torque_pub_->publish(cmd);
 
 }
 

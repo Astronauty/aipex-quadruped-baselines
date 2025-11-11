@@ -40,7 +40,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         // Initialize robot state
         x0 = VectorXd::Zero(mpc_params.N_STATES); // Initial state of the robot
         ground_reaction_forces = Matrix<double, 3, 4>::Zero(); // Initialize GRFs for the 4 feet of the quadruped robot
-        X_ref = VectorXd::Ones(mpc_params.N_STATES*mpc_params.N_MPC); // Reference trajectory
+        X_ref = VectorXd::Zero(mpc_params.N_STATES*mpc_params.N_MPC); // Reference trajectory
         theta = VectorXd::Zero(12); // Initialize joint angles of the quadruped robot
 
         // Initialize pinocchio model & data (for foot jacobian computaiton)
@@ -60,13 +60,24 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         // Formulate the QP 
         U = model->addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
         cout << "Number of Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
+        
+        // Add bounds to U for physical caps (optional but recommended)
+        // Fx, Fy can be free (friction cone handles them), but cap Fz
+        const double Fz_max = 200.0; // Maximum vertical force in N (adjust as needed)
+        for (int k = 0; k < mpc_params.N_MPC - 1; ++k) {
+            for (int i = 0; i < 4; ++i) {
+                // Cap vertical force
+                U[k*12 + 3*i + 2].set(GRB_DoubleAttr_UB, Fz_max);
+            }
+        }
 
         Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
         R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
 
         // add_friction_cone_constraints(*model, U, 0.5);
 
-        this->solve_joint_torques();
+        // Don't solve here - wait for real x0/X_ref from node
+        // this->solve_joint_torques();
     } 
     catch(GRBException e) 
     {
@@ -117,23 +128,18 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
     const int& N_CONTROLS = this->mpc_params.N_CONTROLS;
     const int& N_MPC = this->mpc_params.N_MPC;
 
+    // Build A_qp, B_qp for i = 0...(N_MPC-1) representing x_{i+1}
     MatrixXd A_qp = MatrixXd::Zero(N_STATES * N_MPC, N_STATES); 
     MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * (N_MPC-1));
-
-    for (int i = 0; i < mpc_params.N_MPC; i++) 
-    {
-        for (int j = 0; j < i; j++) 
-        {
-            // cout << i << " x " << j << endl;
-            B_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = quad_dss.A.pow(i - j) * quad_dss.B;
-            // cout << "A_qp accessing: " << i * N_STATES << "x" << j * N_CONTROLS << endl;
-            // cout << "A_qp block size: " << N_STATES << "x" << N_CONTROLS << endl;
-            // cout << "A_qp End: " << (i+1)*N_STATES << "x" << (j+1)*N_CONTROLS << endl;
-            // cout << "\n" << endl;
+    
+    for (int i = 0; i < N_MPC; ++i) {
+        A_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1);
+        // controls exist for j = 0...(N_MPC-2)
+        const int j_max = std::min(i, N_MPC - 2);
+        for (int j = 0; j <= j_max; ++j) {
+            B_qp.block(i*N_STATES, j*N_CONTROLS, N_STATES, N_CONTROLS)
+                = quad_dss.A.pow(i - j) * quad_dss.B;
         }
-        // cout << "pog2 " << i << endl;
-        // cout << "\n" << quad_dss.A.pow(0) << endl;
-        A_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1); 
     }
 
     // cout << "state space predict success " << endl;
@@ -279,6 +285,23 @@ void ConvexMPC::update_reference_trajectory(const VectorXd& X_ref)
     //     X_ref(6), X_ref(7), X_ref(8), X_ref(9), X_ref(10), X_ref(11));
     
     this->X_ref = X_ref;
+    // Recompute q after updating X_ref (will be recomputed in solve_joint_torques anyway)
+    // Note: q is recomputed in solve_joint_torques() right before optimization
+}
+
+void ConvexMPC::update_base_world(const Vector3d& p_base_W)
+{
+    this->p_base_W = p_base_W;
+}
+
+void ConvexMPC::update_foot_positions_world(const Matrix<double, 3, 4>& foot_positions_W)
+{
+    this->foot_positions_W = foot_positions_W;
+}
+
+void ConvexMPC::update_com_offset_body(const Vector3d& r_com_B)
+{
+    this->r_com_B = r_com_B;
 }
 
 std::vector<Matrix<double, 3, 4>> ConvexMPC::grf_from_mpc_solution()
@@ -313,7 +336,9 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
 
     // Update the dynamics model to account for changing foot position and yaw
-    StateSpace quad_dss = quadruped_state_space_discrete(x0[2], foot_positions, quad_params.inertiaTensor, quad_params.mass, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
+    // Use world-frame lever arms r_i^W = p_foot^W - p_base^W for dynamics
+    Eigen::Matrix<double,3,4> r_i_W = foot_positions_W.colwise() - p_base_W;
+    StateSpace quad_dss = quadruped_state_space_discrete(x0[2], r_i_W, quad_params.inertiaTensor, quad_params.mass, mpc_params.dt);
     // print_eigen_matrix(quad_dss.A, "A", logger_);
     // print_eigen_matrix(quad_dss.B, "B", logger_);
     tie(A_qp, B_qp) = create_state_space_prediction_matrices(quad_dss);
@@ -321,9 +346,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     VectorXd U_temp = VectorXd::Zero(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1)); // Initialize U_temp to zero 
 
-    // Initialize swing leg tracker gains
-    Kp = Matrix3d::Identity() * 10.0; // Proportional gain for swing leg tracking
-    Kd = Matrix3d::Identity() * 1; // Derivative gain for swing leg tracking
+    // Swing leg tracker gains already initialized in constructor
 
     // print_eigen_matrix(mpc_params.Q, "Q", logger_);
 
@@ -420,37 +443,24 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     double yaw = x0[2];
 
     RCLCPP_INFO(logger_, "Roll: %.3f, Pitch: %.3f, Yaw: %.3f", roll, pitch, yaw);
-    Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) * 
-           AngleAxisd(pitch, Vector3d::UnitY()) * 
-           AngleAxisd(roll, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
-
-    // R_WB = Matrix3d::Identity(); // TODO: remove this line, just for testing purposes
-
-    print_eigen_matrix(R_WB, "R_WB", logger_);
-    print_eigen_matrix(R_WB.transpose(), "R_BW", logger_);
-
-
-    MatrixXd grf_body_frame = R_WB.transpose() * grf; // Transform GRF to body frame
-    print_eigen_matrix(grf_body_frame, "GRF in Body Frame", logger_);
-
-
+    
+    // Jacobians are LOCAL_WORLD_ALIGNED, so they map world-frame forces directly to joint torques
+    // No rotation needed: τ = J^T * F_world
+    RCLCPP_WARN_ONCE(logger_, "Assuming GRF in WORLD, Jacobians LOCAL_WORLD_ALIGNED, and dynamics lever arms in WORLD.");
+    
+    // Per-joint sign map (adjust if URDF/joint conventions require it)
+    static const Eigen::Array<double,12,1> sign_map =
+        (Eigen::Array<double,12,1>() << 1,1,1,   1,1,1,   1,1,1,   1,1,1).finished();
+    
     for (int foot = 0; foot < 4; foot++)
     {
-        Vector3d foot_grf = grf_vec[0].col(foot); // Extract the grf for the current foot (world frame)
-        
-        Vector3d foot_joint_torques = foot_jacobians[foot].transpose() * R_WB.transpose() * (-foot_grf); // Compute joint torques for the current foot (correpsonding to its 3 actuators)
-        joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
-
-        joint_torques[foot * 3] = -joint_torques[foot * 3];  // Hip
-        // joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; // Thigh 
-        // joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; // Invert sign of calf joint?
-
-        // print_eigen_matrix(R_WB.transpose() * foot_grf, "Foot " + std::to_string(foot) + " GRF in Body Frame", logger_);
-        // // Test
-        // Vector3d test_foot_grf;
-        // test_foot_grf << 1, 0 , 1;
-        // print_eigen_matrix(foot_jacobians[foot].transpose() * R_WB.transpose() * test_foot_grf, "Foot " + std::to_string(foot) + " Joint Torques", logger_);
+        Vector3d Fw = grf_vec[0].col(foot);        // world-frame force from QP
+        Vector3d tau_i = foot_jacobians[foot].transpose() * (-Fw);
+        joint_torques.segment<3>(3*foot) = tau_i;
     }
+    
+    // Apply per-joint sign map if needed
+    joint_torques = (joint_torques.array() * sign_map).matrix();
 
     
 
@@ -619,6 +629,7 @@ void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact
     }
 
     contact_constraints_.clear();
+    model->update(); // Keep model tidy between solves
 
     for (int k = 0; k < mpc_params.N_MPC - 1; k++) // For each timestep
     {
