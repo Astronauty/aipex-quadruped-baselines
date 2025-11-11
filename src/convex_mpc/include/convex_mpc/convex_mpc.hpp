@@ -58,11 +58,6 @@ class ConvexMPC
         void update_foot_positions(const Matrix<double, 3, 4>& foot_positions);
         void update_reference_trajectory(const VectorXd& X_ref);
         
-        // World-frame state updates for centroidal dynamics
-        void update_base_world(const Vector3d& p_base_W);
-        void update_foot_positions_world(const Matrix<double, 3, 4>& foot_positions_W);
-        void update_com_offset_body(const Vector3d& r_com_B);
-        
         /**
          * @brief Sets contact constraints in the MPC problem based on the provided contact states. Enforces friction cone constraints for legs in contact (pyramidal approximation of the friction cone) and zero forces for swing legs.
          * 
@@ -105,10 +100,6 @@ class ConvexMPC
 
         // Vector3d foot_positions[4];
         Matrix<double, 3, 4> foot_positions; // Positions of the feet in the body frame
-        // World-frame state for centroidal dynamics
-        Vector3d p_base_W; // Base position in world frame
-        Matrix<double, 3, 4> foot_positions_W; // Foot positions in world frame
-        Vector3d r_com_B; // CoM offset in body frame
         // void update_foot_positions(const Vector<double, 12>& q);
 
         MatrixXd Q_bar; // Diagonal block matrix of quadratic state cost for N_MPC steps

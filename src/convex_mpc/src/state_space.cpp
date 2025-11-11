@@ -6,21 +6,32 @@
 using namespace std;
 StateSpace c2d(const StateSpace& ss, double dt)
 {
-    const int n = ss.A.rows();        // state dim
-    const int m = ss.B.cols();        // input dim
+    MatrixXd A = ss.A;
+    MatrixXd B = ss.B;
+    MatrixXd C = ss.C;
+    MatrixXd D = ss.D;
 
-    // Augmented for ZOH: exp( [A B; 0 0] dt ) = [Ad Bd; 0 I]
-    Eigen::MatrixXd M = Eigen::MatrixXd::Zero(n + m, n + m);
-    M.topLeftCorner(n, n)  = ss.A;
-    M.topRightCorner(n, m) = ss.B;
+    // Compute matrix exponential
+    MatrixXd M(A.rows()+ B.cols(), A.cols() + B.cols()); // Augmented matrix for finding ZOH discretization
 
-    Eigen::MatrixXd Md = (M * dt).exp();
+    M << A, B,
+         MatrixXd::Zero(B.cols(), A.cols()), MatrixXd::Zero(B.cols(), B.cols());
 
-    Eigen::MatrixXd Ad = Md.topLeftCorner(n, n);
-    Eigen::MatrixXd Bd = Md.topRightCorner(n, m);
+    MatrixXd M_exp = (M*dt).exp();
+    // cout << "M exp matrix:\n" << M_exp << endl;
 
-    // C, D unchanged for ZOH
-    return StateSpace(Ad, Bd, ss.C, ss.D);
+    // cout << "M exp matrix:\n" << M_exp << endl;
+
+
+    // Discretize the continuous state space model
+    // MatrixXd Ad = (A*dt).exp();
+    MatrixXd Ad = M_exp.topLeftCorner(A.rows(), A.cols());
+    MatrixXd Bd = M_exp.topRightCorner(B.rows(), B.cols());
+    MatrixXd Cd = C;
+    MatrixXd Dd = D;
+
+    return StateSpace(Ad, Bd, Cd, Dd);
+
 }
 
 // int main(int, char**)

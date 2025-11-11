@@ -13,55 +13,58 @@ using namespace std;
 Simplified state space quadruped dynamics based on https://dspace.mit.edu/bitstream/handle/1721.1/138000/convex_mpc_2fix.pdf
 x = [theta, p, omega, p_dot, g]
 */
-StateSpace quadruped_state_space_continuous(const double& yaw,
-                                            const Eigen::Matrix<double,3,4>& foot_levers_W,  // const & rename: r_i^W
-                                            const Eigen::Matrix3d& I_b,
-                                            const double& mass)
-{
-    // Inertia about world-aligned body (roll/pitch small, yaw = yaw)
-    Eigen::Matrix3d Rz = eul2rotm(0.0, 0.0, yaw);
-    Eigen::Matrix3d I_w = Rz * I_b * Rz.transpose();
-    Eigen::Matrix3d I_w_inv = I_w.inverse();
+StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b, const double& mass)
+{   
+    // Define relevant transforms and inertial properties
+    Matrix3d R_z = eul2rotm(0, 0, yaw);
+    Matrix3d I_w = R_z*I_b*R_z.transpose(); // Inertia tensor in world body frame for small angles 
+    Matrix3d I_w_inv = I_w.inverse(); // Inverse of inertia tensor in world body frame
+    // Vector3f g;
+    // g << 0, 0, -9.81; // Gravity vector
+    
+    double g;
+    g = 9.81;
 
-    // State order: x = [theta(0:2), p(3:5), omega(6:8), p_dot(9:11), g(12)]
-    Eigen::MatrixXd A(13,13); A.setZero();
+    // Define the continuous state space model for a simplified quadruped
+    MatrixXd A(13,13);
+    A.setZero();
+    A.block<3, 3>(0, 6) = R_z;
+    A.block<3, 3>(3, 9) = Matrix3d::Identity();
+    // A.block<3, 1>(9, 0) = Matrix3d::iden
+    A(11, 12) = -1; // Gravity influence on accel
+    // A(12, 12) = 1; // Gravity state
 
-    // θ̇ = T(θ) ω. For small angles, T(θ) ≈ I_3 (don't use Rz)
-    A.block<3,3>(0,6) = Eigen::Matrix3d::Identity();
-
-    // ṗ = v
-    A.block<3,3>(3,9) = Eigen::Matrix3d::Identity();
-
-    // v̇_z has -g (g is the last state x(12))
-    A(11,12) = -1.0;
-
-    // Inputs are ground reaction forces u = [F_FL; F_FR; F_RL; F_RR] (each 3x1), WORLD frame
-    Eigen::MatrixXd B(13,12); B.setZero();
-    for (int i = 0; i < 4; ++i) {
-        // ω̇ = I_w^{-1} * Σ (r_i^W × F_i)  => block to ω̇ is I_w_inv * hat(r_i^W)
-        // NOTE: pass a 3x1 vector to hatMap, not a row (don't transpose).
-        B.block<3,3>(6, 3*i) = I_w_inv * hatMap(foot_levers_W.col(i));
-        // v̇ = (1/m) Σ F_i
-        B.block<3,3>(9, 3*i) = Eigen::Matrix3d::Identity() / mass;
+    // Matrix<double, 13, 13> B;
+    MatrixXd B(13, 12);
+    B.setZero();
+    for (int foot_index = 0; foot_index < 4; foot_index++)
+    {
+        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index).transpose());
+        B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/mass;
     }
+    
+    // cout << "Continuous State Space Model" << endl;
+    std::stringstream ssA, ssB;
 
-    // Output matrices (unused, but keep consistent)
-    Eigen::Matrix<double,12,13> C = Eigen::Matrix<double,12,13>::Zero();
-    C.block<12,12>(0,0) = Eigen::Matrix<double,12,12>::Identity(); // observe first 12 states
-    Eigen::Matrix<double,12,13> D = Eigen::Matrix<double,12,13>::Zero();
+    ssA << A;
+    ssB << B;
+
+    // cout << "A:\n" << ssA.str() << endl;
+    // cout << "B:\n" << ssB.str() << endl;
+
+    Matrix<double, 12, 13> C = Matrix<double, 12, 13>::Identity(); // Full state feedback, not including gravity state
+    // Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Identity();
+    Matrix<double, 12, 13> D = Matrix<double, 12, 13>::Zero();
 
     return StateSpace(A,B,C,D);
 };
 
 
-StateSpace quadruped_state_space_discrete(const double& yaw,
-                                          const Eigen::Matrix<double,3,4>& foot_levers_W, // const &
-                                          const Eigen::Matrix3d& I_b,
-                                          const double& mass,
-                                          const double& dt)
+StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b, const double& mass, const double& dt)
 {
-    StateSpace ss = quadruped_state_space_continuous(yaw, foot_levers_W, I_b, mass);
-    return c2d(ss, dt);
+    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions, I_b, mass);
+    StateSpace dss = c2d(ss, dt);
+    return dss;
 };
 
 // int main(int, char**)
