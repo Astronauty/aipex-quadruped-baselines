@@ -65,6 +65,7 @@ class QuadConvexMPCNode : public rclcpp::Node
         // MPCParams mpc_params; // MPC parameters
 
         Matrix<double, 3, 4> foot_positions = Matrix<double, 3, 4>::Zero(); // Foot positions in x, y, z
+        Matrix<double, 3, 4> foot_positions_world = Matrix<double, 3, 4>::Zero(); // Foot positions in the world frame
         float joint_angles[12] = {0.0f}; // Joint angles of Go2
 
         // Publisher for joint torque commands
@@ -93,8 +94,7 @@ class QuadConvexMPCNode : public rclcpp::Node
         rclcpp::TimerBase::SharedPtr cmd_timer_; // Lowcmd publish frequency
         size_t count_;
         StateMeasurementMode state_measurement_mode_;
-        bool has_low_state_ = false;
-        bool has_sport_mode_state_ = false;
+        
 
         // Joystick parsing
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
@@ -108,8 +108,6 @@ class QuadConvexMPCNode : public rclcpp::Node
         void sport_mode_callback(const unitree_go::msg::SportModeState::SharedPtr data);
         void update_mpc_state();
         void publish_cmd();
-        void log_low_state(const unitree_go::msg::LowState& msg);
-        void log_sport_mode_state(const unitree_go::msg::SportModeState& msg);
 
         // Gait parameters
         // float gait_phase_;

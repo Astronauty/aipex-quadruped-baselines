@@ -441,10 +441,6 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
         Vector3d foot_joint_torques = foot_jacobians[foot].transpose() * R_WB.transpose() * (-foot_grf); // Compute joint torques for the current foot (correpsonding to its 3 actuators)
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
 
-        joint_torques[foot * 3] = -joint_torques[foot * 3];  // Hip
-        // joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; // Thigh 
-        // joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; // Invert sign of calf joint?
-
         // print_eigen_matrix(R_WB.transpose() * foot_grf, "Foot " + std::to_string(foot) + " GRF in Body Frame", logger_);
         // // Test
         // Vector3d test_foot_grf;
@@ -483,6 +479,25 @@ vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
 
     // Update the pinocchio model config q with the joint angles (doing this to make sure joint indices match)
     Eigen::VectorXd q = Eigen::VectorXd::Zero(pinocchio_model.nq);
+    
+    // Diagnostic: Log joint ordering mapping (only on first call)
+    static bool first_call = true;
+    if (first_call) {
+        RCLCPP_INFO(logger_, "=== Pinocchio Joint Ordering Diagnostic ===");
+        for (int foot_index = 0; foot_index < 4; foot_index++) {
+            for (int joint_index = 0; joint_index < 3; joint_index++) {
+                int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][joint_index]);
+                int q_idx = pinocchio_model.joints[joint_id].idx_q();
+                int v_idx = pinocchio_model.joints[joint_id].idx_v();
+                int theta_idx = foot_index * 3 + joint_index;
+                RCLCPP_INFO(logger_, "Foot %d, Joint %d: %s -> theta[%d] -> q[%d], v[%d]", 
+                    foot_index, joint_index, joint_names_by_foot[foot_index][joint_index].c_str(),
+                    theta_idx, q_idx, v_idx);
+            }
+        }
+        first_call = false;
+    }
+    
     for (int foot_index = 0; foot_index < 4; foot_index++) {
         for (int joint_index = 0; joint_index < 3; joint_index++) {
             int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][joint_index]);
@@ -500,7 +515,7 @@ vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
         pinocchio::FrameIndex foot_frame_id = pinocchio_model.getFrameId(foot_names[foot_index]);
 
         Eigen::MatrixXd J_temp(6, pinocchio_model.nv);
-        pinocchio::computeFrameJacobian(pinocchio_model, pinocchio_data, q, foot_frame_id, pinocchio::LOCAL_WORLD_ALIGNED, J_temp);
+        pinocchio::computeFrameJacobian(pinocchio_model, pinocchio_data, q, foot_frame_id, pinocchio::LOCAL, J_temp);
 
         // Construct the 3x3 Jacobian for each foot
         for (int i = 0; i < 3; i++)

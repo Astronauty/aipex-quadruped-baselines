@@ -218,12 +218,25 @@ void QuadConvexMPCNode::low_state_callback(unitree_go::msg::LowState::SharedPtr 
         motor[i] = data->motor_state[i];
         // RCLCPP_INFO(this->get_logger(), "Motor state -- num: %d; q: %f; dq: %f; ddq: %f; tau: %f",
         //             i, motor[i].q, motor[i].dq, motor[i].ddq, motor[i].tau_est);
-        joint_angles[i] = motor[i].q; // Joint angles of Go2
     }
+    
+    // Remap Unitree motor order to expected theta order
+    // Unitree order (MuJoCo): FR(0-2), FL(3-5), RR(6-8), RL(9-11)
+    // Expected order: FL(0-2), FR(3-5), RL(6-8), RR(9-11)
+    // Mapping: FL=3-5, FR=0-2, RL=9-11, RR=6-8
+    joint_angles[0] = motor[3].q; // FL_hip
+    joint_angles[1] = motor[4].q; // FL_thigh
+    joint_angles[2] = motor[5].q; // FL_calf
+    joint_angles[3] = motor[0].q; // FR_hip
+    joint_angles[4] = motor[1].q; // FR_thigh
+    joint_angles[5] = motor[2].q; // FR_calf
+    joint_angles[6] = motor[9].q; // RL_hip
+    joint_angles[7] = motor[10].q; // RL_thigh
+    joint_angles[8] = motor[11].q; // RL_calf
+    joint_angles[9] = motor[6].q; // RR_hip
+    joint_angles[10] = motor[7].q; // RR_thigh
+    joint_angles[11] = motor[8].q; // RR_calf
 
-    has_low_state_ = true;
-
-    log_low_state(*data);
     
 }
 
@@ -250,9 +263,6 @@ void QuadConvexMPCNode::sport_mode_callback(const unitree_go::msg::SportModeStat
         foot_vel[i] = data->foot_speed_body[i];
     }
 
-    has_sport_mode_state_ = true;
-
-    log_sport_mode_state(*data);
 
     // RCLCPP_INFO(this->get_logger(), "Foot position and velcity relative to body -- num: %d; x: %f; y: %f; z: %f, vx: %f; vy: %f; vz: %f",
     //             0, foot_pos[0], foot_pos[1], foot_pos[2], foot_vel[0], foot_vel[1], foot_vel[2]);
@@ -273,79 +283,6 @@ void QuadConvexMPCNode::sport_mode_callback(const unitree_go::msg::SportModeStat
     p_dot[2] = data->velocity[2]; // Velocity in z
 
     
-}
-
-void QuadConvexMPCNode::log_low_state(const unitree_go::msg::LowState& msg)
-{
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(6);
-    oss << "LowState | IMU rpy: [" << msg.imu_state.rpy[0] << ", "
-        << msg.imu_state.rpy[1] << ", " << msg.imu_state.rpy[2] << "]; gyro: ["
-        << msg.imu_state.gyroscope[0] << ", " << msg.imu_state.gyroscope[1]
-        << ", " << msg.imu_state.gyroscope[2] << "]; accel: ["
-        << msg.imu_state.accelerometer[0] << ", " << msg.imu_state.accelerometer[1]
-        << ", " << msg.imu_state.accelerometer[2] << "]";
-
-    for (int i = 0; i < 12; ++i)
-    {
-        const auto& motor_state = msg.motor_state[i];
-        oss << "\n  Motor " << i
-            << " | q: " << motor_state.q
-            << ", dq: " << motor_state.dq
-            << ", ddq: " << motor_state.ddq
-            << ", tau_est: " << motor_state.tau_est;
-    }
-
-    RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
-}
-
-void QuadConvexMPCNode::log_sport_mode_state(const unitree_go::msg::SportModeState& msg)
-{
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(6);
-    oss << "SportModeState | pos: [" << msg.position[0] << ", "
-        << msg.position[1] << ", " << msg.position[2] << "]; vel: ["
-        << msg.velocity[0] << ", " << msg.velocity[1] << ", "
-        << msg.velocity[2] << "]; yaw_speed: " << msg.yaw_speed
-        << "; gait_type: " << msg.gait_type
-        << "; foot_raise_height: " << msg.foot_raise_height
-        << "; body_height: " << msg.body_height;
-
-    oss << "\n  Foot forces: [";
-    for (int i = 0; i < 4; ++i)
-    {
-        oss << msg.foot_force[i];
-        if (i < 3) oss << ", ";
-    }
-    oss << "]";
-
-    oss << "\n  Foot positions (body frame):";
-    for (int leg = 0; leg < 4; ++leg)
-    {
-        oss << "\n    Leg " << leg << " : [";
-        for (int axis = 0; axis < 3; ++axis)
-        {
-            int idx = leg * 3 + axis;
-            oss << msg.foot_position_body[idx];
-            if (axis < 2) oss << ", ";
-        }
-        oss << "]";
-    }
-
-    oss << "\n  Foot velocities (body frame):";
-    for (int leg = 0; leg < 4; ++leg)
-    {
-        oss << "\n    Leg " << leg << " : [";
-        for (int axis = 0; axis < 3; ++axis)
-        {
-            int idx = leg * 3 + axis;
-            oss << msg.foot_speed_body[idx];
-            if (axis < 2) oss << ", ";
-        }
-        oss << "]";
-    }
-
-    RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
 }
 
 void QuadConvexMPCNode::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
@@ -408,12 +345,6 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
 
 void QuadConvexMPCNode::update_mpc_state()
 {
-    if (!has_low_state_ || !has_sport_mode_state_)
-    {
-        RCLCPP_WARN_ONCE(this->get_logger(), "Waiting for initial low_state and sport_mode messages before updating MPC state.");
-        return;
-    }
-
     // x = [theta, p, omega, p_dot, g]
     float g = 9.81; // Gravity state
 
@@ -438,7 +369,20 @@ void QuadConvexMPCNode::update_mpc_state()
     // Reshape foot_pos (12x1 vector) into a 3x4 matrix for MPC
     Eigen::Map<Eigen::Matrix<float, 3, 4, Eigen::ColMajor>> mat_map(foot_pos, 3, 4);
     foot_positions = mat_map.cast<double>();
-    this->convex_mpc->update_foot_positions(foot_positions); // Update foot positions in the body frame
+    
+    // Convert COM position to Eigen vector
+    Eigen::Vector3d p_COM_W;
+    p_COM_W << p[0], p[1], p[2];
+    
+    // Compute foot positions in world frame (assuming foot_positions are already in world frame)
+    // If they're in body frame, we'd need to rotate them first
+    Eigen::Matrix<double, 3, 4> foot_W = foot_positions;
+    
+    // Compute COM-relative positions in world frame
+    for (int i = 0; i < 4; ++i) {
+        foot_positions_world.col(i) = foot_W.col(i) - p_COM_W;
+    }
+    this->convex_mpc->update_foot_positions(foot_positions_world); // Update foot positions (COM-relative, world-frame)
 
 
     // Update the reference trajectory
@@ -483,10 +427,7 @@ Eigen::VectorXd QuadConvexMPCNode::constrain_reference_trajectory_size(const Eig
 
 void QuadConvexMPCNode::publish_cmd()
 {
-    if (!has_low_state_ || !has_sport_mode_state_)
-    {
-        return;
-    }
+    
 
     // Check whether each leg is scheduled to be in swing or stance
     unordered_map<std::string, int> contact_states;
@@ -526,10 +467,22 @@ void QuadConvexMPCNode::publish_cmd()
 
     }
 
-    for (int i = 0; i < 12; i++)
-    {
-        low_cmd.motor_cmd[i].tau = joint_torques[i]; // Set the joint torque command
-    }
+    // Remap joint torques from expected order to Unitree motor order
+    // Expected order: FL(0-2), FR(3-5), RL(6-8), RR(9-11)
+    // Unitree order (MuJoCo): FR(0-2), FL(3-5), RR(6-8), RL(9-11)
+    // Inverse mapping: FR=3-5, FL=0-2, RR=9-11, RL=6-8
+    low_cmd.motor_cmd[0].tau = joint_torques[3]; // FR_hip
+    low_cmd.motor_cmd[1].tau = joint_torques[4]; // FR_thigh
+    low_cmd.motor_cmd[2].tau = joint_torques[5]; // FR_calf
+    low_cmd.motor_cmd[3].tau = joint_torques[0]; // FL_hip
+    low_cmd.motor_cmd[4].tau = joint_torques[1]; // FL_thigh
+    low_cmd.motor_cmd[5].tau = joint_torques[2]; // FL_calf
+    low_cmd.motor_cmd[6].tau = joint_torques[9]; // RR_hip
+    low_cmd.motor_cmd[7].tau = joint_torques[10]; // RR_thigh
+    low_cmd.motor_cmd[8].tau = joint_torques[11]; // RR_calf
+    low_cmd.motor_cmd[9].tau = joint_torques[6]; // RL_hip
+    low_cmd.motor_cmd[10].tau = joint_torques[7]; // RL_thigh
+    low_cmd.motor_cmd[11].tau = joint_torques[8]; // RL_calf
 
     RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
         joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
