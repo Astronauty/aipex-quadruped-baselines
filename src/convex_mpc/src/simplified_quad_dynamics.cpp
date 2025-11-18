@@ -39,7 +39,8 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
     B.setZero();
     for (int foot_index = 0; foot_index < 4; foot_index++)
     {
-        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index).transpose());
+        // hatMap expects Vector3d (column vector), foot_positions.col() already returns column vector
+        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index));
         B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/mass;
     }
     

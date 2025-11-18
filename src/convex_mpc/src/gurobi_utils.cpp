@@ -42,9 +42,10 @@ GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& P, int n) // Necess
 }
 
 /**
- * @brief Create a quadratic objective function for gurobi of the form J = p'x.
- * @param Q Quadratic cost matrix, expressed as a Eigen MatrixXd.
- * @param x Reference state vector, expressed as a std::vector<double> of gurobi variables.
+ * @brief Create a linear objective function for gurobi of the form J = p'x.
+ * @param x Decision variables, expressed as a pointer to a GRBVar vector.
+ * @param p Linear cost vector, expressed as an Eigen VectorXd.
+ * @param n Number of variables.
  */
 GRBLinExpr create_lin_obj(const GRBVar* x, const VectorXd& p, int n)
 {

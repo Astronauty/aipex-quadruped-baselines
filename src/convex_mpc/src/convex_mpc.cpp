@@ -364,11 +364,22 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // print_eigen_matrix(q, "q", logger_);
 
     // Set QP objective
-    lin_expr = create_lin_obj(U, q, mpc_params.N_STATES); // Only the linear part of the objective is influenced by x0
+    // q has size N_CONTROLS * (N_MPC - 1), matching the decision variables U
+    lin_expr = create_lin_obj(U, q, mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
     quad_expr = create_quad_obj(U, P , mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1));
 
     model->setObjective(quad_expr + lin_expr, GRB_MINIMIZE);
     model->optimize(); 
+    
+    // Check solver status
+    int status = model->get(GRB_IntAttr_Status);
+    if (status != GRB_OPTIMAL && status != GRB_SUBOPTIMAL) {
+        RCLCPP_ERROR(logger_, "Gurobi optimization failed with status: %d", status);
+        RCLCPP_ERROR(logger_, "Status codes: 2=OPTIMAL, 3=INFEASIBLE, 4=UNBOUNDED, 5=INF_OR_UNBD");
+        // Return zero torques on failure (safer than using invalid solution)
+        return Vector<double, 12>::Zero();
+    }
+    
     RCLCPP_INFO(logger_, "Gurobi solve time: %.6f seconds", model->get(GRB_DoubleAttr_Runtime));
 
     // Set terminal constraint based on reference trajectory
