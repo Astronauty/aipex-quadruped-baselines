@@ -64,7 +64,7 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
         R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
 
-        // add_friction_cone_constraints(*model, U, 0.5);
+        add_friction_cone_constraints(*model, U, 0.5);
 
         this->solve_joint_torques();
     } 
