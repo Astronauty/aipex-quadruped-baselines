@@ -1,5 +1,9 @@
 source /opt/ros/humble/setup.sh
 source /opt/unitree_robotics/unitree_ros2/setup_local.sh
+source install/local_setup.sh
+
+
+export ROS_DOMAIN_ID=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/install/local_setup.sh"

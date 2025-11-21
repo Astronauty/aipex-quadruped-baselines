@@ -1,7 +1,8 @@
 .vscode/
 
-
 build/
 install/
 log/
 
+*.log
+convex_mpc.log

@@ -28,7 +28,7 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
     // Define the continuous state space model for a simplified quadruped
     MatrixXd A(13,13);
     A.setZero();
-    A.block<3, 3>(0, 6) = R_z;
+    A.block<3, 3>(0, 6) = R_z.transpose(); // Rotation matrix from world frame to body frame
     A.block<3, 3>(3, 9) = Matrix3d::Identity();
     // A.block<3, 1>(9, 0) = Matrix3d::iden
     A(11, 12) = -1; // Gravity influence on accel
@@ -39,7 +39,8 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
     B.setZero();
     for (int foot_index = 0; foot_index < 4; foot_index++)
     {
-        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index).transpose());
+        // hatMap expects Vector3d (column vector), foot_positions.col() already returns column vector
+        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index));
         B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/mass;
     }
     
