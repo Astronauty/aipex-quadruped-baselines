@@ -99,6 +99,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     this->declare_parameter<double>("Q_scale", 1.0);
     this->declare_parameter<double>("Q_n_scale", 1.0);
     this->declare_parameter<double>("min_vertical_grf", 10.0);
+    this->declare_parameter<double>("max_vertical_grf", 400.0);
 
 
 
@@ -114,17 +115,23 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     Q_diag = Map<VectorXd>(Q_diag_double.data(), Q_diag_double.size()) * this->get_parameter("Q_scale").as_double();
     double Q_n_scale = this->get_parameter("Q_n_scale").as_double();
     double min_vertical_grf = this->get_parameter("min_vertical_grf").as_double();
+    double max_vertical_grf = this->get_parameter("max_vertical_grf").as_double();
 
     MatrixXd Q = Q_diag.asDiagonal();
-    MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
+    // R weight balances tracking vs control effort
+    // With Q[5] = 50, R = 0.1 gives Q/R = 500, which prioritizes tracking but prevents excessive forces
+    // R = 0.5 gives Q/R = 100, more balanced for steady-state operation
+    this->declare_parameter<double>("R_weight", 0.1);
+    double R_weight = this->get_parameter("R_weight").as_double();
+    MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS) * R_weight;
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
 
     mpc_params = std::make_unique<MPCParams>(N_MPC, N_CONTROLS, N_STATES,
-        dt, Q, Q_n_scale, R, u_lower, u_upper, min_vertical_grf);
+        dt, Q, Q_n_scale, R, u_lower, u_upper, min_vertical_grf, max_vertical_grf);
 
     // Define Quadruped Params (from https://github.com/unitreerobotics/unitree_ros/blob/master/robots/go2_description/urdf/go2_description.urdf)
-    this->declare_parameter<double>("mass", 6.921);
+    this->declare_parameter<double>("mass", 15.7);
     double mass = this->get_parameter("mass").as_double();
 
     this->declare_parameter<double>("torque_limit", 45.0);
@@ -359,9 +366,8 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
 
     double max_translation_vel = 0.5;
     double max_yaw_vel = 0.5;
-
+    
     double height = 0.312; // Desired height above ground
-    // double height = 0.2;
     double pitch = 0.0; 
     double roll = 0.0; 
     double current_yaw = theta[2]; // Current yaw angle from IMU
@@ -381,6 +387,7 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     double vx = max_translation_vel * axes_double[controller_axis_indices["x"]]; // Forward/backward movement
     double vy = max_translation_vel * axes_double[controller_axis_indices["y"]]; // Left/right movement
     double wz = max_yaw_vel * axes_double[controller_axis_indices["yaw"]]; // Yaw rotation
+
 
     for (int k=0; k < mpc_params->N_MPC; k++)
     {
@@ -488,6 +495,10 @@ void QuadConvexMPCNode::publish_cmd()
     {
         return;
     }
+
+    // Update MPC state first to ensure x0 is current before solving
+    // This prevents solving with uninitialized state when timers are slightly out of sync
+    update_mpc_state();
 
     // Check whether each leg is scheduled to be in swing or stance
     unordered_map<std::string, int> contact_states;

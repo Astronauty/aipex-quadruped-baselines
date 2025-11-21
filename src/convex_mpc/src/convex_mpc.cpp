@@ -307,6 +307,14 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     std::cout << "---------------------------------------------------------------------------------------------------------------------------------------------"
               << std::endl;
 
+    // Check if state is uninitialized - gravity state (index 12) should always be 9.81
+    // If it's zero or very small, the state hasn't been updated yet
+    if (x0.size() < 13 || std::abs(x0[12]) < 1e-3) {
+        RCLCPP_WARN(logger_, "State x0 is uninitialized (gravity state = %.6f) - skipping MPC solve. Returning zero torques.", 
+                    x0.size() >= 13 ? x0[12] : 0.0);
+        return Vector<double, 12>::Zero();
+    }
+
     RCLCPP_INFO(logger_, "Solving joint torques using Convex MPC...");
     // print_eigen_matrix(Q_bar, "Q_bar", logger_);
     // print_eigen_matrix(R_bar, "R_bar", logger_);
@@ -334,7 +342,16 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     Kp = Matrix3d::Identity() * 10.0; // Proportional gain for swing leg tracking
     Kd = Matrix3d::Identity() * 1; // Derivative gain for swing leg tracking
 
-    // print_eigen_matrix(mpc_params.Q, "Q", logger_);
+    // Print Q matrix diagonal to verify weights are applied
+    RCLCPP_INFO(logger_, "Q matrix diagonal (state weights):");
+    for (int i = 0; i < mpc_params.N_STATES; ++i) {
+        RCLCPP_INFO(logger_, "  Q[%d] = %.2f", i, mpc_params.Q(i, i));
+    }
+    RCLCPP_INFO(logger_, "Q[5] (vertical position) = %.2f, Q[11] (vertical velocity) = %.2f", 
+                mpc_params.Q(5, 5), mpc_params.Q(11, 11));
+    RCLCPP_INFO(logger_, "R (control effort) weight = %.4f (diagonal, all forces)", mpc_params.R(0, 0));
+    RCLCPP_INFO(logger_, "Q[5]/R ratio = %.2f (should be >> 1 to prioritize tracking over control effort)", 
+                mpc_params.Q(5, 5) / mpc_params.R(0, 0));
 
     // Update QP objective function
     double regularization = 1E-6; // Regularization term for numerical stability
@@ -381,6 +398,14 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     }
     
     RCLCPP_INFO(logger_, "Gurobi solve time: %.6f seconds", model->get(GRB_DoubleAttr_Runtime));
+    RCLCPP_INFO(logger_, "Gurobi objective value: %.6f", model->get(GRB_DoubleAttr_ObjVal));
+    
+    // Compute tracking error cost to verify Q weights are working
+    VectorXd state_error = x0 - X_ref.segment(0, mpc_params.N_STATES);
+    double tracking_cost = state_error.transpose() * mpc_params.Q * state_error;
+    RCLCPP_INFO(logger_, "Current state tracking cost: %.6f (should be high if Q weights are large)", tracking_cost);
+    RCLCPP_INFO(logger_, "Vertical position error: %.4f m, Vertical velocity error: %.4f m/s", 
+                state_error(5), state_error(11));
 
     // Set terminal constraint based on reference trajectory
     // VectorXd xN_ref = X_ref.segment(mpc_params.N_STATES * (mpc_params.N_MPC - 1), mpc_params.N_STATES);
@@ -400,6 +425,17 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     Matrix<double, 3, 4> grf = grf_vec[0];
     print_eigen_matrix(grf, "GRF at k = 0", logger_);
 
+    // Check total vertical GRF vs expected weight
+    double total_vertical_grf = 0.0;
+    for (int i = 0; i < 4; ++i) {
+        total_vertical_grf += grf(2, i); // z-component (vertical)
+    }
+    double expected_weight = quad_params.mass * quad_params.g;
+    double grf_deficit = expected_weight - total_vertical_grf;
+    RCLCPP_INFO(logger_, "Total vertical GRF: %.2f N, Expected (mg): %.2f N, Deficit: %.2f N", 
+                total_vertical_grf, expected_weight, grf_deficit);
+    RCLCPP_INFO(logger_, "Per-leg vertical GRF: [%.2f, %.2f, %.2f, %.2f] N", 
+                grf(2, 0), grf(2, 1), grf(2, 2), grf(2, 3));
 
     // Predict states based on GRB solution
     for (int i = 0; i < U_temp.size(); i++) {
@@ -461,7 +497,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
         Vector3d foot_joint_torques = foot_jacobians[foot].transpose()* (-foot_grf); // Compute joint torques for the current foot (correpsonding to its 3 actuators)
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
 
-        joint_torques[foot * 3] = -joint_torques[foot * 3];  // Hip
+       // joint_torques[foot * 3] = -joint_torques[foot * 3];  // Hip
         // joint_torques[foot * 3 + 1] = -joint_torques[foot * 3 + 1]; // Thigh 
         // joint_torques[foot * 3 + 2] = -joint_torques[foot * 3 + 2]; // Invert sign of calf joint?
 
@@ -633,6 +669,11 @@ Vector<double, 12> ConvexMPC::clamp_joint_torques(Vector<double, 12>& joint_torq
 
 void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact_states)
 {
+    // Log contact states
+    RCLCPP_INFO(logger_, "Contact states: FL=%d, FR=%d, RL=%d, RR=%d", 
+                contact_states["FL"], contact_states["FR"], 
+                contact_states["RL"], contact_states["RR"]);
+    
     // Remove previous contact constraints
     for (const auto& constr : contact_constraints_) {
         model->remove(constr);
@@ -663,8 +704,15 @@ void ConvexMPC::set_contact_constraints(unordered_map<std::string, int>& contact
                     model->addConstr(U[k*12 +3*i + 1] >= -quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
                 );
 
+                // Minimum vertical GRF constraint - critical for standing
+                // MATLAB enforces f_min = 10N to ensure all stance legs apply force
+                // This prevents the MPC from trying to use zero forces when standing
                 contact_constraints_.push_back(
                     model->addConstr(U[k*12 +3*i + 2] >= mpc_params.min_vertical_grf) // Ensure the vertical force is greater than the minimum
+                );
+                // Maximum vertical GRF constraint
+                contact_constraints_.push_back(
+                    model->addConstr(U[k*12 +3*i + 2] <= mpc_params.max_vertical_grf) // Ensure the vertical force is less than the maximum
                 );
             }
             else
