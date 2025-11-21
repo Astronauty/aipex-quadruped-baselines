@@ -18,7 +18,8 @@ def generate_launch_description():
     #     "config",
     #     "convex_mpc_params.yaml"
     # )
-    convex_mpc_params_file = "/home/aipexws5/daniel/aipex-quadruped-baselines/src/convex_mpc/config/convex_mpc_params.yaml"
+    # convex_mpc_params_file = "/home/aipexws5/daniel/aipex-quadruped-baselines/src/convex_mpc/config/convex_mpc_params.yaml"
+    convex_mpc_params_file = "/home/abien/ros2_ws/src/aipex-quadruped-baselines/src/convex_mpc/config/convex_mpc_params.yaml"
     return LaunchDescription([
         Node(
             package='convex_mpc',

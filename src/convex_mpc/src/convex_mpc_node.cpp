@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 #include <stdexcept>
+#include <sstream>
+#include <iomanip>
 #include <Eigen/Dense>
 
 
@@ -53,18 +55,13 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     state_measurement_mode_ = StateMeasurementMode::SPORTMODE; 
 
-    float theta[3] = {0.0, 0.0, 0.0}; // Orientation in roll, pitch, yaw
-    float p[3] = {0.0, 0.0, 0.0}; // Position in x, y, z
-    float omega[3] = {0.0, 0.0, 0.0}; // Angular velocity in roll, pitch, yaw
-    float p_dot[3] = {0.0, 0.0, 0.0}; // Linear velocity in x, y, z
-
     joy_msg = std::make_shared<sensor_msgs::msg::Joy>();
     joy_msg->axes.resize(8, 0.0);  // Initialize with 8 axes, all zero
     joy_msg->buttons.resize(11, 0); // Initialize with 11 buttons, all zero
     
 
     // Publisher for joint torque commands
-    this->declare_parameter<int>("JOINT_TORQUE_PUBLISH_RATE_MS", 10);
+    this->declare_parameter<int>("JOINT_TORQUE_PUBLISH_RATE_MS", 5);
     const int JOINT_TORQUE_PUBLISH_RATE_MS = this->get_parameter("JOINT_TORQUE_PUBLISH_RATE_MS").as_int();
 
     joint_torque_pub_ = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);
@@ -87,7 +84,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     );
 
     // TODO: Set correct rate for the timer
-    this->declare_parameter<int>("MPC_STATE_UPDATE_RATE_MS", 10);
+    this->declare_parameter<int>("MPC_STATE_UPDATE_RATE_MS", 5);
     const int MPC_STATE_UPDATE_RATE_MS = this->get_parameter("MPC_STATE_UPDATE_RATE_MS").as_int();
     update_mpc_state_timer_ = this->create_wall_timer(std::chrono::milliseconds(MPC_STATE_UPDATE_RATE_MS), std::bind(&QuadConvexMPCNode::update_mpc_state, this));
 
@@ -102,6 +99,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     this->declare_parameter<double>("Q_scale", 1.0);
     this->declare_parameter<double>("Q_n_scale", 1.0);
     this->declare_parameter<double>("min_vertical_grf", 10.0);
+    this->declare_parameter<double>("max_vertical_grf", 400.0);
 
 
 
@@ -117,17 +115,23 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     Q_diag = Map<VectorXd>(Q_diag_double.data(), Q_diag_double.size()) * this->get_parameter("Q_scale").as_double();
     double Q_n_scale = this->get_parameter("Q_n_scale").as_double();
     double min_vertical_grf = this->get_parameter("min_vertical_grf").as_double();
+    double max_vertical_grf = this->get_parameter("max_vertical_grf").as_double();
 
     MatrixXd Q = Q_diag.asDiagonal();
-    MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS);
+    // R weight balances tracking vs control effort
+    // With Q[5] = 50, R = 0.1 gives Q/R = 500, which prioritizes tracking but prevents excessive forces
+    // R = 0.5 gives Q/R = 100, more balanced for steady-state operation
+    this->declare_parameter<double>("R_weight", 0.1);
+    double R_weight = this->get_parameter("R_weight").as_double();
+    MatrixXd R = MatrixXd::Identity(N_CONTROLS, N_CONTROLS) * R_weight;
     VectorXd u_lower = VectorXd::Constant(N_CONTROLS, -45.0);
     VectorXd u_upper = VectorXd::Constant(N_CONTROLS, 45.0);
 
     mpc_params = std::make_unique<MPCParams>(N_MPC, N_CONTROLS, N_STATES,
-        dt, Q, Q_n_scale, R, u_lower, u_upper, min_vertical_grf);
+        dt, Q, Q_n_scale, R, u_lower, u_upper, min_vertical_grf, max_vertical_grf);
 
     // Define Quadruped Params (from https://github.com/unitreerobotics/unitree_ros/blob/master/robots/go2_description/urdf/go2_description.urdf)
-    this->declare_parameter<double>("mass", 6.921);
+    this->declare_parameter<double>("mass", 15.7);
     double mass = this->get_parameter("mass").as_double();
 
     this->declare_parameter<double>("torque_limit", 45.0);
@@ -223,6 +227,10 @@ void QuadConvexMPCNode::low_state_callback(unitree_go::msg::LowState::SharedPtr 
         //             i, motor[i].q, motor[i].dq, motor[i].ddq, motor[i].tau_est);
         joint_angles[i] = motor[i].q; // Joint angles of Go2
     }
+
+    has_low_state_ = true;
+
+    log_low_state(*data);
     
 }
 
@@ -249,6 +257,10 @@ void QuadConvexMPCNode::sport_mode_callback(const unitree_go::msg::SportModeStat
         foot_vel[i] = data->foot_speed_body[i];
     }
 
+    has_sport_mode_state_ = true;
+
+    log_sport_mode_state(*data);
+
     // RCLCPP_INFO(this->get_logger(), "Foot position and velcity relative to body -- num: %d; x: %f; y: %f; z: %f, vx: %f; vy: %f; vz: %f",
     //             0, foot_pos[0], foot_pos[1], foot_pos[2], foot_vel[0], foot_vel[1], foot_vel[2]);
     // RCLCPP_INFO(this->get_logger(), "Foot position and velcity relative to body -- num: %d; x: %f; y: %f; z: %f, vx: %f; vy: %f; vz: %f",
@@ -270,6 +282,79 @@ void QuadConvexMPCNode::sport_mode_callback(const unitree_go::msg::SportModeStat
     
 }
 
+void QuadConvexMPCNode::log_low_state(const unitree_go::msg::LowState& msg)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(6);
+    oss << "LowState | IMU rpy: [" << msg.imu_state.rpy[0] << ", "
+        << msg.imu_state.rpy[1] << ", " << msg.imu_state.rpy[2] << "]; gyro: ["
+        << msg.imu_state.gyroscope[0] << ", " << msg.imu_state.gyroscope[1]
+        << ", " << msg.imu_state.gyroscope[2] << "]; accel: ["
+        << msg.imu_state.accelerometer[0] << ", " << msg.imu_state.accelerometer[1]
+        << ", " << msg.imu_state.accelerometer[2] << "]";
+
+    for (int i = 0; i < 12; ++i)
+    {
+        const auto& motor_state = msg.motor_state[i];
+        oss << "\n  Motor " << i
+            << " | q: " << motor_state.q
+            << ", dq: " << motor_state.dq
+            << ", ddq: " << motor_state.ddq
+            << ", tau_est: " << motor_state.tau_est;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
+}
+
+void QuadConvexMPCNode::log_sport_mode_state(const unitree_go::msg::SportModeState& msg)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(6);
+    oss << "SportModeState | pos: [" << msg.position[0] << ", "
+        << msg.position[1] << ", " << msg.position[2] << "]; vel: ["
+        << msg.velocity[0] << ", " << msg.velocity[1] << ", "
+        << msg.velocity[2] << "]; yaw_speed: " << msg.yaw_speed
+        << "; gait_type: " << msg.gait_type
+        << "; foot_raise_height: " << msg.foot_raise_height
+        << "; body_height: " << msg.body_height;
+
+    oss << "\n  Foot forces: [";
+    for (int i = 0; i < 4; ++i)
+    {
+        oss << msg.foot_force[i];
+        if (i < 3) oss << ", ";
+    }
+    oss << "]";
+
+    oss << "\n  Foot positions (body frame):";
+    for (int leg = 0; leg < 4; ++leg)
+    {
+        oss << "\n    Leg " << leg << " : [";
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            int idx = leg * 3 + axis;
+            oss << msg.foot_position_body[idx];
+            if (axis < 2) oss << ", ";
+        }
+        oss << "]";
+    }
+
+    oss << "\n  Foot velocities (body frame):";
+    for (int leg = 0; leg < 4; ++leg)
+    {
+        oss << "\n    Leg " << leg << " : [";
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            int idx = leg * 3 + axis;
+            oss << msg.foot_speed_body[idx];
+            if (axis < 2) oss << ", ";
+        }
+        oss << "]";
+    }
+
+    RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
+}
+
 void QuadConvexMPCNode::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
     this->joy_msg = msg; // Store the joystick message
@@ -281,9 +366,8 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
 
     double max_translation_vel = 0.5;
     double max_yaw_vel = 0.5;
-
+    
     double height = 0.312; // Desired height above ground
-    // double height = 0.2;
     double pitch = 0.0; 
     double roll = 0.0; 
     double current_yaw = theta[2]; // Current yaw angle from IMU
@@ -304,6 +388,7 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     double vy = max_translation_vel * axes_double[controller_axis_indices["y"]]; // Left/right movement
     double wz = max_yaw_vel * axes_double[controller_axis_indices["yaw"]]; // Yaw rotation
 
+
     for (int k=0; k < mpc_params->N_MPC; k++)
     {
         X_ref.segment<13>(k * mpc_params->N_STATES) = (Eigen::Matrix<double, 13, 1>() <<
@@ -312,7 +397,7 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
             current_yaw + wz * k * mpc_params->dt, // Fixed yaw rate interpolation
             // p[0] + vx * k * mpc_params->dt, // x position (forward/backward movement)
             // p[1] + vy * k * mpc_params->dt, // y position (left/right movement)
-            -0.025570 + vx * k * mpc_params->dt, // x position (forward/backward movement)
+            0.0 + vx * k * mpc_params->dt, // x position (forward/backward movement)
             vy * k * mpc_params->dt, // y position (left/right movement)
             height, // z position (height above ground)
             0.0, // Roll rate (fixed for now)
@@ -330,6 +415,12 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
 
 void QuadConvexMPCNode::update_mpc_state()
 {
+    if (!has_low_state_ || !has_sport_mode_state_)
+    {
+        RCLCPP_WARN_ONCE(this->get_logger(), "Waiting for initial low_state and sport_mode messages before updating MPC state.");
+        return;
+    }
+
     // x = [theta, p, omega, p_dot, g]
     float g = 9.81; // Gravity state
 
@@ -352,15 +443,16 @@ void QuadConvexMPCNode::update_mpc_state()
     this->convex_mpc->update_joint_angles(joint_angles_double); // Update joint angles (used for foot Jacobian computation)
 
     // Reshape foot_pos (12x1 vector) into a 3x4 matrix for MPC
+    // foot_pos are in world frame (absolute positions from xrog/TF)
     Eigen::Map<Eigen::Matrix<float, 3, 4, Eigen::ColMajor>> mat_map(foot_pos, 3, 4);
     foot_positions = mat_map.cast<double>();
-    this->convex_mpc->update_foot_positions(foot_positions); // Update foot positions in the body frame
+    this->convex_mpc->update_foot_positions(foot_positions); // Update foot positions (world frame, will be converted to COM-relative in MPC)
 
 
     // Update the reference trajectory
     // Reference state to repeat
     Eigen::Vector<double, 13> X_ref_single;
-    X_ref_single << 0.000000, 0.000000, 0.000000, -0.025570, 0.000000, 0.312320, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 9.810000;
+    X_ref_single << 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.312320, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 9.810000;
 
     // Repeat X_ref_single N_MPC times to form X_ref
     int N_MPC = mpc_params->N_MPC;
@@ -399,6 +491,15 @@ Eigen::VectorXd QuadConvexMPCNode::constrain_reference_trajectory_size(const Eig
 
 void QuadConvexMPCNode::publish_cmd()
 {
+    if (!has_low_state_ || !has_sport_mode_state_)
+    {
+        return;
+    }
+
+    // Update MPC state first to ensure x0 is current before solving
+    // This prevents solving with uninitialized state when timers are slightly out of sync
+    update_mpc_state();
+
     // Check whether each leg is scheduled to be in swing or stance
     unordered_map<std::string, int> contact_states;
 

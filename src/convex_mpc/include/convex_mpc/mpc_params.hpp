@@ -17,6 +17,7 @@ struct MPCParams
 
     const double Q_n_scale; // Scaling factor for terminal state weight
     const double min_vertical_grf; // Minimum vertical ground reaction force
+    const double max_vertical_grf; // Maximum vertical ground reaction force
 
     // MPCParams(): 
     //     N_MPC(-1),
@@ -28,7 +29,7 @@ struct MPCParams
     //     u_lower(VectorXd::Zero(0)),
     //     u_upper(VectorXd::Zero(0)) {};
 
-    MPCParams(int n_mpc, int n_controls, int n_states, double dt, MatrixXd Q, double Q_n_scale, MatrixXd R, VectorXd u_lower, VectorXd u_upper, double min_vertical_grf)
+    MPCParams(int n_mpc, int n_controls, int n_states, double dt, MatrixXd Q, double Q_n_scale, MatrixXd R, VectorXd u_lower, VectorXd u_upper, double min_vertical_grf, double max_vertical_grf)
     : N_MPC(n_mpc),
       N_CONTROLS(n_controls),
       N_STATES(n_states),
@@ -38,5 +39,6 @@ struct MPCParams
       R(R),
       u_lower(u_lower),
       u_upper(u_upper),
-      min_vertical_grf(min_vertical_grf){}
+      min_vertical_grf(min_vertical_grf),
+      max_vertical_grf(max_vertical_grf){}
 };
