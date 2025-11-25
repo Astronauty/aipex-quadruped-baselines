@@ -4,18 +4,24 @@ import numpy as np
 import casadi as ca
 
 class URDFManipulatorDynamics:
-    def __init__(self, urdf_path):
+    """Parse manipulator dynamics from a provided URDF and generate Casadi representations for use in OCPs.
+    """
+    def __init__(self, urdf_path, verbose=False):
         # urdf_path = "/src/convex_mpc/urdf/go2_description.urdf"
         # self.model = pinocchio.buildModelFromUrdf(urdf_path)
+        self.verbose=verbose
         
         self.base_model = pinocchio.buildModelFromUrdf(urdf_path) # Adds a 6DoF Joint for floating base
-        print("Base Model: ")
+        print("----------------------")
+        print("Base Model Dimensions: ")
+        
         print(f"nq:{self.base_model.nq}")
         print(f"nv:{self.base_model.nv}")
         # print(f"nu:{self.base_model.nu}")
         print()
         
         self.model = pinocchio.buildModelFromUrdf(urdf_path, pinocchio.JointModelFreeFlyer()) # Adds a 6DoF Joint for floating base
+        print("----------------------")
         print("Floating Base Model: ")
         print(f"nq:{self.model.nq}")
         print(f"nv:{self.model.nv}")
@@ -40,7 +46,8 @@ class URDFManipulatorDynamics:
     
     @property
     def nu(self):
-        return 18 # 6 free joints for free-flyer
+        # return 18 # 6 free joints for free-flyer
+        return self.model.nv - 6
     
     @property
     def nc(self):
@@ -68,24 +75,36 @@ class URDFManipulatorDynamics:
         C = pinocchio.computeCoriolisMatrix(self.model, self.data, q, dq)  # Coriolis matrix
         g = pinocchio.computeGeneralizedGravity(self.model, self.data, q)  # Gravity vector
         
-        
-        # Jacobian
-        
-
-        print("Go2 Manipulator Dynamics")
-        print("------------------------")
-        print(f"nq: {self.nq}")
-        print(f"nv: {self.nv}")
-        print()
-        print(f"M {M.shape}:\n", M)
-        print()
-        print(f"C {C.shape}:\n", C)
-        print()
-        # print("g:\n ", g)
-        print(f"g {g.shape}:\n", g)
+        if self.verbose:
+            print("Go2 Manipulator Dynamics")
+            print("------------------------")
+            print(f"nq: {self.nq}")
+            print(f"nv: {self.nv}")
+            print()
+            print(f"M {M.shape}:\n", M)
+            print()
+            print(f"C {C.shape}:\n", C)
+            print()
+            # print("g:\n ", g)
+            print(f"g {g.shape}:\n", g)
         
         
         return M, C, g
+    
+    def print_model_structure(self):
+        print("Joints:")
+        for j, joint in enumerate(self.model.joints):
+            name = self.model.names[j]
+            idx_v = self.model.idx_vs[j]      # starting velocity index
+            nv_j = self.model.nvs[j]          # number of velocity dofs for this joint
+            print(f"  joint_id={j:2d} name={name:20s} idx_v={idx_v:2d} nv={nv_j}")
+
+        print("\nFrames (bodies only):")
+        for i, f in enumerate(self.model.frames):
+            if f.type == pinocchio.FrameType.BODY:
+                # print(f"  frame_id={i:2d} body_name={f.name:20s} parent_joint={f.parent}")
+                print(f"  frame_id={i:2d} body_name={f.name:20s} parent_joint={f.parentJoint}")
+                
     
     def state_space_residual(self, x, u, lam):
         """Returns a dynamics residual in the form of state space dynamics. 
@@ -127,7 +146,7 @@ class URDFManipulatorDynamics:
         lam_sym = ca.SX.sym('lam', self.nc)            # 12 (placeholder)
 
         q = x_sym[0:self.nq]
-        v = x_sym[self.nq:self.nq + self.nv]
+        dq = x_sym[self.nq:self.nq + self.nv]
 
         # Pinocchio expects numeric; wrap with ca.Callback or build via external for full symbolic.
         # Here we treat M,C,g as parameters by evaluating at q,v=0 (example placeholder).
@@ -137,14 +156,27 @@ class URDFManipulatorDynamics:
         C = ca.DM(C_num)
         g = ca.DM(g_num)
 
-        tau = ca.vertcat(ca.DM.zeros(6), u_sym)
-        a = ca.solve(M, tau - C @ v - g)
-        qdot = ca.vertcat(v[3:6], ca.DM.zeros(4), v[6:])
-        dx = ca.vertcat(qdot, a)
+        u_full_sym = ca.vertcat(ca.DM.zeros(6), u_sym) # add zero 6doF forces for the free flyer joint
+        print("u_full_sym length: ", u_full_sym.shape)
+        ddq = ca.solve(M, u_full_sym - (C @ dq) - g)
+        # qdot = ca.vertcat(dq[3:6], ca.DM.zeros(4), v[6:])
+        
+        dx = ca.vertcat(dq, ddq)
         f = ca.Function('f', [x_sym, u_sym, lam_sym], [dx])
         return f
 
-
+    def get_frame_pose(self, q, frame_name):
+        assert len(q) == self.nq
+        
+        fid = self.model.getFrameId(frame_name)
+        pinocchio.forwardKinematics(self.model, self.data, q)
+        pinocchio.updateFramePlacements(self.model, self.data)
+        
+        T = self.data.oMf[fid]
+        pos = T.translation
+        R = T.rotation
+        return pos, R
+        
 
     @property
     def S(active_legs):
@@ -161,29 +193,49 @@ class URDFManipulatorDynamics:
         S = np.array()
         
         return S
+    
+
 
  
 class Go2DirectMultipleShooting:
     def __init__(self, N_MPC : int, dt : float, urdf_path):
+        
+        # Create the dynamics model for the go2
+        self.go2= URDFManipulatorDynamics(urdf_path)
+        
         # Parse parameters
         self.N_MPC = N_MPC
         self.dt = dt
+        self.nX = self.go2.nq + self.go2.nv
+        self.nu = self.go2.nu
         
         T = N_MPC * dt # Time horizon
-        
-        # Create the dynamics model for the go2
-        go2= URDFManipulatorDynamics(urdf_path)
 
         # Declare model variables
-        X = ca.SX.sym('X', go2.nq)
-        U = ca.SX.sym('U', go2.nu)
-        LAM = ca.SX.sym('LAM', go2.nc)
+        X = ca.SX.sym('X', self.go2.nq * N_MPC)
+        U = ca.SX.sym('U', self.go2.nu * (N_MPC - 1))
+        LAM = ca.SX.sym('LAM', self.go2.nc * N_MPC)
+
+        self.q0 = np.zeros(self.go2.nq) # Current q0
 
         # Model equations
-        xdot = go2.casadi_dynamics_function()
 
-#         # Objective term
-#         L = x1**2 + x2**2 + u**2
+        # Objective term
+        
+        X_ref = ca.SX('X_ref', # temp reference trajectory
+        
+        f = self.go2.casadi_dynamics_function() # xdot = f(x,u,lam)
+        
+        # L = x1**2 + x2**2 + u**2
+        go2.print_model_structure()
+        
+        p_WB, R_WB = go2.get_frame_pose(self.q0, "base")
+        
+        print(f"Base Link Frame Position: {p_WB}")
+        print(f"Base Link Orientation: {R_WB}")
+        
+        
+        # pos ,R = go2.frame_pose(q, "baselink")
 
 #         # Formulate discrete time dynamics
 #         if False:
@@ -282,6 +334,7 @@ class Go2DirectMultipleShooting:
 #         plt.show()
         
         pass
+    
 
 
 
