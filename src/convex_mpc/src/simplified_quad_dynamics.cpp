@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <iostream>
+
 using namespace Eigen;
 using namespace std;
 
@@ -28,7 +30,7 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
     // Define the continuous state space model for a simplified quadruped
     MatrixXd A(13,13);
     A.setZero();
-    A.block<3, 3>(0, 6) = R_z;
+    A.block<3, 3>(0, 6) = R_z.transpose(); // Rotation matrix from world frame to body frame
     A.block<3, 3>(3, 9) = Matrix3d::Identity();
     // A.block<3, 1>(9, 0) = Matrix3d::iden
     A(11, 12) = -1; // Gravity influence on accel
@@ -39,8 +41,8 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
     B.setZero();
     for (int foot_index = 0; foot_index < 4; foot_index++)
     {
-        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index).transpose());
-        B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/mass;
+        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.row(foot_index).transpose());
+        B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/m;
     }
     
     // cout << "Continuous State Space Model" << endl;
@@ -62,7 +64,7 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
 
 StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b, const double& mass, const double& dt)
 {
-    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions, I_b, mass);
+    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions, I_b, mass, I_b, mass);
     StateSpace dss = c2d(ss, dt);
     return dss;
 };

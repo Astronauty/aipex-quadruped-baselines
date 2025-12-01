@@ -58,14 +58,14 @@ class QuadConvexMPCNode : public rclcpp::Node
         double elapsed_time_s;
 
         // MPC State Vars
-        float theta[3]; // Orientation in roll, pitch, yaw
-        float p[3]; // Position in x, y, z
-        float omega[3]; // Angular velocity in roll, pitch, yaw
-        float p_dot[3]; // Linear velocity in x, y, z
+        float theta[3] = {0.0f}; // Orientation in roll, pitch, yaw
+        float p[3] = {0.0f}; // Position in x, y, z
+        float omega[3] = {0.0f}; // Angular velocity in roll, pitch, yaw
+        float p_dot[3] = {0.0f}; // Linear velocity in x, y, z
         // MPCParams mpc_params; // MPC parameters
 
-        Matrix<double, 3, 4> foot_positions; // Foot positions in x, y, z
-        float joint_angles[12]; // Joint angles of Go2
+        Matrix<double, 3, 4> foot_positions = Matrix<double, 3, 4>::Zero(); // Foot positions in x, y, z
+        float joint_angles[12] = {0.0f}; // Joint angles of Go2
 
         // Publisher for joint torque commands
         rclcpp::Publisher<unitree_go::msg::LowCmd>::SharedPtr joint_torque_pub_;
@@ -73,16 +73,16 @@ class QuadConvexMPCNode : public rclcpp::Node
 
         // Unitree sportmode vars
         rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr sport_mode_sub_;
-        float foot_pos[12];
-        float foot_vel[12];
+        float foot_pos[12] = {0.0f};
+        float foot_vel[12] = {0.0f};
         
         // Unitree lowstate vars
         rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr low_state_sub_;
 
         unitree_go::msg::IMUState imu;         // Unitree go2 IMU message
         unitree_go::msg::MotorState motor[12]; // Unitree go2 motor state message
-        int16_t foot_force[4];                 // External contact force value (int)
-        int16_t foot_force_est[4];             // Estimated  external contact force value (int)
+        int16_t foot_force[4] = {0};                 // External contact force value (int)
+        int16_t foot_force_est[4] = {0};             // Estimated  external contact force value (int)
         float battery_voltage;                 // Battery voltage
         float battery_current;                 // Battery current
 
@@ -93,6 +93,8 @@ class QuadConvexMPCNode : public rclcpp::Node
         rclcpp::TimerBase::SharedPtr cmd_timer_; // Lowcmd publish frequency
         size_t count_;
         StateMeasurementMode state_measurement_mode_;
+        bool has_low_state_ = false;
+        bool has_sport_mode_state_ = false;
 
         // Joystick parsing
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
@@ -106,6 +108,8 @@ class QuadConvexMPCNode : public rclcpp::Node
         void sport_mode_callback(const unitree_go::msg::SportModeState::SharedPtr data);
         void update_mpc_state();
         void publish_cmd();
+        void log_low_state(const unitree_go::msg::LowState& msg);
+        void log_sport_mode_state(const unitree_go::msg::SportModeState& msg);
 
         // Gait parameters
         // float gait_phase_;
