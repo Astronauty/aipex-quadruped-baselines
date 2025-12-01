@@ -223,9 +223,20 @@ void QuadConvexMPCNode::low_state_callback(unitree_go::msg::LowState::SharedPtr 
     for (int i = 0; i < 12; i++)
     {
         motor[i] = data->motor_state[i];
+    }
         // RCLCPP_INFO(this->get_logger(), "Motor state -- num: %d; q: %f; dq: %f; ddq: %f; tau: %f",
         //             i, motor[i].q, motor[i].dq, motor[i].ddq, motor[i].tau_est);
-        joint_angles[i] = motor[i].q; // Joint angles of Go2
+        // Map motor indices to joint angles with FR↔FL and RR↔RL swap:
+    // From lowstate: Motors 0-2=FR, 3-5=FL, 6-8=RL, 9-11=RR
+    // Motors 0-2 (FR) → joint_angles[3-5] (used for Foot 1/FR)
+    // Motors 3-5 (FL) → joint_angles[0-2] (used for Foot 0/FL)
+    // Motors 6-8 (RL) → joint_angles[9-11] (used for Foot 3/RR)
+    // Motors 9-11 (RR) → joint_angles[6-8] (used for Foot 2/RL)
+    for (int i = 0; i < 3; i++) {
+        joint_angles[0 + i] = motor[3 + i].q; // Foot 0 (FL) gets motors 3-5 (FL from lowstate)
+        joint_angles[3 + i] = motor[0 + i].q; // Foot 1 (FR) gets motors 0-2 (FR from lowstate)
+        joint_angles[6 + i] = motor[9 + i].q; // Foot 2 (RL) gets motors 9-11 (RR from lowstate)
+        joint_angles[9 + i] = motor[6 + i].q; // Foot 3 (RR) gets motors 6-8 (RL from lowstate)
     }
 
     has_low_state_ = true;
@@ -538,9 +549,17 @@ void QuadConvexMPCNode::publish_cmd()
 
     }
 
-    for (int i = 0; i < 12; i++)
-    {
-        low_cmd.motor_cmd[i].tau = joint_torques[i]; // Set the joint torque command
+     // Remap torques to correct motors (reverse of joint angle swap: FR↔FL and RR↔RL)
+    // From lowstate: Motors 0-2=FR, 3-5=FL, 6-8=RL, 9-11=RR
+    // joint_torques[0-2] (computed for Foot 0/FL) should go to motors 3-5 (FL from lowstate)
+    // joint_torques[3-5] (computed for Foot 1/FR) should go to motors 0-2 (FR from lowstate)
+    // joint_torques[6-8] (computed for Foot 2/RL) should go to motors 9-11 (RR from lowstate)
+    // joint_torques[9-11] (computed for Foot 3/RR) should go to motors 6-8 (RL from lowstate)
+    for (int i = 0; i < 3; i++) {
+        low_cmd.motor_cmd[0 + i].tau = joint_torques[3 + i]; // Motors 0-2 (FR) get Foot 1/FR torques
+        low_cmd.motor_cmd[3 + i].tau = joint_torques[0 + i]; // Motors 3-5 (FL) get Foot 0/FL torques
+        low_cmd.motor_cmd[6 + i].tau = joint_torques[9 + i]; // Motors 6-8 (RL) get Foot 3/RR torques
+        low_cmd.motor_cmd[9 + i].tau = joint_torques[6 + i]; // Motors 9-11 (RR) get Foot 2/RL torques
     }
 
     RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
