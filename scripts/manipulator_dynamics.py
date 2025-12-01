@@ -162,7 +162,9 @@ class URDFManipulatorDynamics:
         # qdot = ca.vertcat(dq[3:6], ca.DM.zeros(4), v[6:])
         
         dx = ca.vertcat(dq, ddq)
-        f = ca.Function('f', [x_sym, u_sym, lam_sym], [dx])
+        # f = ca.Function('f', [x_sym, u_sym, lam_sym], [dx])
+        f = ca.Function('f', [x_sym, u_sym], [dx])
+        
         return f
 
     def get_frame_pose(self, q, frame_name):
@@ -206,134 +208,102 @@ class Go2DirectMultipleShooting:
         # Parse parameters
         self.N_MPC = N_MPC
         self.dt = dt
-        self.nX = self.go2.nq + self.go2.nv
+        self.nx = self.go2.nq + self.go2.nv
         self.nu = self.go2.nu
         
-        T = N_MPC * dt # Time horizon
+        self.nx_rigidbody = 7 # Number of dofs in rigid body pose
+        
+        
+        self.T = N_MPC * dt # Time horizon
 
         # Declare model variables
-        X = ca.SX.sym('X', self.go2.nq * N_MPC)
-        U = ca.SX.sym('U', self.go2.nu * (N_MPC - 1))
-        LAM = ca.SX.sym('LAM', self.go2.nc * N_MPC)
+        self.X = ca.SX.sym('X', self.go2.nq * N_MPC)
+        self.U = ca.SX.sym('U', self.go2.nu * (N_MPC - 1))
+        self.LAM = ca.SX.sym('LAM', self.go2.nc * N_MPC)
 
         self.q0 = np.zeros(self.go2.nq) # Current q0
 
         # Model equations
 
         # Objective term
+        X_ref_rb = ca.SX.sym('X_ref_rb', self.nx_rigidbody * N_MPC) # Reference trajectory for the rigid body pose
         
-        X_ref = ca.SX('X_ref', # temp reference trajectory
+        # TODO: Weights for Q and R
+        Q_diag = 1.0 * ca.DM.eye(self.nx_rigidbody)
+        Qf = 1.0 * ca.DM.eye(self.nx_rigidbody)
+        R = 1.0 * ca.DM.eye(self.nu)
         
         f = self.go2.casadi_dynamics_function() # xdot = f(x,u,lam)
         
         # L = x1**2 + x2**2 + u**2
-        go2.print_model_structure()
+        self.go2.print_model_structure()
         
-        p_WB, R_WB = go2.get_frame_pose(self.q0, "base")
+        p_WB, R_WB = self.go2.get_frame_pose(self.q0, "base")
         
         print(f"Base Link Frame Position: {p_WB}")
         print(f"Base Link Orientation: {R_WB}")
+
+        # # Formulate discrete time dynamics
+        # if False:
+        #     # CVODES from the SUNDIALS suite
+        #     dae = {'x':x, 'p':u, 'ode':xdot, 'quad':L}
+        #     F = integrator('F', 'cvodes', dae, 0, T/N)
+        # else:
         
+        # Fixed step Runge-Kutta 4 integrator
+        M = 4 # RK4 steps per interval
         
-        # pos ,R = go2.frame_pose(q, "baselink")
-
-#         # Formulate discrete time dynamics
-#         if False:
-#             # CVODES from the SUNDIALS suite
-#             dae = {'x':x, 'p':u, 'ode':xdot, 'quad':L}
-#             F = integrator('F', 'cvodes', dae, 0, T/N)
-#         else:
-#         # Fixed step Runge-Kutta 4 integrator
-#         M = 4 # RK4 steps per interval
-#         DT = T/N/M
-#         f = Function('f', [x, u], [xdot, L])
-#         X0 = MX.sym('X0', 2)
-#         U = MX.sym('U')
-#         X = X0
-#         Q = 0
-#         for j in range(M):
-#             k1, k1_q = f(X, U)
-#             k2, k2_q = f(X + DT/2 * k1, U)
-#             k3, k3_q = f(X + DT/2 * k2, U)
-#             k4, k4_q = f(X + DT * k3, U)
-#             X=X+DT/6*(k1 +2*k2 +2*k3 +k4)
-#             Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
-#         F = Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
-
-#         # Evaluate at a test point
-#         Fk = F(x0=[0.2,0.3],p=0.4)
-#         print(Fk['xf'])
-#         print(Fk['qf'])
-
-#         # Start with an empty NLP
-#         w=[]
-#         w0 = []
-#         lbw = []
-#         ubw = []
-#         J = 0
-#         g=[]
-#         lbg = []
-#         ubg = []
-
-#         # "Lift" initial conditions
-#         Xk = MX.sym('X0', 2)
-#         w += [Xk]
-#         lbw += [0, 1]
-#         ubw += [0, 1]
-#         w0 += [0, 1]
-
-#         # Formulate the NLP
-#         for k in range(N):
-#             # New NLP variable for the control
-#             Uk = MX.sym('U_' + str(k))
-#             w   += [Uk]
-#             lbw += [-1]
-#             ubw += [1]
-#             w0  += [0]
-
-#             # Integrate till the end of the interval
-#             Fk = F(x0=Xk, p=Uk)
-#             Xk_end = Fk['xf']
-#             J=J+Fk['qf']
-
-#             # New NLP variable for state at end of interval
-#             Xk = MX.sym('X_' + str(k+1), 2)
-#             w   += [Xk]
-#             lbw += [-0.25, -inf]
-#             ubw += [  inf,  inf]
-#             w0  += [0, 0]
-
-#             # Add equality constraint
-#             g   += [Xk_end-Xk]
-#             lbg += [0, 0]
-#             ubg += [0, 0]
-
-#         # Create an NLP solver
-#         prob = {'f': J, 'x': vertcat(*w), 'g': vertcat(*g)}
-#         solver = nlpsol('solver', 'ipopt', prob);
-
-#         # Solve the NLP
-#         sol = solver(x0=w0, lbx=lbw, ubx=ubw, lbg=lbg, ubg=ubg)
-#         w_opt = sol['x'].full().flatten()
-
-#         # Plot the solution
-#         x1_opt = w_opt[0::3]
-#         x2_opt = w_opt[1::3]
-#         u_opt = w_opt[2::3]
-
-#         tgrid = [T/N*k for k in range(N+1)]
-#         import matplotlib.pyplot as plt
-#         plt.figure(1)
-#         plt.clf()
-#         plt.plot(tgrid, x1_opt, '--')
-#         plt.plot(tgrid, x2_opt, '-')
-#         plt.step(tgrid, vertcat(DM.nan(1), u_opt), '-.')
-#         plt.xlabel('t')
-#         plt.legend(['x1','x2','u'])
-#         plt.grid()
-#         plt.show()
+        # f = ca.Function('f', [x, u], [xdot, L])
+        x0 = ca.MX.sym('x0', self.nx)
+        u0 = ca.MX.sym('u0', self.nu)
         
+        xdot = f(x0, u0)
+        print(xdot)
+        # X = X0
+        # Q = 0
+        
+        # f(X, U)
+        
+        for k in range(N_MPC - 1):
+            
         pass
+
+    def x_rb_k(self, k):
+        """Returns the rigid-body pose () for the kth time index in the mpc horizon
+        Args:
+            k (int) : timestep index within mpc horizon
+        """
+        assert k <= self.N_MPC
+        
+        x_k = self.X[k*self.nx : (k+1)*self.nx]
+        x_k_rb = x_k[:self.nx_rigidbody]
+           
+        return x_k_rb
+    
+    def u_k(self, k):
+        assert k < self.N_MPC
+        
+        u_k = self.U[k * self.nu : (k+1) * self.nu]
+        return u_k
+    
+    def rk4_step(f, xk, uk, dt):
+        """Given 
+
+        Args:
+            f (_type_): _description_
+            x (_type_): _description_
+            u (_type_): _description_
+            dt (_type_): _description_
+            
+        Returns
+        """
+        k1 = f(xk, uk)
+        k2 = f(xk + dt/2 * k1, uk)
+        k3 = f(xk + dt/2 * k2, uk)
+        k4 = f(xk + dt * k3, uk)
+        xkp1=xk+dt/6*(k1 +2*k2 +2*k3 +k4)
+        
+        return xkp1
     
 
 
