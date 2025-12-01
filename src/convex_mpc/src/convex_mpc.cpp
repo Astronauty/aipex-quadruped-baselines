@@ -66,6 +66,9 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 
         // add_friction_cone_constraints(*model, U, 0.5);
 
+        set_contact_constraints()
+
+
         this->solve_joint_torques();
     } 
     catch(GRBException e) 

@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <iostream>
+
 using namespace Eigen;
 using namespace std;
 
@@ -39,9 +41,8 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
     B.setZero();
     for (int foot_index = 0; foot_index < 4; foot_index++)
     {
-        // hatMap expects Vector3d (column vector), foot_positions.col() already returns column vector
-        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.col(foot_index));
-        B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/mass;
+        B.block<3, 3>(6, 3*foot_index) = I_w_inv*hatMap(foot_positions.row(foot_index).transpose());
+        B.block<3, 3>(9, 3*foot_index) = Matrix3d::Identity()/m;
     }
     
     // cout << "Continuous State Space Model" << endl;
@@ -63,7 +64,7 @@ StateSpace quadruped_state_space_continuous(const double& yaw, Matrix<double, 3,
 
 StateSpace quadruped_state_space_discrete(const double& yaw, Matrix<double, 3, 4>& foot_positions, const Matrix3d& I_b, const double& mass, const double& dt)
 {
-    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions, I_b, mass);
+    StateSpace ss = quadruped_state_space_continuous(yaw, foot_positions, I_b, mass, I_b, mass);
     StateSpace dss = c2d(ss, dt);
     return dss;
 };
