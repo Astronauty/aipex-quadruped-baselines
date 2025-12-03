@@ -2,6 +2,8 @@ import pinocchio
 import os
 import numpy as np
 import casadi as ca
+from scipy.spatial.transform import Rotation as R
+
 
 class URDFManipulatorDynamics:
     """Parse manipulator dynamics from a provided URDF and generate Casadi representations for use in OCPs.
@@ -140,13 +142,13 @@ class URDFManipulatorDynamics:
         # f = ca.Function('f', [x, u, lam], [dx])
         return dx
     
-    def casadi_dynamics_function(self):
-        x_sym = ca.SX.sym('x', self.nq + self.nv)      # 37
-        u_sym = ca.SX.sym('u', self.nu)                # 12
-        lam_sym = ca.SX.sym('lam', self.nc)            # 12 (placeholder)
+    def casadi_dynamics_function(self, x_sym, u_sym):
+        # x_sym = ca.SX.sym('x', self.nq + self.nv)      # 37
+        # u_sym = ca.SX.sym('u', self.nu)                # 12
+        # lam_sym = ca.SX.sym('lam', self.nc)            # 12 (placeholder)
 
-        q = x_sym[0:self.nq]
-        dq = x_sym[self.nq:self.nq + self.nv]
+        q = x_sym[0:self.nq] # 19
+        dq = x_sym[self.nq:self.nq + self.nv] # 18
 
         # Pinocchio expects numeric; wrap with ca.Callback or build via external for full symbolic.
         # Here we treat M,C,g as parameters by evaluating at q,v=0 (example placeholder).
@@ -156,8 +158,9 @@ class URDFManipulatorDynamics:
         C = ca.DM(C_num)
         g = ca.DM(g_num)
 
-        u_full_sym = ca.vertcat(ca.DM.zeros(6), u_sym) # add zero 6doF forces for the free flyer joint
-        print("u_full_sym length: ", u_full_sym.shape)
+        u_full_sym = ca.vertcat(ca.SX.zeros(6), u_sym) # add zero 6doF forces for the free flyer joint
+        
+        # print("u_full_sym length: ", u_full_sym.shape)
         ddq = ca.solve(M, u_full_sym - (C @ dq) - g)
         # qdot = ca.vertcat(dq[3:6], ca.DM.zeros(4), v[6:])
         
@@ -204,93 +207,118 @@ class Go2DirectMultipleShooting:
         
         # Create the dynamics model for the go2
         self.go2= URDFManipulatorDynamics(urdf_path)
+        self.go2.print_model_structure()
+        
         
         # Parse parameters
         self.N_MPC = N_MPC
         self.dt = dt
         self.nx = self.go2.nq + self.go2.nv
         self.nu = self.go2.nu
-        
         self.nx_rigidbody = 7 # Number of dofs in rigid body pose
-        
         
         self.T = N_MPC * dt # Time horizon
 
         # Declare model variables
-        self.X = ca.SX.sym('X', self.go2.nq * N_MPC)
-        self.U = ca.SX.sym('U', self.go2.nu * (N_MPC - 1))
+        self.X = ca.SX.sym('X', self.nx * N_MPC)
+        self.U = ca.SX.sym('U', self.nu * (N_MPC - 1))
         self.LAM = ca.SX.sym('LAM', self.go2.nc * N_MPC)
 
         self.q0 = np.zeros(self.go2.nq) # Current q0
 
-        # Model equations
-
         # Objective term
-        X_ref_rb = ca.SX.sym('X_ref_rb', self.nx_rigidbody * N_MPC) # Reference trajectory for the rigid body pose
-        
+        self.X_ref_rb = ca.SX.sym('X_ref_rb', self.nx_rigidbody * N_MPC) # Reference trajectory for the rigid body pose (note that it is only defined with the rigid body states)
+
         # TODO: Weights for Q and R
-        Q_diag = 1.0 * ca.DM.eye(self.nx_rigidbody)
+        Q = 1.0 * ca.DM.eye(self.nx_rigidbody)
         Qf = 1.0 * ca.DM.eye(self.nx_rigidbody)
         R = 1.0 * ca.DM.eye(self.nu)
         
-        f = self.go2.casadi_dynamics_function() # xdot = f(x,u,lam)
-        
-        # L = x1**2 + x2**2 + u**2
-        self.go2.print_model_structure()
-        
-        p_WB, R_WB = self.go2.get_frame_pose(self.q0, "base")
-        
-        print(f"Base Link Frame Position: {p_WB}")
-        print(f"Base Link Orientation: {R_WB}")
-
-        # # Formulate discrete time dynamics
-        # if False:
-        #     # CVODES from the SUNDIALS suite
-        #     dae = {'x':x, 'p':u, 'ode':xdot, 'quad':L}
-        #     F = integrator('F', 'cvodes', dae, 0, T/N)
-        # else:
-        
-        # Fixed step Runge-Kutta 4 integrator
-        M = 4 # RK4 steps per interval
-        
-        # f = ca.Function('f', [x, u], [xdot, L])
-        x0 = ca.MX.sym('x0', self.nx)
-        u0 = ca.MX.sym('u0', self.nu)
-        
-        xdot = f(x0, u0)
-        print(xdot)
-        # X = X0
-        # Q = 0
-        
-        # f(X, U)
-        
+        J = 0
         for k in range(N_MPC - 1):
+            x_rb_k = self.get_kth_rigid_body_state(self.X, k) # kth rigid body state
+            x_ref_rb_k = self.get_state_k(self.X_ref_rb, self.nx_rigidbody, k) # kth rigid body state from ref traj
+            e_rb_k = x_ref_rb_k - x_rb_k # Rigid body pose error for this timestep
             
-        pass
+            u_k = self.get_state_k(self.U, self.nu, k)
+            
+            J += ca.mtimes([e_rb_k.T, Q, e_rb_k]) + ca.mtimes([u_k.T, R, u_k])
+        
+        self.J_fun = ca.Function("J", [self.X_ref_rb, self.X, self.U], [J], ['X_ref_rb', 'X', 'U'], ['J'])
+        
+        
+        ### Test the objective function w/ dummy values
+        X0 = ca.DM.zeros(self.nx * self.N_MPC)
+        U0 = ca.DM.zeros(self.nu * (self.N_MPC - 1))
+        Xref_rb0 = ca.DM(np.tile([0,0,0,0,0,0, 1.0], self.N_MPC))
+        J_val = self.J_fun(Xref_rb0, X0, U0)
+        print(f"J: {float(J_val)}")
+        
+        
+        ### Dynamics function
+        # f_dynamics = self.go2.casadi_dynamics_function() # xdot = f(x,u,lam)
+        p_WB, R_WB = self.go2.get_frame_pose(self.q0, "base")
+        print(R_WB)
+        
+        # xk = ca.MX.sym('xk', self.nx)
+        # uk = ca.MX.sym('uk', self.nu)
+        xk = ca.SX.sym('xk', self.nx)
+        uk = ca.SX.sym('uk', self.nu)
+        xkp1 = self.rk4_step(self.go2.casadi_dynamics_function(xk, uk), xk, uk, self.dt)
+        
+        f_xkp1 = ca.Function('xkp1', [xk, uk], [xkp1],['xk','u'],['xkp1'])
+        
+        # test dynamics function w/ dummy values
+        x0 = ca.DM.zeros(self.nx)
+        u0 = ca.DM.zeros(self.nu)
+        
+        x1 = f_xkp1(x0, u0)
+        print(f_xkp1['xkp1'])
+        
+        ### Discrete time dynamics for direct multiple shooting via RK4 
+        # xkp1 = ca.Function("xkp1", [xk], [xkp1],  ['xk'], ['xkp1'])
+        # for k in range(N_MPC-1):
+    
+        # pass
+    
+    def get_state_k(self, X, nx, k):
+        """Returns a partition of the vector X, from X[k*nx : (k+1)*nx]
 
-    def x_rb_k(self, k):
-        """Returns the rigid-body pose () for the kth time index in the mpc horizon
+        Args:
+            X (_type_): _description_
+            nx (_type_): _description_
+            k (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        x_k = X[k*nx : (k+1)*nx]
+        return x_k
+
+    def get_kth_rigid_body_state(self, X, k):
+        """Returns the rigid-body pose (x, y, z, a, b, c, d) for the kth time index in the mpc horizon
         Args:
             k (int) : timestep index within mpc horizon
         """
         assert k <= self.N_MPC
         
-        x_k = self.X[k*self.nx : (k+1)*self.nx]
+        x_k = X[k*self.nx : (k+1)*self.nx]
         x_k_rb = x_k[:self.nx_rigidbody]
            
         return x_k_rb
     
-    def u_k(self, k):
-        assert k < self.N_MPC
+
+    # def get_contro_k(self, k):
+    #     assert k < self.N_MPC
         
-        u_k = self.U[k * self.nu : (k+1) * self.nu]
-        return u_k
+    #     u_k = self.U[k * self.nu : (k+1) * self.nu]
+    #     return u_k
     
-    def rk4_step(f, xk, uk, dt):
+    def rk4_step(self, f, xk, uk, dt):
         """Given 
 
         Args:
-            f (_type_): _description_
+            f (_type_): function derivative
             x (_type_): _description_
             u (_type_): _description_
             dt (_type_): _description_
@@ -304,10 +332,6 @@ class Go2DirectMultipleShooting:
         xkp1=xk+dt/6*(k1 +2*k2 +2*k3 +k4)
         
         return xkp1
-    
-
-
-
 
 if __name__ == "__main__":
     current_dir = os.path.dirname(__file__)
