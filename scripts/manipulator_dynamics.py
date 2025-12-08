@@ -1,9 +1,11 @@
 import pinocchio 
+# import pinocchio.casadi as cpin
 import os
 import numpy as np
 import casadi as ca
 from scipy.spatial.transform import Rotation as R
-
+import time
+import matplotlib.pyplot as plt
 
 class URDFManipulatorDynamics:
     """Parse manipulator dynamics from a provided URDF and generate Casadi representations for use in OCPs.
@@ -141,10 +143,22 @@ class URDFManipulatorDynamics:
 
         # f = ca.Function('f', [x, u, lam], [dx])
         return dx
+    @staticmethod
+    def quat_dot_xyzw_from_omega(quat_xyzw, omega):
+        qx, qy, qz, qw = quat_xyzw[0], quat_xyzw[1], quat_xyzw[2], quat_xyzw[3]
+        wx, wy, wz = omega[0], omega[1], omega[2]
+        qx_dot = 0.5 * ( wx*qw + wy*qz - wz*qy )
+        qy_dot = 0.5 * (-wx*qz + wy*qw + wz*qx )
+        qz_dot = 0.5 * ( wx*qy - wy*qx + wz*qw )
+        qw_dot = -0.5 * ( wx*qx + wy*qy + wz*qz )
+        return ca.vertcat(qx_dot, qy_dot, qz_dot, qw_dot)
     
-    def casadi_dynamics_function(self, x_sym, u_sym):
-        # x_sym = ca.SX.sym('x', self.nq + self.nv)      # 37
-        # u_sym = ca.SX.sym('u', self.nu)                # 12
+    
+    
+    # def casadi_dynamics_function(self, x_sym, u_sym):
+    def casadi_dynamics_function(self):
+        x_sym = ca.SX.sym('x', self.nq + self.nv)      # 37
+        u_sym = ca.SX.sym('u', self.nu)                # 12
         # lam_sym = ca.SX.sym('lam', self.nc)            # 12 (placeholder)
 
         q = x_sym[0:self.nq] # 19
@@ -164,12 +178,56 @@ class URDFManipulatorDynamics:
         ddq = ca.solve(M, u_full_sym - (C @ dq) - g)
         # qdot = ca.vertcat(dq[3:6], ca.DM.zeros(4), v[6:])
         
-        dx = ca.vertcat(dq, ddq)
+        # Solve for the quaternion derivative
+        omega = dq[0:3] 
+        v_lin = dq[3:6]
+        quat = q[3:7]
+        quat_dot = self.quat_dot_xyzw_from_omega(quat, omega)
+        joint_pos_dot = dq[6:]
+        qdot = ca.vertcat(v_lin, quat_dot, joint_pos_dot)  # (19,)
+
+        
+        # dx = ca.vertcat(dq, ddq)
+        dx = ca.vertcat(qdot, ddq)
         # f = ca.Function('f', [x_sym, u_sym, lam_sym], [dx])
         f = ca.Function('f', [x_sym, u_sym], [dx])
         
         return f
 
+    def discrete_step_integrate(self, dt):
+        """
+        Single step integration for a pinocchio config, handling quaternion derivatives. 
+        q_{k+1} = integrate(q_k, v_k * dt)
+        v_{k+1} = v_k + ddq_k * dt
+        with forward dynamics: M ddq = tau - C v - g
+        """
+        # q = ca.SX('q', self.nq) # 19
+        # dq = ca.SX('dq', self.nv) # 18
+        x = ca.SX.sym('x', self.nq + self.nv)
+        u = ca.SX.sym('u', self.nu) # 12
+        
+        q = x[0:self.nq]
+        dq = x[self.nq: self.nq + self.nv]
+        
+        # Compute dynamics terms at (q,v)
+        M = pinocchio.crba(self.model, self.data, q)
+        C = pinocchio.computeCoriolisMatrix(self.model, self.data, q, dq)
+        g = pinocchio.computeGeneralizedGravity(self.model, self.data, q)
+
+        u_aug = ca.vertcat(ca.SX.zeros(6), u) # Pad with zeros for the free flyer joints
+
+        # Forward dynamics
+        ddq = np.linalg.solve(M, u_aug - C @ dq - g)
+
+        # Integrate configuration using group operation (handles quaternion)
+        q_next = pinocchio.integrate(self.model, q, dq * dt)
+
+        # Explicit Euler for velocities
+        dq_next = dq + ddq * dt
+        x_next = ca.vertcat(q_next, dq_next)
+        # return q_next, dq_next
+        return ca.Function('f', [x, u], [x_next], ['x_k', 'u_k'], ['x_kp1'])
+    
     def get_frame_pose(self, q, frame_name):
         assert len(q) == self.nq
         
@@ -204,11 +262,9 @@ class URDFManipulatorDynamics:
  
 class Go2DirectMultipleShooting:
     def __init__(self, N_MPC : int, dt : float, urdf_path):
-        
         # Create the dynamics model for the go2
         self.go2= URDFManipulatorDynamics(urdf_path)
         self.go2.print_model_structure()
-        
         
         # Parse parameters
         self.N_MPC = N_MPC
@@ -256,30 +312,120 @@ class Go2DirectMultipleShooting:
         
         
         ### Dynamics function
-        # f_dynamics = self.go2.casadi_dynamics_function() # xdot = f(x,u,lam)
         p_WB, R_WB = self.go2.get_frame_pose(self.q0, "base")
         print(R_WB)
         
-        # xk = ca.MX.sym('xk', self.nx)
-        # uk = ca.MX.sym('uk', self.nu)
-        xk = ca.SX.sym('xk', self.nx)
-        uk = ca.SX.sym('uk', self.nu)
-        xkp1 = self.rk4_step(self.go2.casadi_dynamics_function(xk, uk), xk, uk, self.dt)
+        # xk = ca.SX.sym('xk', self.nx)
+        # uk = ca.SX.sym('uk', self.nu)
+        xk = self.get_state_k(self.X, self.nx, 0)
+        uk = self.get_state_k(self.U, self.nu, 0)
+
+        f_continuous_dynamics = self.go2.casadi_dynamics_function() # Continuous dynamics funciton dx = f(x,u)
         
-        f_xkp1 = ca.Function('xkp1', [xk, uk], [xkp1],['xk','u'],['xkp1'])
         
-        # test dynamics function w/ dummy values
-        x0 = ca.DM.zeros(self.nx)
-        u0 = ca.DM.zeros(self.nu)
+        ### Equality constraints
+        # Multiple shooting constraints
+        g_list = []
+        for k in range(self.N_MPC-1):
+            x_k = self.get_state_k(self.X, self.nx, k)
+            u_k = self.get_state_k(self.U, self.nu, k)
+            
+            x_kp1 = self.get_state_k(self.X, self.nx, k+1)
+            x_kp1_pred = self.rk4_step(f_continuous_dynamics, x_k, u_k, self.dt) # Dynamics rollout 
+            g_list.append(x_kp1 - x_kp1_pred)
+            
+        G = ca.vertcat(*g_list)
         
-        x1 = f_xkp1(x0, u0)
-        print(f_xkp1['xkp1'])
+        # Dynamics equlaity constraints
+        self.lbg = ca.DM.zeros(self.nx * (self.N_MPC - 1))
+        self.ubg = ca.DM.zeros(self.nx * (self.N_MPC - 1))
         
-        ### Discrete time dynamics for direct multiple shooting via RK4 
-        # xkp1 = ca.Function("xkp1", [xk], [xkp1],  ['xk'], ['xkp1'])
-        # for k in range(N_MPC-1):
+        
+        # Primal bounds
+        x_lb = -1e2 * ca.DM.ones(self.nx * self.N_MPC)
+        x_ub =  1e2 * ca.DM.ones(self.nx * self.N_MPC)
+        u_lb = -1e2 * ca.DM.ones(self.nu * (self.N_MPC - 1))
+        u_ub =  1e2 * ca.DM.ones(self.nu * (self.N_MPC - 1))
+        self.lbx = ca.vertcat(x_lb, u_lb)
+        self.ubx = ca.vertcat(x_ub, u_ub)
+        
+        
+        nlp = {
+            'x': ca.vertcat(self.X, self.U),
+            'f': J,
+            'g': G,
+            'p': self.X_ref_rb
+        }
+        
+        
     
-        # pass
+        self.g_lb = ca.DM.zeros(self.nx * (self.N_MPC - 1))
+        self.g_ub = ca.DM.zeros(self.nx * (self.N_MPC - 1))
+        
+        
+        ### Solver settings
+        self.solver = ca.nlpsol('solver', 'ipopt', nlp, {
+            'ipopt.print_level': 0,
+            'print_time': False,
+            'ipopt.max_iter': 200
+        })
+        
+        # Decision variable initialization 
+        w0 = ca.vertcat(ca.DM.zeros(self.nx * self.N_MPC),
+                ca.DM.zeros(self.nu * (self.N_MPC - 1)))
+        
+        # Xref_rb0 = ca.DM(np.tile([0,0,0, 0,0,0, 1.0], self.N_MPC)).reshape((-1,1))
+        # Xref_rb0 = ca.DM(np.tile([0.0, 0.0, 0.31232, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], self.N_MPC)).rehsape((-1, 1))
+        Xref_rb0 = ca.DM(np.tile([0.0, 0.0, 0.31232, 0.0, 0.0, 0.0, 1.0], self.N_MPC)).reshape((-1, 1))
+        
+        
+        iters = 500
+        
+        solve_times =[]
+  
+        for i in range(iters):
+            t0 = time.time()
+            sol = self.solver(x0=w0, lbg=self.lbg, ubg=self.ubg, lbx=self.lbx, ubx=self.ubx, p=Xref_rb0)
+            t1 = time.time()
+            solve_times.append(t1 - t0)
+            # stats = self.solver.stats()
+            # print(stats)
+            # print(stats["t_wall_total"])
+            
+        print(f"Avg solve time: {np.mean(solve_times):.6f} s, std: {np.std(solve_times):.6f} s")
+            
+        # Histogram plot
+        plt.figure(figsize=(6,4))
+        
+        mu = np.mean(solve_times)
+        sigma = np.std(solve_times)
+        
+        legend_text = f"mean = {mu:.6f}s\nstd  = {sigma:.6f}s"
+        # Dummy handle for text-only legend
+
+
+
+
+        # plt.figure(figsize=(6,4))
+        plt.hist(solve_times, bins=30, edgecolor='k')
+        plt.xscale('log')
+        
+        plt.plot([], [], ' ', label=legend_text)
+        plt.legend(loc='upper right', frameon=True)
+        
+        
+        plt.xlabel('Solve time (s)')
+        plt.ylabel('Count')
+        plt.title('Nonlinear MPC (IPOPT) Solve Time (s)')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig('solve_times_hist.png', dpi=500)
+        plt.show()
+        
+        
+        
+
+
     
     def get_state_k(self, X, nx, k):
         """Returns a partition of the vector X, from X[k*nx : (k+1)*nx]
@@ -353,5 +499,5 @@ if __name__ == "__main__":
     # # print(go2.nu)
     # print(go2.state_space_residual(x, u, lam))
 
-    prob = Go2DirectMultipleShooting(N_MPC=10, dt=0.005, urdf_path=urdf_path)
+    prob = Go2DirectMultipleShooting(N_MPC=10, dt=0.025, urdf_path=urdf_path)
     
