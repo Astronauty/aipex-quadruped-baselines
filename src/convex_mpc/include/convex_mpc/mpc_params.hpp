@@ -19,6 +19,11 @@ struct MPCParams
     const double min_vertical_grf; // Minimum vertical ground reaction force
     const double max_vertical_grf; // Maximum vertical ground reaction force
 
+    // When false, the per-cycle diagnostic logging and the QP condition-number
+    // eigendecomposition are skipped. Both are debug aids and together cost ~80ms
+    // per control cycle, which pushes the loop far past its mpc_dt budget.
+    bool verbose_diagnostics = false;
+
     // MPCParams(): 
     //     N_MPC(-1),
     //     N_CONTROLS(-1),

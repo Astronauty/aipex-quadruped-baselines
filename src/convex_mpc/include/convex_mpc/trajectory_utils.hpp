@@ -20,23 +20,28 @@ inline Eigen::VectorXd get_state_at_time_from_ref_traj(const Eigen::VectorXd& X_
 
     // cout << "desired_time_s "
 
-    cout << "desired_time_s: " << desired_time_s - current_time_s << ", current_time_s: " << current_time_s << endl;
-    cout << "gait planning time limit" << mpc_params.dt * (mpc_params.N_MPC - 1)<< endl;
+    const bool verbose = mpc_params.verbose_diagnostics;
+
+    if (verbose) {
+        cout << "desired_time_s: " << desired_time_s - current_time_s << ", current_time_s: " << current_time_s << endl;
+        cout << "gait planning time limit" << mpc_params.dt * (mpc_params.N_MPC - 1)<< endl;
+    }
 
     assert(desired_time_s >= current_time_s && "Desired time must be greater than or equal to current time");
     assert(desired_time_s <= current_time_s + mpc_params.dt * (mpc_params.N_MPC - 1) && "Desired time must be within the reference trajectory horizon.");
 
     double timesteps_to_go = (desired_time_s - current_time_s) / mpc_params.dt;
 
-    cout << "timesteps_to_go: " << timesteps_to_go << endl;
-
     int lower_index = static_cast<int>(std::floor(timesteps_to_go));
     int upper_index = lower_index + 1;
 
-    cout << "lower_index: " << lower_index << ", upper_index: " << upper_index << endl;
-
     double alpha = timesteps_to_go - static_cast<double>(lower_index);
-    cout << "alpha: " << alpha << endl;
+
+    if (verbose) {
+        cout << "timesteps_to_go: " << timesteps_to_go << endl;
+        cout << "lower_index: " << lower_index << ", upper_index: " << upper_index << endl;
+        cout << "alpha: " << alpha << endl;
+    }
 
     // const int pos_state_index = 3; // Position state index
     // const int vel_state_index = 6; // Velocity state index

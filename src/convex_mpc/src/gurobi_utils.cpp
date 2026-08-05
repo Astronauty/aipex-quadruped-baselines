@@ -2,6 +2,7 @@
 #include "convex_mpc/gurobi_utils.hpp"
 #include <Eigen/Dense>
 #include <iostream>
+#include <vector>
 
 using namespace Eigen;
 using namespace std;
@@ -28,15 +29,35 @@ GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& P, int n) // Necess
         throw invalid_argument("gurobi_utils.cpp : Q must be a square matrix.");
     }
 
-    // Sum the quadratic costs
-    for(int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            // obj += Q(i, j) * (x_ref[i] - x[i]) * (x_ref[j] - x[j]);
-            obj += P(i, j) * x[i] * x[j];
+    // Sum the quadratic costs. P is symmetric, so the off-diagonal pairs (i,j) and
+    // (j,i) are folded into a single 2*P(i,j) term, and everything is handed to
+    // Gurobi in one addTerms() call rather than n^2 individual operator+= calls.
+    std::vector<double> coeffs;
+    std::vector<GRBVar> vars1, vars2;
+    coeffs.reserve(static_cast<size_t>(n) * (n + 1) / 2);
+    vars1.reserve(static_cast<size_t>(n) * (n + 1) / 2);
+    vars2.reserve(static_cast<size_t>(n) * (n + 1) / 2);
 
+    for (int i = 0; i < n; i++)
+    {
+        if (P(i, i) != 0.0) {
+            coeffs.push_back(P(i, i));
+            vars1.push_back(x[i]);
+            vars2.push_back(x[i]);
         }
+        for (int j = i + 1; j < n; j++)
+        {
+            const double c = P(i, j) + P(j, i); // symmetric pair
+            if (c != 0.0) {
+                coeffs.push_back(c);
+                vars1.push_back(x[i]);
+                vars2.push_back(x[j]);
+            }
+        }
+    }
+
+    if (!coeffs.empty()) {
+        obj.addTerms(coeffs.data(), vars1.data(), vars2.data(), static_cast<int>(coeffs.size()));
     }
     return obj;
 }

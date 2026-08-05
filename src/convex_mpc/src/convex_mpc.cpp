@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
+#include <chrono>
 #include "convex_mpc/convex_mpc.hpp"
 
 // using namespace std;
@@ -66,8 +67,9 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 
         // add_friction_cone_constraints(*model, U, 0.5);
 
-        set_contact_constraints()
-
+        // Contact constraints are (re)applied by the node each control cycle via
+        // set_contact_constraints(contact_states) before every solve, so there is
+        // no contact state to apply here at construction time.
 
         this->solve_joint_torques();
     } 
@@ -123,20 +125,29 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
     MatrixXd A_qp = MatrixXd::Zero(N_STATES * N_MPC, N_STATES); 
     MatrixXd B_qp = MatrixXd::Zero(N_STATES * N_MPC, N_CONTROLS * (N_MPC-1));
 
-    for (int i = 0; i < mpc_params.N_MPC; i++) 
+    // Precompute A^k once for k = 0..N_MPC. The previous version called A.pow() inside
+    // the double loop, recomputing the same matrix powers O(N^2) times per solve.
+    std::vector<MatrixXd> A_pow;
+    A_pow.reserve(N_MPC + 1);
+    A_pow.push_back(MatrixXd::Identity(N_STATES, N_STATES)); // A^0
+    for (int k = 1; k <= N_MPC; ++k) {
+        A_pow.push_back(A_pow[k - 1] * quad_dss.A);
+    }
+
+    // Precompute A^k * B as well, since each is reused across the diagonal of B_qp.
+    std::vector<MatrixXd> A_pow_B;
+    A_pow_B.reserve(N_MPC);
+    for (int k = 0; k < N_MPC; ++k) {
+        A_pow_B.push_back(A_pow[k] * quad_dss.B);
+    }
+
+    for (int i = 0; i < mpc_params.N_MPC; i++)
     {
-        for (int j = 0; j < i; j++) 
+        for (int j = 0; j < i; j++)
         {
-            // cout << i << " x " << j << endl;
-            B_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = quad_dss.A.pow(i - j) * quad_dss.B;
-            // cout << "A_qp accessing: " << i * N_STATES << "x" << j * N_CONTROLS << endl;
-            // cout << "A_qp block size: " << N_STATES << "x" << N_CONTROLS << endl;
-            // cout << "A_qp End: " << (i+1)*N_STATES << "x" << (j+1)*N_CONTROLS << endl;
-            // cout << "\n" << endl;
+            B_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = A_pow_B[i - j];
         }
-        // cout << "pog2 " << i << endl;
-        // cout << "\n" << quad_dss.A.pow(0) << endl;
-        A_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = quad_dss.A.pow(i+1); 
+        A_qp.block(i*N_STATES, 0, N_STATES, N_STATES) = A_pow[i + 1];
     }
 
     // cout << "state space predict success " << endl;
@@ -221,20 +232,35 @@ MatrixXd ConvexMPC::compute_Q_bar()
 Computes the quadratic cost fo the unconstrained linear mpc problem
 P = 2*R_bar + 2*B_qp'*Q_bar*B_qp
 */
-MatrixXd ConvexMPC::compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd B_qp, double regularization)
+MatrixXd ConvexMPC::compute_P(const MatrixXd& R_bar, const MatrixXd& Q_bar, const MatrixXd& B_qp, double regularization)
 {
     // RCLCPP_INFO(logger_, "Computing P matrix for Convex MPC.");
     assert(R_bar.rows() == R_bar.cols() && "R_bar must be square.");
     assert(Q_bar.rows() == Q_bar.cols() && "Q_bar must be square.");
     assert(B_qp.cols() == R_bar.rows() && "B_qp and R_bar dimensions must match.");
 
-    MatrixXd P = 2*R_bar + 2*B_qp.transpose() * Q_bar * B_qp;
-    P = P + MatrixXd::Identity(P.rows(), P.cols()) * regularization; // Add a small regularization term to avoid singularity
+    // Q_bar is block diagonal (one N_STATES x N_STATES block per horizon step), so
+    // B_qp' * Q_bar * B_qp is accumulated blockwise rather than as two dense
+    // products against the full N_STATES*N_MPC square matrix. Mathematically
+    // identical, but avoids the dominant cost in the solve path.
+    const int NS = mpc_params.N_STATES;
+    const int N_MPC = mpc_params.N_MPC;
 
-    return P;   
+    MatrixXd BtQB = MatrixXd::Zero(B_qp.cols(), B_qp.cols());
+    for (int k = 0; k < N_MPC; ++k)
+    {
+        const auto Bk = B_qp.middleRows(k * NS, NS);          // NS x n_u
+        const auto Qk = Q_bar.block(k * NS, k * NS, NS, NS);  // NS x NS diagonal block
+        BtQB.noalias() += Bk.transpose() * (Qk * Bk);
+    }
+
+    MatrixXd P = 2*R_bar + 2*BtQB;
+    P.diagonal().array() += regularization; // Regularization term to avoid singularity
+
+    return P;
 }
 
-VectorXd ConvexMPC::compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd X_ref)
+VectorXd ConvexMPC::compute_q(const MatrixXd& Q_bar, const MatrixXd& A_qp, const MatrixXd& B_qp, const VectorXd& x0, const VectorXd& X_ref)
 {
     // VectorXd q = 2*x0.transpose() * B_qp * Q_bar.transpose() * A_qp; // Zero reference linear cost
     // VectorXd q = 2*(x0.transpose() * A_qp.transpose() * Q_bar * B_qp - X_ref.transpose() * Q_bar * B_qp); // Old
@@ -259,11 +285,14 @@ void ConvexMPC::update_joint_angles(Vector<double, 12> theta)
 void ConvexMPC::update_foot_positions(const Matrix<double, 3, 4>& foot_positions)
 {
     // Update the foot positions in the body frame
-    RCLCPP_INFO(logger_, "Updating foot positions in ConvexMPC.");
-    RCLCPP_INFO(logger_, "Foot positions: \n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
-        foot_positions(0, 0), foot_positions(0, 1), foot_positions(0, 2), foot_positions(0, 3),
-        foot_positions(1, 0), foot_positions(1, 1), foot_positions(1, 2), foot_positions(1, 3),
-        foot_positions(2, 0), foot_positions(2, 1), foot_positions(2, 2), foot_positions(2, 3));
+    if (mpc_params.verbose_diagnostics)
+    {
+        RCLCPP_INFO(logger_, "Updating foot positions in ConvexMPC.");
+        RCLCPP_INFO(logger_, "Foot positions: \n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
+            foot_positions(0, 0), foot_positions(0, 1), foot_positions(0, 2), foot_positions(0, 3),
+            foot_positions(1, 0), foot_positions(1, 1), foot_positions(1, 2), foot_positions(1, 3),
+            foot_positions(2, 0), foot_positions(2, 1), foot_positions(2, 2), foot_positions(2, 3));
+    }
 
     this->foot_positions = foot_positions;
 }
@@ -318,7 +347,9 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
         return Vector<double, 12>::Zero();
     }
 
-    RCLCPP_INFO(logger_, "Solving joint torques using Convex MPC...");
+    if (mpc_params.verbose_diagnostics) {
+        RCLCPP_INFO(logger_, "Solving joint torques using Convex MPC...");
+    }
     // print_eigen_matrix(Q_bar, "Q_bar", logger_);
     // print_eigen_matrix(R_bar, "R_bar", logger_);
 
@@ -326,6 +357,12 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // Convert foot positions to COM-relative positions in world frame
     // foot_positions are in world frame (absolute), but dynamics need COM-relative
     // x0 = [theta, p, omega, p_dot, g] where p is COM position in world frame
+    //
+    // FRAME NOTE: x0's position comes from /sportmodestate, which unitree_mujoco
+    // fills from a framepos sensor on the *imu site*, while foot_positions come
+    // from mj_data_->xpos of the foot *bodies*. Those are different reference
+    // points, so r_W carries a constant bias of the imu site offset
+    // (-0.02557, 0, 0.04232 m in body frame). Not yet compensated -- see notes.
     Vector3d p_COM = x0.segment<3>(3);  // COM position in world frame
     Matrix<double, 3, 4> r_W;  // COM-relative foot positions in world frame
     for (int i = 0; i < 4; ++i) {
@@ -345,31 +382,41 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     Kp = Matrix3d::Identity() * 10.0; // Proportional gain for swing leg tracking
     Kd = Matrix3d::Identity() * 1; // Derivative gain for swing leg tracking
 
-    // Print Q matrix diagonal to verify weights are applied
-    RCLCPP_INFO(logger_, "Q matrix diagonal (state weights):");
-    for (int i = 0; i < mpc_params.N_STATES; ++i) {
-        RCLCPP_INFO(logger_, "  Q[%d] = %.2f", i, mpc_params.Q(i, i));
+    // Q/R weights are constant after construction, so only log them when debugging.
+    if (mpc_params.verbose_diagnostics)
+    {
+        RCLCPP_INFO(logger_, "Q matrix diagonal (state weights):");
+        for (int i = 0; i < mpc_params.N_STATES; ++i) {
+            RCLCPP_INFO(logger_, "  Q[%d] = %.2f", i, mpc_params.Q(i, i));
+        }
+        RCLCPP_INFO(logger_, "Q[5] (vertical position) = %.2f, Q[11] (vertical velocity) = %.2f",
+                    mpc_params.Q(5, 5), mpc_params.Q(11, 11));
+        RCLCPP_INFO(logger_, "R (control effort) weight = %.4f (diagonal, all forces)", mpc_params.R(0, 0));
+        RCLCPP_INFO(logger_, "Q[5]/R ratio = %.2f (should be >> 1 to prioritize tracking over control effort)",
+                    mpc_params.Q(5, 5) / mpc_params.R(0, 0));
     }
-    RCLCPP_INFO(logger_, "Q[5] (vertical position) = %.2f, Q[11] (vertical velocity) = %.2f", 
-                mpc_params.Q(5, 5), mpc_params.Q(11, 11));
-    RCLCPP_INFO(logger_, "R (control effort) weight = %.4f (diagonal, all forces)", mpc_params.R(0, 0));
-    RCLCPP_INFO(logger_, "Q[5]/R ratio = %.2f (should be >> 1 to prioritize tracking over control effort)", 
-                mpc_params.Q(5, 5) / mpc_params.R(0, 0));
 
     // Update QP objective function
     double regularization = 1E-6; // Regularization term for numerical stability
     P = compute_P(R_bar, Q_bar, B_qp, regularization); // Quadratic cost of linear mpc
 
-    Eigen::SelfAdjointEigenSolver<MatrixXd> es(P);
-    std::cout << "Min Eigenvalue: " << es.eigenvalues().minCoeff() << std::endl;
-    std::cout << "Max Eigenvalue: " << es.eigenvalues().maxCoeff() << std::endl;
-    std::cout << "Condition Number: " << es.eigenvalues().maxCoeff() / es.eigenvalues().minCoeff() << std::endl;
+    // A full eigendecomposition of the 108x108 P costs ~30ms and is only used to
+    // print a condition number, so it is debug-only.
+    if (mpc_params.verbose_diagnostics)
+    {
+        Eigen::SelfAdjointEigenSolver<MatrixXd> es(P);
+        std::cout << "Min Eigenvalue: " << es.eigenvalues().minCoeff() << std::endl;
+        std::cout << "Max Eigenvalue: " << es.eigenvalues().maxCoeff() << std::endl;
+        std::cout << "Condition Number: " << es.eigenvalues().maxCoeff() / es.eigenvalues().minCoeff() << std::endl;
+    }
 
 
     // print_eigen_matrix(x0, "x0", logger_);
     // print_eigen_matrix(X_ref.segment(0, mpc_params.N_STATES), "X_ref", logger_);
 
-    print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
+    if (mpc_params.verbose_diagnostics) {
+        print_eigen_matrix(x0 - X_ref.segment(0, mpc_params.N_STATES), "x0 - X_ref", logger_);
+    }
     // RCLCPP_INFO(logger_, "(x0 - X_ref)^T Q (x0 - X_ref): %f", ((x0 - X_ref.segment(0, mpc_params.N_STATES)).transpose() * mpc_params.Q * (x0 - X_ref.segment(0, mpc_params.N_STATES)))(0,0));
 
     // VectorXd x0_repeated = VectorXd::Zero(mpc_params.N_STATES * mpc_params.N_MPC);
@@ -400,15 +447,18 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
         return Vector<double, 12>::Zero();
     }
     
-    RCLCPP_INFO(logger_, "Gurobi solve time: %.6f seconds", model->get(GRB_DoubleAttr_Runtime));
-    RCLCPP_INFO(logger_, "Gurobi objective value: %.6f", model->get(GRB_DoubleAttr_ObjVal));
-    
-    // Compute tracking error cost to verify Q weights are working
-    VectorXd state_error = x0 - X_ref.segment(0, mpc_params.N_STATES);
-    double tracking_cost = state_error.transpose() * mpc_params.Q * state_error;
-    RCLCPP_INFO(logger_, "Current state tracking cost: %.6f (should be high if Q weights are large)", tracking_cost);
-    RCLCPP_INFO(logger_, "Vertical position error: %.4f m, Vertical velocity error: %.4f m/s", 
-                state_error(5), state_error(11));
+    if (mpc_params.verbose_diagnostics)
+    {
+        RCLCPP_INFO(logger_, "Gurobi solve time: %.6f seconds", model->get(GRB_DoubleAttr_Runtime));
+        RCLCPP_INFO(logger_, "Gurobi objective value: %.6f", model->get(GRB_DoubleAttr_ObjVal));
+
+        // Compute tracking error cost to verify Q weights are working
+        VectorXd state_error = x0 - X_ref.segment(0, mpc_params.N_STATES);
+        double tracking_cost = state_error.transpose() * mpc_params.Q * state_error;
+        RCLCPP_INFO(logger_, "Current state tracking cost: %.6f (should be high if Q weights are large)", tracking_cost);
+        RCLCPP_INFO(logger_, "Vertical position error: %.4f m, Vertical velocity error: %.4f m/s",
+                    state_error(5), state_error(11));
+    }
 
     // Set terminal constraint based on reference trajectory
     // VectorXd xN_ref = X_ref.segment(mpc_params.N_STATES * (mpc_params.N_MPC - 1), mpc_params.N_STATES);
@@ -426,19 +476,23 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // }
 
     Matrix<double, 3, 4> grf = grf_vec[0];
-    print_eigen_matrix(grf, "GRF at k = 0", logger_);
 
-    // Check total vertical GRF vs expected weight
-    double total_vertical_grf = 0.0;
-    for (int i = 0; i < 4; ++i) {
-        total_vertical_grf += grf(2, i); // z-component (vertical)
+    if (mpc_params.verbose_diagnostics)
+    {
+        print_eigen_matrix(grf, "GRF at k = 0", logger_);
+
+        // Check total vertical GRF vs expected weight
+        double total_vertical_grf = 0.0;
+        for (int i = 0; i < 4; ++i) {
+            total_vertical_grf += grf(2, i); // z-component (vertical)
+        }
+        double expected_weight = quad_params.mass * quad_params.g;
+        double grf_deficit = expected_weight - total_vertical_grf;
+        RCLCPP_INFO(logger_, "Total vertical GRF: %.2f N, Expected (mg): %.2f N, Deficit: %.2f N",
+                    total_vertical_grf, expected_weight, grf_deficit);
+        RCLCPP_INFO(logger_, "Per-leg vertical GRF: [%.2f, %.2f, %.2f, %.2f] N",
+                    grf(2, 0), grf(2, 1), grf(2, 2), grf(2, 3));
     }
-    double expected_weight = quad_params.mass * quad_params.g;
-    double grf_deficit = expected_weight - total_vertical_grf;
-    RCLCPP_INFO(logger_, "Total vertical GRF: %.2f N, Expected (mg): %.2f N, Deficit: %.2f N", 
-                total_vertical_grf, expected_weight, grf_deficit);
-    RCLCPP_INFO(logger_, "Per-leg vertical GRF: [%.2f, %.2f, %.2f, %.2f] N", 
-                grf(2, 0), grf(2, 1), grf(2, 2), grf(2, 3));
 
     // Predict states based on GRB solution
     for (int i = 0; i < U_temp.size(); i++) {
@@ -446,7 +500,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     }
 
     VectorXd X_pred = A_qp * x0 + B_qp * U_temp;
-    
+
 
     // Print predicted states
     // std::ostringstream oss;
@@ -466,10 +520,13 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // Get the foot jacobian
     vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
 
-    print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
-    print_eigen_matrix(foot_jacobians[1], "Foot Jacobian 1", logger_);
-    print_eigen_matrix(foot_jacobians[2], "Foot Jacobian 2", logger_);
-    print_eigen_matrix(foot_jacobians[3], "Foot Jacobian 3", logger_);
+    if (mpc_params.verbose_diagnostics)
+    {
+        print_eigen_matrix(foot_jacobians[0], "Foot Jacobian 0", logger_);
+        print_eigen_matrix(foot_jacobians[1], "Foot Jacobian 1", logger_);
+        print_eigen_matrix(foot_jacobians[2], "Foot Jacobian 2", logger_);
+        print_eigen_matrix(foot_jacobians[3], "Foot Jacobian 3", logger_);
+    }
 
     // Compute joint torques by utilizing the foot jacobians
     Vector<double, 12> joint_torques;
@@ -478,19 +535,23 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     double pitch = x0[1];
     double yaw = x0[2];
 
-    RCLCPP_INFO(logger_, "Roll: %.3f, Pitch: %.3f, Yaw: %.3f", roll, pitch, yaw);
-    Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) * 
-           AngleAxisd(pitch, Vector3d::UnitY()) * 
+    Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) *
+           AngleAxisd(pitch, Vector3d::UnitY()) *
            AngleAxisd(roll, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
 
     // R_WB = Matrix3d::Identity(); // TODO: remove this line, just for testing purposes
 
-    print_eigen_matrix(R_WB, "R_WB", logger_);
-    print_eigen_matrix(R_WB.transpose(), "R_BW", logger_);
+    if (mpc_params.verbose_diagnostics)
+    {
+        RCLCPP_INFO(logger_, "Roll: %.3f, Pitch: %.3f, Yaw: %.3f", roll, pitch, yaw);
+        print_eigen_matrix(R_WB, "R_WB", logger_);
+        print_eigen_matrix(R_WB.transpose(), "R_BW", logger_);
 
-
-    MatrixXd grf_body_frame = R_WB.transpose() * grf; // Transform GRF to body frame
-    print_eigen_matrix(grf_body_frame, "GRF in Body Frame", logger_);
+        // NOTE: grf_body_frame is only reported here -- the torque loop below uses the
+        // world-frame GRF directly. Kept as a diagnostic, not used in control.
+        MatrixXd grf_body_frame = R_WB.transpose() * grf; // Transform GRF to body frame
+        print_eigen_matrix(grf_body_frame, "GRF in Body Frame", logger_);
+    }
 
 
     for (int foot = 0; foot < 4; foot++)

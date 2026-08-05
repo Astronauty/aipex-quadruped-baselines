@@ -83,10 +83,13 @@ QuadConvexMPCNode::QuadConvexMPCNode()
         "joy", 10, std::bind(&QuadConvexMPCNode::joy_callback, this, std::placeholders::_1)
     );
 
-    // TODO: Set correct rate for the timer
+    // NOTE: update_mpc_state() is called directly at the top of publish_cmd(), which
+    // guarantees x0 is fresh for the solve and avoids the timer-skew problem this
+    // separate timer was working around. Running both meant doing the state update
+    // (and its joystick/foot-position work) twice per control cycle, so the timer is
+    // intentionally not created here. MPC_STATE_UPDATE_RATE_MS is still declared for
+    // config compatibility but no longer drives a timer.
     this->declare_parameter<int>("MPC_STATE_UPDATE_RATE_MS", 5);
-    const int MPC_STATE_UPDATE_RATE_MS = this->get_parameter("MPC_STATE_UPDATE_RATE_MS").as_int();
-    update_mpc_state_timer_ = this->create_wall_timer(std::chrono::milliseconds(MPC_STATE_UPDATE_RATE_MS), std::bind(&QuadConvexMPCNode::update_mpc_state, this));
 
 
     // Define MPC Params
@@ -129,6 +132,12 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     mpc_params = std::make_unique<MPCParams>(N_MPC, N_CONTROLS, N_STATES,
         dt, Q, Q_n_scale, R, u_lower, u_upper, min_vertical_grf, max_vertical_grf);
+
+    // Per-cycle diagnostic logging and the QP condition-number eigendecomposition
+    // together cost ~80ms/cycle, which alone pushes the control loop past mpc_dt.
+    // Off by default; enable only when debugging.
+    this->declare_parameter<bool>("verbose_diagnostics", false);
+    mpc_params->verbose_diagnostics = this->get_parameter("verbose_diagnostics").as_bool();
 
     // Define Quadruped Params (from https://github.com/unitreerobotics/unitree_ros/blob/master/robots/go2_description/urdf/go2_description.urdf)
     this->declare_parameter<double>("mass", 15.7);
@@ -226,22 +235,30 @@ void QuadConvexMPCNode::low_state_callback(unitree_go::msg::LowState::SharedPtr 
     }
         // RCLCPP_INFO(this->get_logger(), "Motor state -- num: %d; q: %f; dq: %f; ddq: %f; tau: %f",
         //             i, motor[i].q, motor[i].dq, motor[i].ddq, motor[i].tau_est);
-        // Map motor indices to joint angles with FR↔FL and RR↔RL swap:
-    // From lowstate: Motors 0-2=FR, 3-5=FL, 6-8=RL, 9-11=RR
-    // Motors 0-2 (FR) → joint_angles[3-5] (used for Foot 1/FR)
-    // Motors 3-5 (FL) → joint_angles[0-2] (used for Foot 0/FL)
-    // Motors 6-8 (RL) → joint_angles[9-11] (used for Foot 3/RR)
-    // Motors 9-11 (RR) → joint_angles[6-8] (used for Foot 2/RL)
+    // Map motor indices to joint angles. Unitree orders the motors FR, FL, RR, RL
+    // while this code uses foot order FL, FR, RL, RR, so both the front pair and
+    // the rear pair are swapped.
+    //
+    // Verified empirically against the MuJoCo jointactuatorfrc sensors (which are
+    // bound to named joints): commanding /lowcmd index k reports back on the
+    // sensor for the joint listed below.
+    //   Motors 0-2  = FR  -> joint_angles[3-5]  (Foot 1 / FR)
+    //   Motors 3-5  = FL  -> joint_angles[0-2]  (Foot 0 / FL)
+    //   Motors 6-8  = RR  -> joint_angles[9-11] (Foot 3 / RR)
+    //   Motors 9-11 = RL  -> joint_angles[6-8]  (Foot 2 / RL)
     for (int i = 0; i < 3; i++) {
-        joint_angles[0 + i] = motor[3 + i].q; // Foot 0 (FL) gets motors 3-5 (FL from lowstate)
-        joint_angles[3 + i] = motor[0 + i].q; // Foot 1 (FR) gets motors 0-2 (FR from lowstate)
-        joint_angles[6 + i] = motor[9 + i].q; // Foot 2 (RL) gets motors 9-11 (RR from lowstate)
-        joint_angles[9 + i] = motor[6 + i].q; // Foot 3 (RR) gets motors 6-8 (RL from lowstate)
+        joint_angles[0 + i] = motor[3 + i].q; // Foot 0 (FL) gets motors 3-5 (FL)
+        joint_angles[3 + i] = motor[0 + i].q; // Foot 1 (FR) gets motors 0-2 (FR)
+        joint_angles[6 + i] = motor[9 + i].q; // Foot 2 (RL) gets motors 9-11 (RL)
+        joint_angles[9 + i] = motor[6 + i].q; // Foot 3 (RR) gets motors 6-8 (RR)
     }
 
     has_low_state_ = true;
 
-    log_low_state(*data);
+    // Fires at 500Hz and builds a multi-line stringstream per message, so debug-only.
+    if (mpc_params && mpc_params->verbose_diagnostics) {
+        log_low_state(*data);
+    }
     
 }
 
@@ -270,7 +287,10 @@ void QuadConvexMPCNode::sport_mode_callback(const unitree_go::msg::SportModeStat
 
     has_sport_mode_state_ = true;
 
-    log_sport_mode_state(*data);
+    // Fires at 500Hz and builds a multi-line stringstream per message, so debug-only.
+    if (mpc_params && mpc_params->verbose_diagnostics) {
+        log_sport_mode_state(*data);
+    }
 
     // RCLCPP_INFO(this->get_logger(), "Foot position and velcity relative to body -- num: %d; x: %f; y: %f; z: %f, vx: %f; vy: %f; vz: %f",
     //             0, foot_pos[0], foot_pos[1], foot_pos[2], foot_vel[0], foot_vel[1], foot_vel[2]);
@@ -388,7 +408,9 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     Eigen::VectorXd axes_double = Eigen::Map<Eigen::VectorXf>(axes.data(), axes.size()).cast<double>();
 
     // Calculate the desired translation and rotation velocities
-    cout << "Axes: " << axes_double.transpose() << endl;
+    if (mpc_params && mpc_params->verbose_diagnostics) {
+        cout << "Axes: " << axes_double.transpose() << endl;
+    }
 
     std::unordered_map<std::string, int> controller_axis_indices;
     controller_axis_indices["x"] = 1;
@@ -443,8 +465,19 @@ void QuadConvexMPCNode::update_mpc_state()
             p_dot[0], p_dot[1], p_dot[2], // Velocity in x, y, z
             g; // Gravity state
 
-    RCLCPP_INFO(this->get_logger(), "Setting x0 to [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
-        x0(0), x0(1), x0(2), x0(3), x0(4), x0(5), x0(6), x0(7), x0(8), x0(9), x0(10), x0(11), x0(12));
+    // Compact, throttled state trace. Always on: it is a single short line at 20Hz
+    // (negligible cost) and gives offline tooling a state trajectory without having
+    // to enable the full verbose_diagnostics firehose, which would itself perturb
+    // the control loop timing being measured.
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 50,
+        "STATE %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f",
+        x0(0), x0(1), x0(2), x0(3), x0(4), x0(5),
+        x0(6), x0(7), x0(8), x0(9), x0(10), x0(11));
+
+    if (mpc_params->verbose_diagnostics) {
+        RCLCPP_INFO(this->get_logger(), "Setting x0 to [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
+            x0(0), x0(1), x0(2), x0(3), x0(4), x0(5), x0(6), x0(7), x0(8), x0(9), x0(10), x0(11), x0(12));
+    }
 
     this->convex_mpc->update_x0(x0); // Update rigid body pose state
 
@@ -474,9 +507,11 @@ void QuadConvexMPCNode::update_mpc_state()
     }
 
     Eigen::VectorXd X_ref_joy = reference_traj_from_joy(joy_msg); // Get the reference trajectory from joystick input
-    RCLCPP_INFO(this->get_logger(), "Reference trajectory from joystick: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
-        X_ref_joy[0], X_ref_joy[1], X_ref_joy[2], X_ref_joy[3], X_ref_joy[4], X_ref_joy[5],
-        X_ref_joy[6], X_ref_joy[7], X_ref_joy[8], X_ref_joy[9], X_ref_joy[10], X_ref_joy[11], X_ref_joy[12]);
+    if (mpc_params->verbose_diagnostics) {
+        RCLCPP_INFO(this->get_logger(), "Reference trajectory from joystick: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
+            X_ref_joy[0], X_ref_joy[1], X_ref_joy[2], X_ref_joy[3], X_ref_joy[4], X_ref_joy[5],
+            X_ref_joy[6], X_ref_joy[7], X_ref_joy[8], X_ref_joy[9], X_ref_joy[10], X_ref_joy[11], X_ref_joy[12]);
+    }
 
 
 
@@ -549,22 +584,24 @@ void QuadConvexMPCNode::publish_cmd()
 
     }
 
-     // Remap torques to correct motors (reverse of joint angle swap: FR↔FL and RR↔RL)
-    // From lowstate: Motors 0-2=FR, 3-5=FL, 6-8=RL, 9-11=RR
-    // joint_torques[0-2] (computed for Foot 0/FL) should go to motors 3-5 (FL from lowstate)
-    // joint_torques[3-5] (computed for Foot 1/FR) should go to motors 0-2 (FR from lowstate)
-    // joint_torques[6-8] (computed for Foot 2/RL) should go to motors 9-11 (RR from lowstate)
-    // joint_torques[9-11] (computed for Foot 3/RR) should go to motors 6-8 (RL from lowstate)
+    // Remap torques back to Unitree motor order (inverse of the joint-angle swap).
+    // Motor order is FR, FL, RR, RL; foot order here is FL, FR, RL, RR.
+    //   joint_torques[0-2]  (Foot 0 / FL) -> motors 3-5   (FL)
+    //   joint_torques[3-5]  (Foot 1 / FR) -> motors 0-2   (FR)
+    //   joint_torques[6-8]  (Foot 2 / RL) -> motors 9-11  (RL)
+    //   joint_torques[9-11] (Foot 3 / RR) -> motors 6-8   (RR)
     for (int i = 0; i < 3; i++) {
         low_cmd.motor_cmd[0 + i].tau = joint_torques[3 + i]; // Motors 0-2 (FR) get Foot 1/FR torques
         low_cmd.motor_cmd[3 + i].tau = joint_torques[0 + i]; // Motors 3-5 (FL) get Foot 0/FL torques
-        low_cmd.motor_cmd[6 + i].tau = joint_torques[9 + i]; // Motors 6-8 (RL) get Foot 3/RR torques
-        low_cmd.motor_cmd[9 + i].tau = joint_torques[6 + i]; // Motors 9-11 (RR) get Foot 2/RL torques
+        low_cmd.motor_cmd[6 + i].tau = joint_torques[9 + i]; // Motors 6-8 (RR) get Foot 3/RR torques
+        low_cmd.motor_cmd[9 + i].tau = joint_torques[6 + i]; // Motors 9-11 (RL) get Foot 2/RL torques
     }
 
-    RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
-        joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
-        joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
+    if (mpc_params->verbose_diagnostics) {
+        RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
+            joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
+            joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
+    }
     joint_torque_pub_->publish(low_cmd); // Publish the joint torque commands
 
 }

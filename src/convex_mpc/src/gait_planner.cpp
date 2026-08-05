@@ -128,10 +128,15 @@ double GaitPlanner::phase_to_time(double phase)
 
 std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::update_swing_leg_trajectories(const Eigen::VectorXd &X_ref, const MPCParams &mpc_params, const unordered_map<string, Vector3d> &current_foot_positions)
 {
-    cout << "\nUpdating swing leg trajectories..." << endl;
-    cout << "Start time: " << start_time_s_ << endl;
-    cout << "Current time: " << current_time_s_ << ", Current phase: " << gait_phase_ << endl;
-    cout << "Footstep planning horizon: " << footstep_planning_horizon_s_ << " seconds" << endl;
+    const bool verbose = mpc_params.verbose_diagnostics;
+
+    if (verbose)
+    {
+        cout << "\nUpdating swing leg trajectories..." << endl;
+        cout << "Start time: " << start_time_s_ << endl;
+        cout << "Current time: " << current_time_s_ << ", Current phase: " << gait_phase_ << endl;
+        cout << "Footstep planning horizon: " << footstep_planning_horizon_s_ << " seconds" << endl;
+    }
 
     clear_expired_swing_leg_trajectories();
 
@@ -146,7 +151,9 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
     {
         for (const auto &[start_time, end_time] : swing_times)
         {
-            cout << "\nLeg: " << leg << ", Swing start time: " << start_time - current_time_s_ << ", Swing end time: " << end_time - current_time_s_ << endl;
+            if (verbose) {
+                cout << "\nLeg: " << leg << ", Swing start time: " << start_time - current_time_s_ << ", Swing end time: " << end_time - current_time_s_ << endl;
+            }
 
             VectorXd x = get_state_at_time_from_ref_traj(X_ref, mpc_params, current_time_s_, end_time); // End of swing corresponds to start of stance
             Vector3d p_des_end = compute_desired_footstep_position(x, leg); // Compute desired footstep position based on reference traj and Raibert heuristic

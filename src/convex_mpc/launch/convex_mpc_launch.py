@@ -6,20 +6,14 @@ import os
 
 
 def generate_launch_description():
-    # convex_mpc_params_file = os.path.join(
-    #     get_package_share_directory('convex_mpc'),
-    #     'config',
-    #     'convex_mpc_params.yaml'
-    # )
-
-    # convex_mpc_params_file = os.path.join(
-    #     os.path.dirname(__file__),  
-    #     "..",
-    #     "config",
-    #     "convex_mpc_params.yaml"
-    # )
-    # convex_mpc_params_file = "/home/aipexws5/daniel/aipex-quadruped-baselines/src/convex_mpc/config/convex_mpc_params.yaml"
-    convex_mpc_params_file = "/home/abien/ros2_ws/src/aipex-quadruped-baselines/src/convex_mpc/config/convex_mpc_params.yaml"
+    # Resolve the params file from the installed package share directory so the
+    # launch file works on any machine. CMakeLists.txt installs config/ to
+    # share/convex_mpc/config, so this requires the package to have been built.
+    convex_mpc_params_file = os.path.join(
+        get_package_share_directory('convex_mpc'),
+        'config',
+        'convex_mpc_params.yaml'
+    )
     return LaunchDescription([
         Node(
             package='convex_mpc',

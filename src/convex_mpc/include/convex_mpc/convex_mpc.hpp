@@ -108,8 +108,8 @@ class ConvexMPC
         MatrixXd compute_Q_bar();
         // MatrixXd blkdiag(const vector<MatrixXd>& matrices);
 
-        MatrixXd compute_P(MatrixXd R_bar, MatrixXd Q_bar, MatrixXd A_qp, double regularization = 0.0);
-        VectorXd compute_q(MatrixXd Q_bar, MatrixXd A_qp, MatrixXd B_qp, VectorXd x0, VectorXd X_ref);
+        MatrixXd compute_P(const MatrixXd& R_bar, const MatrixXd& Q_bar, const MatrixXd& B_qp, double regularization = 0.0);
+        VectorXd compute_q(const MatrixXd& Q_bar, const MatrixXd& A_qp, const MatrixXd& B_qp, const VectorXd& x0, const VectorXd& X_ref);
 
         Matrix3d Kp; // Proportional gain for swing leg tracking
         Matrix3d Kd; // Derivative gain for swing leg tracking
