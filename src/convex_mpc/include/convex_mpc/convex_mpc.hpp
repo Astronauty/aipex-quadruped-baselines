@@ -4,6 +4,9 @@
 #include <iostream>
 #include <memory>
 #include <filesystem>
+#include <array>
+#include <stdexcept>
+
 
 #include "gurobi_c++.h"
 #include "rclcpp/rclcpp.hpp"
@@ -19,6 +22,7 @@
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/frames.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
+
 
 using namespace std;
 using namespace Eigen;
@@ -99,9 +103,8 @@ class ConvexMPC
         MatrixXd q; // Linear cost of MPC
 
         // Vector3d foot_positions[4];
-        Matrix<double, 3, 4> foot_positions; // Positions of the feet in the body frame
-        // void update_foot_positions(const Vector<double, 12>& q);
-
+        Matrix<double, 3, 4> foot_positions_world; // Positions of the feet in the world frame
+  
         MatrixXd Q_bar; // Diagonal block matrix of quadratic state cost for N_MPC steps
         MatrixXd R_bar; // Diagonal block matrix of quadratic control cost for N_MPC-1 steps
         MatrixXd compute_R_bar();
@@ -114,8 +117,24 @@ class ConvexMPC
         Matrix3d Kp; // Proportional gain for swing leg tracking
         Matrix3d Kd; // Derivative gain for swing leg tracking
         // Vector3d get_joint_torques_for_foot()
-        vector<Matrix<double, 3, 3>>  get_foot_jacobians(const Vector<double, 12>& q); // Returns the foot jacobians for each foot in the body frame
+        vector<Matrix<double, 3, 3>>  get_foot_jacobians(); // Returns the foot jacobians for each foot in the body frame
         Matrix3d get_foot_operation_space_inertia_matrix(const Vector<double, 12>& q, int foot_index);
+
+        std::array<std::array<int, 3>, 4> joint_qidx_; // idx_q() per [foot][joint] - index for joint angles of a given foot within pinocchio q vector
+        std::array<std::array<int, 3>, 4> joint_vidx_; // idx_v() per [foot][joint] - index for joint velocities of a given foot within pinocchio q vector
+        std::array<pinocchio::FrameIndex, 4> foot_fid_; // Foot frame per foot
+
+        Eigen::VectorXd q_pin_;
+
+        // Body CoM in base frame, resolved once from the URDF base link inertia.
+        // Fixed by the massless-leg assumption; see get_foot_positions_body().
+        Vector3d com_B_ = Vector3d::Zero();
+        bool foot_kinematics_dirty_ = true;
+        void resolve_model_indices();
+        void update_kinematics();            
+
+        Matrix<double, 3, 4> get_foot_positions_body(); //  Foot positions in base frame from FK
+        
 
         StateSpace get_quadruped_dss_model(const double& yaw, Matrix<double, 3, 4>& foot_positions, const double& dt);
 

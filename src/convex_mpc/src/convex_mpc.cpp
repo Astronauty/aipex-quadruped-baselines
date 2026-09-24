@@ -48,6 +48,8 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         string urdf_path = PINOCCHIO_MODEL_DIR "/go2_description.urdf";
         pinocchio::urdf::buildModel(urdf_path, pinocchio_model);
         pinocchio_data = pinocchio::Data(pinocchio_model);
+
+        resolve_model_indices();
         
         // Initialize state space prediction matrices
         // StateSpace quad_dss = get_default_dss_model(); // TODO: proper initialization, perhaps based on the initial state of robot?
@@ -79,6 +81,71 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         cout << e.getMessage() << endl;
     }
 
+}
+
+void ConvexMPC::resolve_model_indices()
+{
+    static const std::array<std::array<const char*, 3>, 4> joint_names_by_foot = {{
+        {{"FL_hip_joint", "FL_thigh_joint", "FL_calf_joint"}},
+        {{"FR_hip_joint", "FR_thigh_joint", "FR_calf_joint"}},
+        {{"RL_hip_joint", "RL_thigh_joint", "RL_calf_joint"}},
+        {{"RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"}}
+    }};
+
+    static const std::array<const char*, 4> foot_names = {{
+        "FL_foot", "FR_foot", "RL_foot", "RR_foot"
+    }};
+
+    
+    for (int foot = 0; foot < 4; foot++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            const std::string name = joint_names_by_foot[foot][j];
+
+            if (!pinocchio_model.existJointName(name))
+            {
+
+                // Check if joint indices exist based on joint names and stash
+                RCLCPP_FATAL(logger_, "URDF missing joint '%s' (foot %d, joint %d)", name.c_str(), foot, j);
+                throw std::runtime_error("resolve_model_indices: missing joint " + name);
+            }
+
+            const pinocchio::JointIndex jid = pinocchio_model.getJointId(name);
+            joint_qidx_[foot][j] = pinocchio_model.joints[jid].idx_q();
+            joint_vidx_[foot][j] = pinocchio_model.joints[jid].idx_v();
+        }
+
+        // Check if foot frames exist based on foot names
+        const std::string foot_name = foot_names[foot];
+        if (!pinocchio_model.existFrame(foot_name))
+        {
+            RCLCPP_FATAL(logger_, "URDF missing frame '%s' (foot %d)", foot_name.c_str(), foot);
+            throw std::runtime_error("resolve_model_indices: missing frame " + foot_name);
+        }
+
+        foot_fid_[foot] = pinocchio_model.getFrameId(foot_name);
+    }
+
+
+    if (pinocchio_model.nq != 12 || pinocchio_model.nv != 12)
+    {
+        RCLCPP_FATAL(logger_, "Expected fixed-base 12-DoF model for pinocchio, got nq=%d, nv=%d", pinocchio_model.nq, pinocchio_model.nv);
+        throw std::runtime_error("resolve_model_indices: unexpected model dimensions");
+    }
+    
+
+    this->q_pin_ = Eigen::VectorXd::Zero(pinocchio_model.nq);
+
+    // Body CoM offset, taken once from the base link's inertial origin. Under the
+    // massless-leg assumption this is the CoM the dynamics take moments about, and
+    // it does not move with joint configuration. Joint 1 is the first (and here
+    // only) body in a fixed-base model; its lever gives the inertial origin.
+    com_B_ = pinocchio_model.inertias[1].lever();
+
+    RCLCPP_INFO(logger_, "Pinocchio indices resolved: nq=%d, nv= %d, nframes=%d, com_B=(%.5f, %.5f, %.5f)",
+                pinocchio_model.nq, pinocchio_model.nv, static_cast<int>(pinocchio_model.nframes),
+                com_B_(0), com_B_(1), com_B_(2));
 }
 
 void print_eigen_matrix(const Eigen::MatrixXd& mat, string name, const rclcpp::Logger& logger) 
@@ -279,22 +346,23 @@ void ConvexMPC::update_x0(Vector<double, 13> x0)
 void ConvexMPC::update_joint_angles(Vector<double, 12> theta)
 {
     this->theta = theta;
+    this->foot_kinematics_dirty_ = true;
 
 }
 
-void ConvexMPC::update_foot_positions(const Matrix<double, 3, 4>& foot_positions)
+void ConvexMPC::update_foot_positions(const Matrix<double, 3, 4>& foot_positions_world)
 {
     // Update the foot positions in the body frame
     if (mpc_params.verbose_diagnostics)
     {
         RCLCPP_INFO(logger_, "Updating foot positions in ConvexMPC.");
         RCLCPP_INFO(logger_, "Foot positions: \n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
-            foot_positions(0, 0), foot_positions(0, 1), foot_positions(0, 2), foot_positions(0, 3),
-            foot_positions(1, 0), foot_positions(1, 1), foot_positions(1, 2), foot_positions(1, 3),
-            foot_positions(2, 0), foot_positions(2, 1), foot_positions(2, 2), foot_positions(2, 3));
+            foot_positions_world(0, 0), foot_positions_world(0, 1), foot_positions_world(0, 2), foot_positions_world(0, 3),
+            foot_positions_world(1, 0), foot_positions_world(1, 1), foot_positions_world(1, 2), foot_positions_world(1, 3),
+            foot_positions_world(2, 0), foot_positions_world(2, 1), foot_positions_world(2, 2), foot_positions_world(2, 3));
     }
 
-    this->foot_positions = foot_positions;
+    this->foot_positions_world = foot_positions_world;
 }
 
 void ConvexMPC::update_reference_trajectory(const VectorXd& X_ref)
@@ -357,17 +425,33 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // Convert foot positions to COM-relative positions in world frame
     // foot_positions are in world frame (absolute), but dynamics need COM-relative
     // x0 = [theta, p, omega, p_dot, g] where p is COM position in world frame
-    //
-    // FRAME NOTE: x0's position comes from /sportmodestate, which unitree_mujoco
-    // fills from a framepos sensor on the *imu site*, while foot_positions come
-    // from mj_data_->xpos of the foot *bodies*. Those are different reference
-    // points, so r_W carries a constant bias of the imu site offset
-    // (-0.02557, 0, 0.04232 m in body frame). Not yet compensated -- see notes.
-    Vector3d p_COM = x0.segment<3>(3);  // COM position in world frame
-    Matrix<double, 3, 4> r_W;  // COM-relative foot positions in world frame
-    for (int i = 0; i < 4; ++i) {
-        r_W.col(i) = foot_positions.col(i) - p_COM;  // r_W = p_foot_W - p_COM
+    double roll = x0[0];
+    double pitch = x0[1];
+    double yaw = x0[2];
+
+    Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) *
+           AngleAxisd(pitch, Vector3d::UnitY()) *
+           AngleAxisd(roll, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
+
+    Matrix<double, 3, 4> p_B = get_foot_positions_body();
+    Matrix<double, 3, 4> r_W;
+    for (int i = 0; i < 4; i++)
+    {
+        r_W.col(i) = R_WB * p_B.col(i);
     }
+
+    // Compact, throttled foot-geometry trace, in the same spirit as the STATE line
+    // in the node. Columns are FL, FR, RL, RR, measured from the CoM in base-frame
+    // axes. At a nominal stance x should be roughly +0.19/+0.19/-0.19/-0.19 shifted
+    // by the CoM x offset, y ~ +0.14/-0.14/+0.14/-0.14, and z ~ -0.31 for all four.
+    // Front/rear x signs swapped would mean the joint-angle remap feeding theta is
+    // wrong. The fixed CoM offset is logged once at startup, not here.
+    static rclcpp::Clock pb_log_clock(RCL_STEADY_TIME);
+    RCLCPP_INFO_THROTTLE(logger_, pb_log_clock, 500,
+        "PB_X %.4f %.4f %.4f %.4f | PB_Y %.4f %.4f %.4f %.4f | PB_Z %.4f %.4f %.4f %.4f",
+        p_B(0, 0), p_B(0, 1), p_B(0, 2), p_B(0, 3),
+        p_B(1, 0), p_B(1, 1), p_B(1, 2), p_B(1, 3),
+        p_B(2, 0), p_B(2, 1), p_B(2, 2), p_B(2, 3));
 
     // Update the dynamics model to account for changing foot position and yaw
     StateSpace quad_dss = quadruped_state_space_discrete(x0[2], r_W, quad_params.inertiaTensor, quad_params.mass, mpc_params.dt); // TODO: proper initialization, perhaps based on the initial state of robot?
@@ -518,7 +602,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // RCLCPP_INFO(logger_, "%s", oss.str().c_str());
 
     // Get the foot jacobian
-    vector<Matrix3d> foot_jacobians = get_foot_jacobians(this->theta);
+    vector<Matrix3d> foot_jacobians = get_foot_jacobians();
 
     if (mpc_params.verbose_diagnostics)
     {
@@ -530,14 +614,6 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     // Compute joint torques by utilizing the foot jacobians
     Vector<double, 12> joint_torques;
-
-    double roll = x0[0];
-    double pitch = x0[1];
-    double yaw = x0[2];
-
-    Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) *
-           AngleAxisd(pitch, Vector3d::UnitY()) *
-           AngleAxisd(roll, Vector3d::UnitX())).toRotationMatrix(); // Body frame orientation in world frame
 
     // R_WB = Matrix3d::Identity(); // TODO: remove this line, just for testing purposes
 
@@ -580,68 +656,94 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     return joint_torques;
 }
 
-
-vector<Matrix3d> ConvexMPC::get_foot_jacobians(const Vector<double, 12>& theta)
+/**
+ * @brief Updates the pinocchio kinematics model based on the private class theta variable.
+ * 
+ * Needs to be called prior to referencing any jacobians (e.g. foot jacobians) or referencing frame locations
+ * (i.e. foot positions) within the convex mpc pipeline.
+ * @return None
+ */
+void ConvexMPC::update_kinematics()
 {
-
-    vector<vector<string>> joint_names_by_foot = {
-        {"FL_hip_joint", "FL_thigh_joint", "FL_calf_joint"}, // Foot 0
-        {"FR_hip_joint", "FR_thigh_joint", "FR_calf_joint"}, // Foot 1
-        {"RL_hip_joint", "RL_thigh_joint", "RL_calf_joint"}, // Foot 2
-        {"RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"}  // Foot 3
-    };
-
-    vector<string> foot_names = {
-        "FL_foot", // Foot 0
-        "FR_foot", // Foot 1
-        "RL_foot", // Foot 2
-        "RR_foot"  // Foot 3
-    };
-
-    vector<Matrix<double, 3, 3>> J(4, Matrix3d::Zero()); // Initialize a vector of 4 matrices for the foot jacobians
+    if (!foot_kinematics_dirty_) return;
 
 
-    // Update the pinocchio model config q with the joint angles (doing this to make sure joint indices match)
-    Eigen::VectorXd q = Eigen::VectorXd::Zero(pinocchio_model.nq);
-    for (int foot_index = 0; foot_index < 4; foot_index++) {
-        for (int joint_index = 0; joint_index < 3; joint_index++) {
-            int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][joint_index]);
-            q[pinocchio_model.joints[joint_id].idx_q()] = theta[foot_index * 3 + joint_index];
+    for (int foot=0; foot<4; foot++)
+    {
+        for(int joint = 0; joint <3; joint++)
+        {
+            q_pin_[joint_qidx_[foot][joint]] = this->theta[foot*3 + joint];
         }
     }
 
     // FK to update model state
-    pinocchio::forwardKinematics(pinocchio_model, pinocchio_data, q);
+    pinocchio::forwardKinematics(pinocchio_model, pinocchio_data, q_pin_);
     pinocchio::updateFramePlacements(pinocchio_model, pinocchio_data);
 
-    // Compute Jacobian for each foot
-    for (int foot_index=0; foot_index < 4; foot_index++)
+    foot_kinematics_dirty_ = false;
+}
+
+Matrix<double, 3, 4> ConvexMPC::get_foot_positions_body()
+{
+    update_kinematics();
+
+    // Feet relative to the body CoM, not the base link origin: the dynamics take
+    // moments about the CoM (tau = r x f), so r must start there. com_B_ is the
+    // fixed base-link inertial origin, consistent with the massless-leg assumption
+    // this formulation is built on -- the same assumption that lets the inertia
+    // tensor be a constant. A configuration-dependent CoM would contradict it.
+    Matrix<double, 3, 4> p_B;
+    for (int foot = 0; foot<4; foot++)
     {
-        pinocchio::FrameIndex foot_frame_id = pinocchio_model.getFrameId(foot_names[foot_index]);
+        p_B.col(foot) = pinocchio_data.oMf[foot_fid_[foot]].translation() - com_B_;
+    }
+    return p_B;
+}
+
+/**
+ * @brief Updates the foot jacobians 
+ * @param
+ * @return None
+ */
+vector<Matrix3d> ConvexMPC::get_foot_jacobians()
+{
+    vector<Matrix<double, 3, 3>> J(4, Matrix3d::Zero()); // Initialize a vector of 4 matrices for the foot jacobians
+
+
+    // Update the pinocchio model config q with the joint angles (doing this to make sure joint indices match)
+    this->update_kinematics();
+
+    // Compute Jacobian for each foot
+    for (int foot=0; foot < 4; foot++)
+    {
+        // pinocchio::FrameIndex foot_frame_id = pinocchio_model.getFrameId(foot_names[foot_index]);
+        pinocchio::FrameIndex foot_frame_id = foot_fid_[foot];
 
         Eigen::MatrixXd J_temp(6, pinocchio_model.nv);
-        pinocchio::computeFrameJacobian(pinocchio_model, pinocchio_data, q, foot_frame_id, pinocchio::LOCAL_WORLD_ALIGNED, J_temp);
+        pinocchio::computeFrameJacobian(pinocchio_model, pinocchio_data, q_pin_, foot_frame_id, pinocchio::LOCAL_WORLD_ALIGNED, J_temp);
 
         // Construct the 3x3 Jacobian for each foot
         for (int i = 0; i < 3; i++)
         {
             for (int j = 0; j < 3; j++)
             {
-                int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][j]);
-                int v_idx = pinocchio_model.joints[joint_id].idx_v();
+                // int joint_id = pinocchio_model.getJointId(joint_names_by_foot[foot_index][j]);
+                // int v_idx = pinocchio_model.joints[joint_id].idx_v();
+
+                int v_idx = joint_vidx_[foot][j];
+
                 
                 // std::cout << "  Joint: " << joint_names_by_foot[foot_index][j] << " (velocity index " << v_idx << ")\n";
                 // std::cout << "  Linear part:\n" << J_temp.block<3,1>(0, v_idx) << "\n";
                 // std::cout << "  Angular part:\n" << J_temp.block<3,1>(3, v_idx) << "\n";
 
-                J[foot_index](i, j) = J_temp(i, pinocchio_model.joints[joint_id].idx_v());
+                // J[foot_index](i, j) = J_temp(i, pinocchio_model.joints[joint_id].idx_v());
+                J[foot](i, j) = J_temp(i, v_idx);
             }
 
         }
         // J[foot_index](2, 1) = -J[foot_index](2, 1); // Thigh to z GRF mapping
     }
-
-    
 
     return J;
 }
@@ -688,7 +790,7 @@ Vector<double, 3> ConvexMPC::compute_swing_leg_tracking_torques(
 */
 Matrix3d ConvexMPC::get_foot_operation_space_inertia_matrix(const Vector<double, 12>& q, int foot_index)
 {
-    vector<Matrix3d> J = get_foot_jacobians(this->theta);
+    vector<Matrix3d> J = get_foot_jacobians();
     Matrix3d J_i = J[foot_index];
     cout << "Foot jacobian size " << J_i.rows() << " x " << J_i.cols() << endl;
 

@@ -62,6 +62,13 @@ class QuadConvexMPCNode : public rclcpp::Node
         float p[3] = {0.0f}; // Position in x, y, z
         float omega[3] = {0.0f}; // Angular velocity in roll, pitch, yaw
         float p_dot[3] = {0.0f}; // Linear velocity in x, y, z
+
+        // Standing position reference, latched from the first state message so the
+        // stance holds a fixed point instead of being pulled to the world origin.
+        // While the stick commands a velocity the latch is carried along with it,
+        // so releasing the stick holds wherever the robot ended up.
+        double p_ref[2] = {0.0, 0.0};
+        bool p_ref_latched = false;
         // MPCParams mpc_params; // MPC parameters
 
         Matrix<double, 3, 4> foot_positions = Matrix<double, 3, 4>::Zero(); // Foot positions in x, y, z

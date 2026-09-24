@@ -7,7 +7,8 @@
 #include <sstream>
 #include <iomanip>
 #include <Eigen/Dense>
-
+#include <array>
+#include <stdexcept>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -421,6 +422,26 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     double vy = max_translation_vel * axes_double[controller_axis_indices["y"]]; // Left/right movement
     double wz = max_yaw_vel * axes_double[controller_axis_indices["yaw"]]; // Yaw rotation
 
+    // Latch the standing position on the first cycle, then advance it only by the
+    // commanded velocity. Referencing absolute 0 made any drift from the world
+    // origin a standing error the MPC fought; re-anchoring to p every cycle would
+    // instead leave x/y with no restoring force at all. Latching gives a fixed
+    // target to hold, which is what standing means.
+    if (!p_ref_latched)
+    {
+        p_ref[0] = p[0];
+        p_ref[1] = p[1];
+        p_ref_latched = true;
+        RCLCPP_INFO(this->get_logger(), "Latched standing position reference: x=%.4f y=%.4f",
+                    p_ref[0], p_ref[1]);
+    }
+    else
+    {
+        // Carry the latch along while a velocity is commanded so that releasing
+        // the stick holds the new position rather than pulling back to the old one.
+        p_ref[0] += vx * mpc_params->dt;
+        p_ref[1] += vy * mpc_params->dt;
+    }
 
     for (int k=0; k < mpc_params->N_MPC; k++)
     {
@@ -428,10 +449,8 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
             0.0, 
             0.0,
             current_yaw + wz * k * mpc_params->dt, // Fixed yaw rate interpolation
-            // p[0] + vx * k * mpc_params->dt, // x position (forward/backward movement)
-            // p[1] + vy * k * mpc_params->dt, // y position (left/right movement)
-            0.0 + vx * k * mpc_params->dt, // x position (forward/backward movement)
-            vy * k * mpc_params->dt, // y position (left/right movement)
+            p_ref[0] + vx * k * mpc_params->dt, // x position (forward/backward movement)
+            p_ref[1] + vy * k * mpc_params->dt, // y position (left/right movement)
             height, // z position (height above ground)
             0.0, // Roll rate (fixed for now)
             0.0, // Pitch rate (fixed for now)
@@ -473,6 +492,12 @@ void QuadConvexMPCNode::update_mpc_state()
         "STATE %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f",
         x0(0), x0(1), x0(2), x0(3), x0(4), x0(5),
         x0(6), x0(7), x0(8), x0(9), x0(10), x0(11));
+
+    // Tracking error against the standing reference, for gain tuning. Ordered
+    // roll, pitch, x, y, z so the dominant terms are easy to read off.
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
+        "ERR roll %.4f pitch %.4f | x %.4f y %.4f z %.4f",
+        x0(0), x0(1), x0(3) - p_ref[0], x0(4) - p_ref[1], x0(5) - 0.312320);
 
     if (mpc_params->verbose_diagnostics) {
         RCLCPP_INFO(this->get_logger(), "Setting x0 to [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",

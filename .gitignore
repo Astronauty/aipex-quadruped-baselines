@@ -3,6 +3,7 @@
 build/
 install/
 log/
+ros_logs/
 
 *.log
 convex_mpc.log

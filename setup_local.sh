@@ -16,6 +16,12 @@ source "$SCRIPT_DIR/install/local_setup.sh"
 # otherwise the controller cannot see /lowstate or /sportmodestate.
 export ROS_DOMAIN_ID=0
 
+# Write ROS node logs into the repo rather than ~/.ros/log, so a run's output
+# sits next to the code and config that produced it. Note this is NOT the top
+# level log/ directory, which belongs to colcon's build logs.
+export ROS_LOG_DIR="$SCRIPT_DIR/ros_logs"
+mkdir -p "$ROS_LOG_DIR"
+
 # Add Gurobi environment variables
 export GUROBI_HOME=/opt/gurobi1202/linux64
 export PATH=$PATH:$GUROBI_HOME/bin
