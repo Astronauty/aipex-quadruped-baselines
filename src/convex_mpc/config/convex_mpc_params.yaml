@@ -46,7 +46,14 @@
   ros__parameters:
     N_MPC: 10 # Number of timesteps for mpc horizon
     mpc_dt: 0.025 # Discretization timestep for MPC
-    mass: 16.1 # Mass in kg of quadruped
+    # Total mass of the MuJoCo model (sum of body_mass in go2.xml), which is what
+    # the simulator actually integrates. The URDF totals 16.087 kg and this was
+    # previously 16.1, so the solver was sizing gravity compensation for a robot
+    # 5.9% heavier than the one it was controlling -- about 8.8 N of excess lift,
+    # holding the body roughly 4 cm above the commanded height regardless of how
+    # Q[5] was weighted. On hardware this should be the measured robot mass,
+    # including any payload.
+    mass: 15.2064 # Mass in kg of quadruped
     JOINT_TORQUE_PUBLISH_RATE_MS: 25 # Rate in ms to publish joint torques, reusing previous MPC solutions.
     MPC_STATE_UPDATE_RATE_MS: 25
     mu_static_friction: 0.6
@@ -65,10 +72,31 @@
     # the weight has to be comparable to Q[5] before it registers against height.
     # Q[9]/Q[10] (vx, vy) add velocity damping, which has more authority per unit
     # force and suppresses drift before it accumulates into a position error.
-    Q_diag: [10.0, 10.0, 10.0, 500.0, 500.0, 500.0, 0.0, 0.0, 10.0, 50.0, 50.0, 500.0, 0.0]
+    # Q[0]/Q[1] (roll, pitch) raised from 10 together. Pitch at 100 cut a -0.074 rad
+    # nose-up lean to +0.005 and, because the lean was what drove the fore-aft
+    # creep, more than halved the x error as a side effect. Leaving roll at 10 then
+    # let roll grow the same way pitch had, so the two are kept symmetric: there is
+    # no physical reason to weight one axis an order of magnitude above the other.
+    # Sign convention: negative pitch is nose up, confirmed against foot geometry
+    # (front feet sitting 3 cm further below the body than the rear).
+    # Q[5]/Q[11] (pz, vz) stay at 500. Raising them to 2000 to speed up height
+    # convergence backfired: z crossed zero at ~48 s instead of approaching it, then
+    # settled at +0.084 -- worse than the +0.052 from before the mass fix -- while
+    # roll, pitch and y all degraded 2-3x as the enlarged height term crowded them
+    # out. Lifting the body changes the leg geometry and hence the moment arms, so
+    # the equilibrium moves as you push through it; this is not a plain second order
+    # response that a larger weight settles faster.
+    Q_diag: [100.0, 100.0, 10.0, 500.0, 500.0, 500.0, 0.0, 0.0, 10.0, 50.0, 50.0, 500.0, 0.0]
     Q_scale: 1.0 # Weighting factor where Q = Q_scale * diag(Q_diag) - matches MATLAB
     Q_n_scale: 1.0 # Weighting factor Q_N for final state in horizon - matches MATLAB
-    R_weight: 0.001 # Control regularization - balances tracking vs control effort (Q[5]/R = 500 with Q[5]=50)
+    # Control regularization, balancing tracking against control effort. Halved
+    # from 0.001 to speed up settling without privileging any one axis: raising
+    # Q[5] alone overshot and crowded out the orientation terms, whereas a smaller
+    # R makes the solver more willing to command force everywhere in proportion.
+    # The ec0c5d6 sweep found 0.001 in a narrow working band with 1e-4 and 1e-2
+    # both failing, but that was against an inertia tensor 5-7x too small and a
+    # mass 5.9% too high, so the band is worth re-establishing.
+    R_weight: 0.0005
     min_vertical_grf: 10.0 # Minimum vertical GRF - matches MATLAB f_min=10
     max_vertical_grf: 400.0 # Maximum vertical GRF - matches MATLAB f_max (scaled for Go2 mass)
     qos_overrides:

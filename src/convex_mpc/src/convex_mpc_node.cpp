@@ -151,14 +151,32 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     double mu = this->get_parameter("mu_static_friction").as_double();
 
 
-    double ixx=0.02448;
-    double ixy=0.00012166;
-    double ixz=0.0014849;
-    double iyy=0.098077;
+    // Composite inertia of the whole robot about its CoM at the nominal stance
+    // (hip 0, thigh 0.9, calf -1.8 -- the MuJoCo "home" keyframe), in body frame.
+    //
+    // These were previously the base link's own inertia, taken straight from the
+    // URDF's <link name="base"> block, while mass below is the whole robot's
+    // 16.1 kg. That pairing made the model roughly 5x easier to rotate than its
+    // weight implies, because more than half the mass sits in the legs and their
+    // parallel-axis contribution dominates: the legs are far enough from the CoM
+    // that m*d^2 swamps their own inertia. The MPC therefore under-applied every
+    // corrective couple and the shortfall accumulated as a steady backward creep
+    // of the body relative to the feet (~1.3 mm/s), which no cost weight touched.
+    //
+    // Computed two ways that agree to within 5%: summing the URDF links with
+    // parallel-axis terms, and summing MuJoCo's body_inertia about subtree_com at
+    // the same keyframe. The MuJoCo values are used since that is what the sim
+    // integrates. Still a constant, consistent with the fixed-inertia assumption
+    // the convex formulation needs -- just evaluated for the whole robot rather
+    // than the trunk alone.
+    double ixx=0.17029;
+    double ixy=0.000122;
+    double ixz=-0.016475;
+    double iyy=0.483737;
     double iyz=-3.12E-05;
-    double izz=0.107;
+    double izz=0.535372;
 
-    Matrix3d I_b; // TODO: extract from URDF
+    Matrix3d I_b;
     I_b << ixx, ixy, ixz,
             ixy, iyy, iyz,
             ixz, iyz, izz;
