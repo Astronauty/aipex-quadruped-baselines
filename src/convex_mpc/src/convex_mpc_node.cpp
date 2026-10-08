@@ -1,4 +1,5 @@
 #include <chrono>
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
@@ -44,6 +45,18 @@ StateMeasurementMode measurement_mode_from_string(const std::string& mode_str) {
     throw std::invalid_argument("Invalid measurement mode: " + mode_str);
 }
 
+// Helper function to convert string to GaitType.
+// Only the gaits GaitPlanner::set_phase_offsets() defines offsets for are accepted;
+// the others exist in the enum but would throw from deep inside the planner, so
+// they are rejected here with a message that names the valid options.
+GaitType gait_type_from_string(const std::string& gait_str) {
+    if (gait_str == "STAND") return GaitType::STAND;
+    if (gait_str == "TROT") return GaitType::TROT;
+    if (gait_str == "BOUND") return GaitType::BOUND;
+    throw std::invalid_argument(
+        "Invalid or unimplemented gait type: '" + gait_str + "'. Supported: STAND, TROT, BOUND.");
+}
+
 
 QuadConvexMPCNode::QuadConvexMPCNode()
     : Node("convex_mpc_controller"), count_(0)
@@ -64,24 +77,102 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Publisher for joint torque commands
     this->declare_parameter<int>("JOINT_TORQUE_PUBLISH_RATE_MS", 5);
     const int JOINT_TORQUE_PUBLISH_RATE_MS = this->get_parameter("JOINT_TORQUE_PUBLISH_RATE_MS").as_int();
+    JOINT_TORQUE_PUBLISH_RATE_MS_ = JOINT_TORQUE_PUBLISH_RATE_MS;
 
     joint_torque_pub_ = this->create_publisher<unitree_go::msg::LowCmd>("/lowcmd", 10);
-    publish_joint_torque_timer_ = this->create_wall_timer(std::chrono::milliseconds(JOINT_TORQUE_PUBLISH_RATE_MS), std::bind(&QuadConvexMPCNode::publish_cmd, this));
+
+    // Two rates. The MPC solve and gait planning run at JOINT_TORQUE_PUBLISH_RATE_MS
+    // (the horizon discretization); the swing PD feedback and torque publish run at
+    // SWING_CONTROL_RATE_MS, which is faster.
+    //
+    // The swing controller is a cheap Cartesian PD law whose tracking is limited by
+    // how stale its velocity feedback is, not by gains or by how often the spline
+    // reference is sampled -- measured in scripts/swing_leg_rig.py, where raising
+    // only the reference rate 40->500Hz changed nothing while raising only the
+    // feedback rate 40->200Hz cut peak torque from 61 Nm to 9 Nm and eliminated
+    // saturation. Re-solving the QP that fast is neither necessary nor affordable.
+    this->declare_parameter<int>("SWING_CONTROL_RATE_MS", 5);
+    const int SWING_CONTROL_RATE_MS = this->get_parameter("SWING_CONTROL_RATE_MS").as_int();
+
+    // Must be declared BEFORE the branch below reads it. It used to be declared
+    // ~300 lines further down with the other diagnostic params, so the branch ran
+    // against the in-class initializer and nesting was always ON regardless of the
+    // yaml -- the node logged "Plan nested in the swing tick" with the param false.
+    this->declare_parameter("nest_plan_in_swing_tick", true);
+    nest_plan_in_swing_tick_ = this->get_parameter("nest_plan_in_swing_tick").as_bool();
+
+    // When nesting, publish_cmd drives the solve itself, so a second timer would
+    // double-solve. plan_decimation_ sets how many swing ticks per solve, derived
+    // from the two configured rates so the existing params keep their meaning.
+    if (nest_plan_in_swing_tick_)
+    {
+        plan_decimation_ = std::max(1, JOINT_TORQUE_PUBLISH_RATE_MS / SWING_CONTROL_RATE_MS);
+        RCLCPP_INFO(this->get_logger(),
+            "Plan nested in the swing tick: solve every %d swing ticks (%d ms / %d ms)",
+            plan_decimation_, JOINT_TORQUE_PUBLISH_RATE_MS, SWING_CONTROL_RATE_MS);
+    }
+    else
+    {
+        plan_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        // The group must be PASSED to create_wall_timer. Creating it and leaving
+        // the timer on the default argument puts the timer in the node's DEFAULT
+        // group, which is MutuallyExclusive -- so both timers serialised against
+        // each other no matter how many threads the executor had. Measured: the
+        // 5 ms swing timer achieved 80 Hz, not 200 Hz, with max gap ~24 ms, the
+        // full length of the 17 ms solve.
+        update_plan_timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(JOINT_TORQUE_PUBLISH_RATE_MS),
+            std::bind(&QuadConvexMPCNode::update_plan, this),
+            plan_cb_group_);
+    }
+
+    // Separate groups so the two timers can genuinely run concurrently under the
+    // MultiThreadedExecutor in main(). Each group is itself mutually exclusive, so
+    // neither callback can re-enter itself.
+    swing_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    publish_joint_torque_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(SWING_CONTROL_RATE_MS),
+        std::bind(&QuadConvexMPCNode::publish_cmd, this),
+        swing_cb_group_);
+
+    RCLCPP_INFO(this->get_logger(), "Plan/MPC at %d ms (%.0f Hz), swing PD at %d ms (%.0f Hz)",
+                JOINT_TORQUE_PUBLISH_RATE_MS, 1000.0 / JOINT_TORQUE_PUBLISH_RATE_MS,
+                SWING_CONTROL_RATE_MS, 1000.0 / SWING_CONTROL_RATE_MS);
 
     // Create a lowstate subscriber to update mpc states
+    // Subscriptions get their own Reentrant group and the executor an extra
+    // thread. Once both timers were moved into explicit callback groups, the
+    // node's DEFAULT group contained only these subscriptions -- and with two
+    // threads occupied by the timers, incoming state was never serviced: the
+    // controller ran but has_low_state_ stayed false and it published nothing.
+    // Reentrant rather than MutuallyExclusive so state intake is not queued
+    // behind another subscription callback.
+    // MutuallyExclusive, NOT Reentrant. Reentrant would let two /lowstate
+    // messages -- which arrive at 500 Hz -- run low_state_callback concurrently
+    // and interleave their writes into the single shared joint_angles /
+    // joint_velocities buffers that both timers read, i.e. a torn state vector.
+    // Serialising the callbacks costs nothing here (the callback is a remap and a
+    // few copies) and the queue depth of 1 means a backlog is dropped, not built.
+    state_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions state_sub_opts;
+    state_sub_opts.callback_group = state_cb_group_;
+
     low_state_sub_ = this->create_subscription<unitree_go::msg::LowState>(
-        "lowstate", 1, std::bind(&QuadConvexMPCNode::low_state_callback, this, std::placeholders::_1)
+        "lowstate", 1, std::bind(&QuadConvexMPCNode::low_state_callback, this, std::placeholders::_1),
+        state_sub_opts
     );
 
     // Sport mode state subscriber
     // TODO: switch between subscriber callbacks based on measurement_mode
     sport_mode_sub_ = this->create_subscription<unitree_go::msg::SportModeState>(
-        "sportmodestate", 1, std::bind(&QuadConvexMPCNode::sport_mode_callback, this, std::placeholders::_1)
+        "sportmodestate", 1, std::bind(&QuadConvexMPCNode::sport_mode_callback, this, std::placeholders::_1),
+        state_sub_opts
     );
 
     //Joystick subscriber
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-        "joy", 10, std::bind(&QuadConvexMPCNode::joy_callback, this, std::placeholders::_1)
+        "joy", 10, std::bind(&QuadConvexMPCNode::joy_callback, this, std::placeholders::_1),
+        state_sub_opts
     );
 
     // NOTE: update_mpc_state() is called directly at the top of publish_cmd(), which
@@ -144,8 +235,22 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     this->declare_parameter<double>("mass", 15.7);
     double mass = this->get_parameter("mass").as_double();
 
-    this->declare_parameter<double>("torque_limit", 45.0);
-    double torque_limit = this->get_parameter("torque_limit").as_double();
+    // Per-joint torque limits [hip, thigh, calf], matching the MuJoCo actuator
+    // ctrlranges: abduction/hip 23.7, thigh 23.7, knee/calf 45.43 Nm. The old
+    // single 45.0 applied the knee's limit to all three joints.
+    this->declare_parameter<std::vector<double>>("joint_torque_limits", {23.7, 23.7, 45.43});
+    const std::vector<double> jtl = this->get_parameter("joint_torque_limits").as_double_array();
+    if (jtl.size() != 3) {
+        throw std::invalid_argument("joint_torque_limits must have 3 elements [hip, thigh, calf]");
+    }
+    const Eigen::Vector3d joint_torque_limits(jtl[0], jtl[1], jtl[2]);
+
+    // Scalar fallback, kept for the few callers that want one number; use the
+    // smallest joint limit so it is conservative rather than optimistic.
+    const double torque_limit = joint_torque_limits.minCoeff();
+
+    RCLCPP_INFO(this->get_logger(), "Joint torque limits: hip %.2f, thigh %.2f, calf %.2f Nm",
+                jtl[0], jtl[1], jtl[2]);
 
     this->declare_parameter<double>("mu_static_friction", 1.0);
     double mu = this->get_parameter("mu_static_friction").as_double();
@@ -184,32 +289,254 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
 
     // QuadrupedParams quadruped_params = QuadrupedParams(I_b, mass, gravity, torque_limit, mu);
-    quadruped_params = std::make_unique<QuadrupedParams>(I_b, mass, gravity, torque_limit, mu);
+    quadruped_params = std::make_unique<QuadrupedParams>(I_b, mass, gravity, torque_limit, mu,
+                                                         joint_torque_limits);
 
     // Initialize the ConvexMPC object
     convex_mpc = std::make_unique<ConvexMPC>(*mpc_params, *quadruped_params, this->get_logger());
 
-    // TODO: implement parameter loading for gait planner
-    // gait_planner = std::make_unique<GaitPlanner>(
-    //     GaitType::TROT, 
-    //     0.5, // Duty factor
-    //     1.0, // Gait duration in seconds
-    //     0.08, // Swing height in meters
-    //     2.0, // Footstep planning horizon
-    //     0.0  // Start time
-    // );
 
+    // Gait configuration. Defaults reproduce the previous hardcoded standing
+    // behaviour (STAND with duty factor 1.0 keeps every foot in stance forever),
+    // so a config that omits these is unchanged from before parameterization.
+    this->declare_parameter<std::string>("gait_type", "STAND");
+    this->declare_parameter("duty_factor", 1.0);
+    this->declare_parameter("gait_duration_s", 1.0);
+    this->declare_parameter("swing_height_m", 0.08);
     this->declare_parameter("footstep_planning_horizon_s", 0.2);
-    double footstep_planning_horizon_s = this->get_parameter("footstep_planning_horizon_s").as_double();
+
+    const std::string gait_type_str = this->get_parameter("gait_type").as_string();
+    const double duty_factor = this->get_parameter("duty_factor").as_double();
+    const double gait_duration_s = this->get_parameter("gait_duration_s").as_double();
+    const double swing_height_m = this->get_parameter("swing_height_m").as_double();
+    const double footstep_planning_horizon_s = this->get_parameter("footstep_planning_horizon_s").as_double();
+
+    const GaitType gait_type = gait_type_from_string(gait_type_str);
+
+    if (duty_factor <= 0.0 || duty_factor > 1.0) {
+        throw std::invalid_argument("duty_factor must be in (0, 1]");
+    }
+    if (gait_duration_s <= 0.0) {
+        throw std::invalid_argument("gait_duration_s must be positive");
+    }
+
+    // Swing trajectories have to exist before the foot leaves the ground, so the
+    // planning horizon needs to reach at least one full gait period ahead.
+    if (gait_type != GaitType::STAND && footstep_planning_horizon_s < gait_duration_s) {
+        RCLCPP_WARN(this->get_logger(),
+            "footstep_planning_horizon_s (%.3f) is shorter than gait_duration_s (%.3f); "
+            "swings may be planned late. Consider raising it to at least one gait period.",
+            footstep_planning_horizon_s, gait_duration_s);
+    }
+
+    // Startup stance: hold all four feet down until the body has settled onto the
+    // commanded height and attitude, then hand over to the configured gait.
+    //
+    // Starting a trot immediately does not work. The robot spawns with its legs
+    // collapsed (feet ~0.07 m below the CoM rather than the ~0.31 m of a nominal
+    // stance), so the first swings begin before there is a stance to push
+    // against: the body rolls over and drifts metres sideways within a few gait
+    // cycles. Letting the MPC stand up first gives the gait a stable initial
+    // condition, which is what the trot formulation assumes.
+    this->declare_parameter("startup_stance_s", 2.0);
+    startup_stance_s_ = this->get_parameter("startup_stance_s").as_double();
+
+    // Stash the target gait; the planner starts in STAND regardless.
+    target_gait_type_ = gait_type;
+    target_duty_factor_ = duty_factor;
+    gait_started_ = (gait_type == GaitType::STAND); // Nothing to switch to
+
+    RCLCPP_INFO(this->get_logger(),
+        "Gait: %s, duty_factor %.3f, period %.3f s, swing height %.3f m, planning horizon %.3f s",
+        gait_type_str.c_str(), duty_factor, gait_duration_s, swing_height_m,
+        footstep_planning_horizon_s);
+
+    if (!gait_started_) {
+        RCLCPP_INFO(this->get_logger(),
+            "Holding stance for %.2f s before starting %s.",
+            startup_stance_s_, gait_type_str.c_str());
+    }
+
     gait_planner = std::make_unique<GaitPlanner>
     (
-        GaitType::STAND,
-        1.0, // Duty factor
-        1.0, // Gait duration in seconds
-        0.08, // Swing height in meters
-        footstep_planning_horizon_s, // Footstep planning horizon
+        GaitType::STAND, // Always stand first; start_gait() switches over below
+        1.0,             // Duty factor 1.0 -> every foot stays in stance
+        gait_duration_s,
+        swing_height_m,
+        footstep_planning_horizon_s,
         this->start_time_s  // Start time
     );
+    gait_planner->set_verbose(mpc_params->verbose_diagnostics);
+
+    // Diagnostic: step in place, ignoring the Raibert footstep target. Isolates
+    // swing tracking from footstep planning when a gait is unstable. The robot
+    // cannot translate while this is on.
+    this->declare_parameter("step_in_place", false);
+    const bool step_in_place = this->get_parameter("step_in_place").as_bool();
+    gait_planner->set_step_in_place(step_in_place);
+
+    if (step_in_place) {
+        RCLCPP_WARN(this->get_logger(),
+            "step_in_place is enabled: footstep targets are pinned to lift-off, "
+            "so the robot will not translate. Diagnostic use only.");
+    }
+
+    // Diagnostic: hold stance legs at a fixed joint posture instead of applying the
+    // MPC's ground reaction forces, so the swing controller can be tested with the
+    // GRF-to-torque mapping completely out of the loop.
+    //
+    // Only meaningful with the base welded (scripts/make_pinned_scene.py): a free
+    // base needs real GRFs to stay upright, and the robot simply collapses. With
+    // the base pinned nothing has to be held up, so stance legs are mere anchors
+    // and any remaining swing tracking error is the swing controller's alone.
+    //
+    // If swing tracking is good here but bad with GRFs enabled, the fault is in the
+    // stance path; if it is bad here too, it is in the swing path.
+    this->declare_parameter("freeze_stance_legs", false);
+    freeze_stance_legs_ = this->get_parameter("freeze_stance_legs").as_bool();
+
+    // Diagnostic: hold stance feet with the swing legs' own Cartesian PD instead of
+    // applying the MPC's GRFs, so all twelve joints run one control law and the GRF
+    // path is out of the loop. Pairs with a welded base; on a free base the robot
+    // has to support itself on position-holding legs, which is a much harder ask.
+    // Paper eq. (1)+(2): add the feedforward term Lambda*a_ref + C*qdot + G to
+    // the swing feedback. Without it the feedback has to generate the force that
+    // accelerates the foot along its arc out of tracking error, which is why the
+    // error scales with arc speed (32 mm RMS at a 0.15 s swing vs 11 mm at 1.0 s).
+    // Paper eq. (3): schedule Kp/Kd from the operational-space inertia so the
+    // closed-loop natural frequency is configuration-independent, instead of
+    // using the fixed swing_Kp/swing_Kd. omega is then the thing to tune, and it
+    // has physical units (rad/s) rather than being an arbitrary gain.
+    // Diagnostic: skip the MPC solve entirely, so the swing timer is not starved
+    // by it. Isolates "is the swing loop limited by the solve blocking it?" from
+    // the executor refactor needed to fix that properly. Requires
+    // freeze_stance_legs, since without the solve there are no stance GRFs.
+    // Run the MPC solve inside the swing tick instead of on its own timer. See
+    // publish_cmd() for why. Defaults ON: the async-timer arrangement it replaces
+    // was measured to cost 37x in swing tracking error.
+    this->declare_parameter("skip_mpc_solve", false);
+    skip_mpc_solve_ = this->get_parameter("skip_mpc_solve").as_bool();
+
+    this->declare_parameter("swing_natural_freq_gains", false);
+    this->declare_parameter("swing_omega", std::vector<double>{30.0, 30.0, 30.0});
+    this->declare_parameter("swing_zeta", 0.7);
+    swing_natural_freq_gains_ = this->get_parameter("swing_natural_freq_gains").as_bool();
+    const std::vector<double> omega_v = this->get_parameter("swing_omega").as_double_array();
+    if (omega_v.size() != 3) {
+        throw std::invalid_argument("swing_omega must have 3 elements");
+    }
+    swing_omega_ = Vector3d(omega_v[0], omega_v[1], omega_v[2]);
+    swing_zeta_ = this->get_parameter("swing_zeta").as_double();
+
+    if (swing_natural_freq_gains_) {
+        RCLCPP_INFO(this->get_logger(),
+            "Swing gains scheduled from Lambda (paper eq. 3): omega [%.1f %.1f %.1f] rad/s, zeta %.2f",
+            swing_omega_[0], swing_omega_[1], swing_omega_[2], swing_zeta_);
+    }
+
+    this->declare_parameter("swing_feedforward", true);
+    swing_feedforward_ = this->get_parameter("swing_feedforward").as_bool();
+    RCLCPP_INFO(this->get_logger(), "Swing feedforward (Lambda*a_ref + C*qdot + G): %s",
+                swing_feedforward_ ? "ON" : "OFF");
+
+    this->declare_parameter("cartesian_stance_hold", false);
+    cartesian_stance_hold_ = this->get_parameter("cartesian_stance_hold").as_bool();
+
+    // Nominal stance foot geometry, taken from the same FK the controller uses so
+    // it cannot drift from the model. This is the hold target for the first stance
+    // entry; see the hold branch in publish_cmd().
+    {
+        Vector<double, 12> q_nominal;
+        for (int leg = 0; leg < 4; leg++) {
+            q_nominal[leg * 3 + 0] = 0.0;
+            q_nominal[leg * 3 + 1] = 0.9;
+            q_nominal[leg * 3 + 2] = -1.8;
+        }
+        convex_mpc->update_joint_angles(q_nominal);
+        const Matrix<double, 3, 4> p_nom = convex_mpc->get_foot_positions_body();
+        for (int leg = 0; leg < 4; leg++) {
+            nominal_foot_p_[leg] = p_nom.col(leg);
+        }
+        RCLCPP_INFO(this->get_logger(),
+            "Nominal stance hold targets (body frame): "
+            "FL %.3f %.3f %.3f | FR %.3f %.3f %.3f | RL %.3f %.3f %.3f | RR %.3f %.3f %.3f",
+            p_nom(0,0), p_nom(1,0), p_nom(2,0), p_nom(0,1), p_nom(1,1), p_nom(2,1),
+            p_nom(0,2), p_nom(1,2), p_nom(2,2), p_nom(0,3), p_nom(1,3), p_nom(2,3));
+    }
+
+    if (cartesian_stance_hold_) {
+        RCLCPP_WARN(this->get_logger(),
+            "cartesian_stance_hold is enabled: stance feet are held by the swing "
+            "Cartesian PD and the MPC's GRFs are NOT applied. Diagnostic use only.");
+    }
+
+    // Joint-space hold target: the nominal stance, not whatever pose the legs
+    // happen to be in. See the handover block for why it is not latched live.
+    for (int leg = 0; leg < 4; leg++) {
+        stance_hold_q_[leg * 3 + 0] = 0.0;
+        stance_hold_q_[leg * 3 + 1] = 0.9;
+        stance_hold_q_[leg * 3 + 2] = -1.8;
+    }
+
+    this->declare_parameter("stance_hold_Kp", 80.0);
+    this->declare_parameter("stance_hold_Kd", 4.0);
+    stance_hold_Kp_ = this->get_parameter("stance_hold_Kp").as_double();
+    stance_hold_Kd_ = this->get_parameter("stance_hold_Kd").as_double();
+
+    if (skip_mpc_solve_ && !freeze_stance_legs_) {
+        throw std::invalid_argument(
+            "skip_mpc_solve requires freeze_stance_legs: with the solve disabled "
+            "there are no stance ground reaction forces and the robot has nothing "
+            "holding it up. Enable freeze_stance_legs (and use the pinned scene).");
+    }
+
+    if (skip_mpc_solve_) {
+        RCLCPP_WARN(this->get_logger(),
+            "skip_mpc_solve is enabled: the MPC is NOT solved. Stance legs are held "
+            "by the joint-space PD only. Diagnostic use only -- this measures the "
+            "swing loop without the solve starving its timer.");
+    }
+
+    if (freeze_stance_legs_) {
+        RCLCPP_WARN(this->get_logger(),
+            "freeze_stance_legs is enabled: stance legs are held by a joint-space PD "
+            "(Kp %.1f, Kd %.1f) and the MPC's GRFs are NOT applied. Only valid with a "
+            "welded base. Diagnostic use only.",
+            stance_hold_Kp_, stance_hold_Kd_);
+    }
+
+    // Swing-leg Cartesian PD gains, per-axis so lateral and vertical tracking can
+    // be weighted differently.
+    this->declare_parameter("swing_Kp", std::vector<double>{200.0, 200.0, 200.0});
+    this->declare_parameter("swing_Kd", std::vector<double>{10.0, 10.0, 10.0});
+
+    const std::vector<double> swing_Kp = this->get_parameter("swing_Kp").as_double_array();
+    const std::vector<double> swing_Kd = this->get_parameter("swing_Kd").as_double_array();
+
+    if (swing_Kp.size() != 3 || swing_Kd.size() != 3) {
+        throw std::invalid_argument("swing_Kp and swing_Kd must each have 3 elements");
+    }
+
+    convex_mpc->set_swing_gains(
+        Vector3d(swing_Kp[0], swing_Kp[1], swing_Kp[2]).asDiagonal(),
+        Vector3d(swing_Kd[0], swing_Kd[1], swing_Kd[2]).asDiagonal());
+
+    // The fast control loop gets its own kinematics model, with its own
+    // pinocchio::Data, so publish_cmd and update_plan share NOTHING and need no
+    // mutex between them. That is what makes the multi-threaded executor work
+    // here: the previous attempt failed because publish_cmd's first act was to
+    // take a mutex that update_plan held across the entire ~12 ms solve, so the
+    // swing timer blocked on the lock instead of the thread and the starvation it
+    // was meant to cure simply moved.
+    swing_kin = std::make_unique<LegKinematics>(
+        std::string(PINOCCHIO_MODEL_DIR) + "/go2_description.urdf",
+        quadruped_params->joint_armature, this->get_logger());
+
+    swing_Kp_ = Vector3d(swing_Kp[0], swing_Kp[1], swing_Kp[2]).asDiagonal();
+    swing_Kd_ = Vector3d(swing_Kd[0], swing_Kd[1], swing_Kd[2]).asDiagonal();
+
+    RCLCPP_INFO(this->get_logger(), "Swing gains: Kp [%.1f %.1f %.1f], Kd [%.1f %.1f %.1f]",
+        swing_Kp[0], swing_Kp[1], swing_Kp[2], swing_Kd[0], swing_Kd[1], swing_Kd[2]);
 }
 
 
@@ -265,11 +592,26 @@ void QuadConvexMPCNode::low_state_callback(unitree_go::msg::LowState::SharedPtr 
     //   Motors 3-5  = FL  -> joint_angles[0-2]  (Foot 0 / FL)
     //   Motors 6-8  = RR  -> joint_angles[9-11] (Foot 3 / RR)
     //   Motors 9-11 = RL  -> joint_angles[6-8]  (Foot 2 / RL)
+    // Joint velocities follow the identical remap; they feed the swing-leg
+    // controller's foot velocity via J * qdot.
     for (int i = 0; i < 3; i++) {
         joint_angles[0 + i] = motor[3 + i].q; // Foot 0 (FL) gets motors 3-5 (FL)
         joint_angles[3 + i] = motor[0 + i].q; // Foot 1 (FR) gets motors 0-2 (FR)
         joint_angles[6 + i] = motor[9 + i].q; // Foot 2 (RL) gets motors 9-11 (RL)
         joint_angles[9 + i] = motor[6 + i].q; // Foot 3 (RR) gets motors 6-8 (RR)
+
+        joint_velocities[0 + i] = motor[3 + i].dq;
+        joint_velocities[3 + i] = motor[0 + i].dq;
+        joint_velocities[6 + i] = motor[9 + i].dq;
+        joint_velocities[9 + i] = motor[6 + i].dq;
+    }
+
+    // Measured vertical contact force per foot. In simulation this is filled by a
+    // local patch to unitree_mujoco's bridge, which sums mj_contactForce over the
+    // contacts involving each foot geom; on hardware it is the Go2's own foot
+    // force estimate. Foot order matches the motor remap above: FL, FR, RL, RR.
+    for (int i = 0; i < 4; i++) {
+        foot_force[i] = data->foot_force[i];
     }
 
     has_low_state_ = true;
@@ -517,6 +859,18 @@ void QuadConvexMPCNode::update_mpc_state()
         "ERR roll %.4f pitch %.4f | x %.4f y %.4f z %.4f",
         x0(0), x0(1), x0(3) - p_ref[0], x0(4) - p_ref[1], x0(5) - 0.312320);
 
+    // Vertical force actually measured at the feet, against the weight it has to
+    // hold. Pair this with the GRF line from the solver: the MPC commands its own
+    // sum(fz), and if the measured total differs then the forces being realised
+    // are not the ones that were solved for, which separates a force-solution
+    // problem from a force-realisation one.
+    {
+        const double fz_meas = foot_force[0] + foot_force[1] + foot_force[2] + foot_force[3];
+        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
+            "FMEAS fz %d %d %d %d | sum %.2f",
+            foot_force[0], foot_force[1], foot_force[2], foot_force[3], fz_meas);
+    }
+
     if (mpc_params->verbose_diagnostics) {
         RCLCPP_INFO(this->get_logger(), "Setting x0 to [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
             x0(0), x0(1), x0(2), x0(3), x0(4), x0(5), x0(6), x0(7), x0(8), x0(9), x0(10), x0(11), x0(12));
@@ -578,7 +932,14 @@ Eigen::VectorXd QuadConvexMPCNode::constrain_reference_trajectory_size(const Eig
     return X_ref;
 }
 
-void QuadConvexMPCNode::publish_cmd()
+/**
+ * @brief Slow half of the control loop: gait planning and the MPC solve.
+ *
+ * Runs at the MPC rate (mpc_dt). Everything here is expensive or inherently tied
+ * to the horizon -- the QP, the swing trajectory planning, the contact schedule.
+ * Its outputs are cached for publish_cmd(), which runs faster.
+ */
+void QuadConvexMPCNode::update_plan()
 {
     if (!has_low_state_ || !has_sport_mode_state_)
     {
@@ -589,64 +950,628 @@ void QuadConvexMPCNode::publish_cmd()
     // This prevents solving with uninitialized state when timers are slightly out of sync
     update_mpc_state();
 
-    // Check whether each leg is scheduled to be in swing or stance
-    unordered_map<std::string, int> contact_states;
+    // One timestamp for the whole cycle. Re-reading the clock between the phase
+    // update, the schedule and the trajectory lookup would let them straddle a
+    // tick and disagree about which legs are swinging.
+    const double now_s = this->now().seconds();
 
-    gait_planner->update_time_and_phase(this->now().seconds());
-    contact_states = gait_planner->get_contact_state();
+    // Hand over from the startup stance to the walking gait once the startup
+    // timer expires. The robot spawns with collapsed legs, so some stance time is
+    // still needed before a foot may leave the ground -- but the handover no
+    // longer waits on the body having converged. See STANDING_HEIGHT_M for why
+    // the pose tolerances were removed. The pose at handover is logged so a
+    // failed gait can be read against the stance it started from.
+    if (!gait_started_ && (now_s - start_time_s) >= startup_stance_s_)
+    {
+        gait_planner->start_gait(target_gait_type_, target_duty_factor_, now_s);
+        gait_started_ = true;
+        swing_log_t0_ = now_s;
 
-    // Solve GRFs from MPC
-    convex_mpc->set_contact_constraints(contact_states); // Enforce friction constraints or zero GRF constraints based on contact state
-    Vector<double, 12> mpc_joint_torques = convex_mpc->solve_joint_torques();
+        // The stance hold target is NOT re-latched here. On a welded base the legs
+        // collapse before the controller is up (gravity clears the keyframe pose in
+        // ~250 ms, Gurobi and Pinocchio take seconds), so latching the measured
+        // pose at handover would anchor the hold to the collapsed one. The nominal
+        // stance set at construction is the right target; see stance_hold_q_.
 
-    unordered_map<string, Vector3d> foot_positions_map = matrix_to_foot_positions_map(foot_positions);
+        RCLCPP_INFO(this->get_logger(),
+            "Startup stance elapsed (%.2f s) - starting gait from "
+            "roll %.4f, pitch %.4f, z err %.4f.",
+            now_s - start_time_s, theta[0], theta[1], p[2] - STANDING_HEIGHT_M);
+    }
 
-    // Solve for swing leg trajectories within the gait planning horizon
+    // Advance the gait clock and plan swings BEFORE the solve, so the contact
+    // schedule the MPC is constrained against and the trajectories the swing
+    // controller follows both describe the same instant.
+    gait_planner->update_time_and_phase(now_s);
+
+    // Foot state, measured once per cycle and shared by the planner and the swing
+    // controller below so both describe the same geometry.
+    //
+    // These come from Pinocchio FK, NOT from SportModeState.foot_position_body.
+    // The two disagree by ~4.4 cm in z at a settled stance (FK puts the feet at
+    // body_z - 0.196 = 0.066 in world terms, while sportmode reports resting feet
+    // near 0.022), and mixing them meant the swing controller servoed an FK
+    // measurement against a sportmode-seeded reference, fighting a constant
+    // offset on every step. FK is the right source here because it is what the
+    // Jacobians -- and therefore the torques -- are computed from.
+    //
+    // Guarded: the fast swing loop drives the same Pinocchio model and would
+    // otherwise be able to dirty the FK cache partway through this read.
+    // No lock needed: convex_mpc is now private to this (planning) callback.
+    // The swing loop owns swing_kin and never touches this instance.
+    const std::vector<Matrix3d> foot_jacobians = convex_mpc->get_foot_jacobians();
+    const Matrix<double, 3, 4> foot_positions_meas = convex_mpc->get_foot_positions_body();
+
+    // Frames. FK is in BODY axes about the CoM; the planner works in absolute
+    // world coordinates. Convert the measurement into world so the trajectories
+    // it builds are world-frame, then convert back when tracking.
+    const Vector3d p_body_W(p[0], p[1], p[2]);
+    const Vector3d com_offset_B = convex_mpc->get_com_offset_body();
+    const Matrix3d R_WB = (AngleAxisd(theta[2], Vector3d::UnitZ()) *
+                           AngleAxisd(theta[1], Vector3d::UnitY()) *
+                           AngleAxisd(theta[0], Vector3d::UnitX())).toRotationMatrix();
+
+    unordered_map<string, Vector3d> foot_positions_map;
+    for (int leg_index = 0; leg_index < 4; leg_index++) {
+        foot_positions_map[quadruped_params->LEG_INDEX_TO_NAME.at(leg_index)] =
+            p_body_W + R_WB * (foot_positions_meas.col(leg_index) + com_offset_B);
+    }
+
     Eigen::VectorXd X_ref_joy = reference_traj_from_joy(joy_msg); // Get the reference trajectory from joystick input
     gait_planner->update_swing_leg_trajectories(X_ref_joy, *mpc_params, foot_positions_map);
-    
 
-    // Finite state machine to command torques based on either GRF (MPC) or PD swing leg controller
-    Vector<double, 12> joint_torques = Vector<double, 12>::Zero();
-    for (const auto& [leg, contact_state] : contact_states)
+    // Contact sampled per horizon step, not frozen at k=0 -- see
+    // ConvexMPC::set_contact_constraints(schedule).
+    const auto contact_schedule = gait_planner->get_contact_schedule(
+        now_s, mpc_params->dt, mpc_params->N_MPC - 1);
+
+    // Solve GRFs from MPC, unless the solve is disabled.
+    //
+    // skip_mpc_solve exists to answer one question without refactoring the
+    // executor: does the swing loop actually improve when it stops being starved?
+    // The ~12 ms solve is what blocks the 5 ms swing timer for half of every
+    // planning cycle, producing the 3/5/17 ms spacing. Skipping it leaves the
+    // gait clock, the contact schedule and the swing trajectories running exactly
+    // as before, so the swing path is unchanged and the ONLY difference is the
+    // timer no longer competing with a 12 ms callback.
+    //
+    // Only valid with freeze_stance_legs (which supplies stance torques from a
+    // joint-space PD instead of GRFs) -- otherwise there is nothing holding the
+    // robot up. Guarded below.
+    Vector<double, 12> mpc_joint_torques = Vector<double, 12>::Zero();
+    double constraints_ms = 0.0, solve_ms = 0.0;
+    if (!skip_mpc_solve_)
     {
-        if(contact_state == 1)
-        {
-            int leg_index = quadruped_params->LEG_NAME_TO_INDEX.at(leg);
-            int joint_start_idx = leg_index * 3;
+        const double t_c0 = this->now().seconds();
+        convex_mpc->set_contact_constraints(contact_schedule); // Enforce friction constraints or zero GRF constraints based on contact state
+        const double t_c1 = this->now().seconds();
+        mpc_joint_torques = convex_mpc->solve_joint_torques();
+        const double t_c2 = this->now().seconds();
+        constraints_ms = (t_c1 - t_c0) * 1000.0;
+        solve_ms = (t_c2 - t_c1) * 1000.0;
+    }
 
-            joint_torques[joint_start_idx] = mpc_joint_torques[joint_start_idx];
-            joint_torques[joint_start_idx+1] = mpc_joint_torques[joint_start_idx+1];
-            joint_torques[joint_start_idx+2] = mpc_joint_torques[joint_start_idx+2];
+    // Cache what the fast control loop needs. It re-reads joint state itself, but
+    // the plan -- which feet are in stance, what the stance torques are -- only
+    // changes at this slower rate.
+    //
+    // The footstep targets are snapshotted here rather than queried from the fast
+    // loop, so that loop holds no reference into gait_planner's trajectory
+    // deques, which update_swing_leg_trajectories() mutates just above.
+    // Snapshotting also keeps the swing reference consistent with the contact
+    // schedule it was planned against. The spline is re-evaluated at the fast rate inside publish_cmd();
+    // what is cached here is the trajectory set, not a frozen sample.
+    auto swing_trajectories = gait_planner->get_active_swing_trajectories();
+    {
+        std::lock_guard<std::mutex> lock(plan_mutex_);
+        cached_mpc_torques_ = mpc_joint_torques;
+        cached_stance_ = contact_schedule[0];
+        cached_swing_trajectories_ = std::move(swing_trajectories);
+        plan_valid_ = true;
+    }
+
+    // How long the planning callback occupies the single executor thread. If this
+    // approaches or exceeds JOINT_TORQUE_PUBLISH_RATE_MS, the faster publish_cmd
+    // timer cannot get a slot and its effective rate collapses.
+    const double plan_ms = (this->now().seconds() - now_s) * 1000.0;
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+        "PLANTIME update_plan %.2f ms (budget %d ms) | constraints %.2f | solve %.2f | planning %.2f",
+        plan_ms, JOINT_TORQUE_PUBLISH_RATE_MS_, constraints_ms, solve_ms,
+        plan_ms - constraints_ms - solve_ms);
+}
+
+/**
+ * @brief Foot velocities from measured joint velocities, v_i = J_i * qdot_i.
+ *
+ * Derived from the joint encoders rather than read from SportModeState's
+ * foot_speed_body: that field is populated in the MuJoCo bridge from cvel, a
+ * spatial velocity about the body origin, which is not the point velocity of
+ * the foot that a Cartesian PD law needs. J * qdot uses the same Jacobians as
+ * the torque mapping, so the derivative term is consistent with the gain it
+ * multiplies.
+ *
+ * @param foot_jacobians Per-foot 3x3 Jacobians, LOCAL_WORLD_ALIGNED, FL/FR/RL/RR.
+ * @return 3x4 matrix of foot velocities, one column per foot, same frame.
+ */
+Eigen::Matrix<double, 3, 4> QuadConvexMPCNode::compute_foot_velocities(
+    const std::vector<Eigen::Matrix3d>& foot_jacobians) const
+{
+    Eigen::Matrix<double, 3, 4> foot_velocities;
+    for (int foot = 0; foot < 4; foot++)
+    {
+        Eigen::Vector3d qdot_leg;
+        for (int j = 0; j < 3; j++) {
+            qdot_leg[j] = static_cast<double>(joint_velocities[foot * 3 + j]);
+        }
+        foot_velocities.col(foot) = foot_jacobians[foot] * qdot_leg;
+    }
+    return foot_velocities;
+}
+
+/**
+ * @brief Fast half of the control loop: swing PD feedback and torque publish.
+ *
+ * Runs faster than the MPC. The swing controller is a cheap Cartesian PD law, and
+ * in the standalone rig (scripts/swing_leg_rig.py) its tracking is limited by how
+ * stale the velocity feedback is rather than by gains or by how often the spline
+ * reference is sampled: at 40Hz, Kd=40 saturates the actuators (61 Nm, 55% of
+ * samples) while at 200Hz the same gains use 4 Nm and track ~3x better. The
+ * break is around Kd*dt ~ 1.
+ *
+ * So the reference and the stance torques are held from the last plan, and only
+ * the feedback -- foot position and velocity from fresh joint encoders -- is
+ * recomputed here.
+ */
+void QuadConvexMPCNode::publish_cmd()
+{
+    if (!has_low_state_ || !has_sport_mode_state_) return;
+
+    // Nested planning: run the solve INSIDE this tick rather than on its own
+    // timer. Mirrors the reference implementation
+    // (github.com/elijah-waichong-chan/go2-convex-mpc), whose control loop is
+    //
+    //     if k % CTRL_DECIM == 0:            # control rate
+    //         if ctrl_i % STEPS_PER_MPC == 0:
+    //             solve_QP(...)              # nested, same tick
+    //         compute_leg_torque(...)
+    //
+    // Two async ROS timers on one executor let the 12 ms solve land anywhere
+    // inside the 5 ms timer's period, which produced the measured 3/5/17 ms
+    // spacing. Nesting makes the plan/swing ratio an exact integer and
+    // guarantees the swing law runs immediately after the solve, on the same
+    // state, every time.
+    //
+    // It does NOT by itself make every tick equal length: the tick that carries
+    // the solve is still ~12 ms longer. Whether that residual matters is exactly
+    // what the LOOPJITTER diagnostic below measures -- it reports the spacing
+    // split by whether the tick carried a solve, so a long-but-periodic tick can
+    // be told apart from genuinely irregular sampling.
+    if (nest_plan_in_swing_tick_)
+    {
+        if (ticks_since_plan_ >= plan_decimation_ || !plan_valid_)
+        {
+            ticks_since_plan_ = 0;
+            update_plan();
+            tick_carried_plan_ = true;
         }
         else
         {
-            // Apply PD control for swing legs
-            
+            tick_carried_plan_ = false;
+        }
+        ticks_since_plan_++;
+    }
+
+    // Tick-spacing census, split by whether this tick also ran the solve. A
+    // uniform loop shows one tight cluster; a starved one shows the plan ticks
+    // long and the others short, which is the 3/5/17 ms pattern.
+    {
+        const double now_tick = this->now().seconds();
+        if (last_tick_s_ > 0.0) {
+            const double gap_ms = (now_tick - last_tick_s_) * 1000.0;
+            if (tick_carried_plan_) {
+                plan_tick_gap_sum_ += gap_ms;
+                plan_tick_gap_max_ = std::max(plan_tick_gap_max_, gap_ms);
+                plan_tick_count_++;
+            } else {
+                swing_tick_gap_sum_ += gap_ms;
+                swing_tick_gap_max_ = std::max(swing_tick_gap_max_, gap_ms);
+                swing_tick_count_++;
+            }
+        }
+        last_tick_s_ = now_tick;
+    }
+
+    Vector<double, 12> mpc_joint_torques;
+    std::array<bool, 4> stance;
+    std::unordered_map<std::string, SwingLegTrajectory> swing_trajectories;
+    {
+        std::lock_guard<std::mutex> lock(plan_mutex_);
+        if (!plan_valid_) return; // No plan solved yet; stay quiet rather than command zeros
+        mpc_joint_torques = cached_mpc_torques_;
+        stance = cached_stance_;
+        swing_trajectories = cached_swing_trajectories_;
+    }
+
+    // Fresh kinematics from the latest encoder values. update_joint_angles marks
+    // the FK cache dirty, so the Jacobians and foot positions below are recomputed
+    // against the joint state as of this tick, not as of the last MPC solve.
+    const double now_s = this->now().seconds();
+
+    // One critical section for every use of the shared Pinocchio model: setting
+    // the joint angles dirties the FK cache, so the Jacobians and foot positions
+    // must be read before the planning thread can set its own angles.
+    // No lock: swing_kin is this loop's private model. The planning thread
+    // uses convex_mpc and never touches this one, so there is nothing to guard.
+    Eigen::Map<Eigen::VectorXf> ja(joint_angles, 12);
+    swing_kin->set_joint_angles(ja.cast<double>());
+
+    // Needed by the feedforward's Coriolis term; harmless otherwise.
+    Eigen::Map<Eigen::VectorXf> jv(joint_velocities, 12);
+    swing_kin->set_joint_velocities(jv.cast<double>());
+
+    const std::vector<Matrix3d> foot_jacobians = swing_kin->foot_jacobians();
+    const Matrix<double, 3, 4> foot_positions_meas = swing_kin->foot_positions_body();
+    const Matrix<double, 3, 4> foot_velocities_meas = compute_foot_velocities(foot_jacobians);
+
+    const Vector3d p_body_W(p[0], p[1], p[2]);
+    const Vector3d com_offset_B = swing_kin->com_offset_body();
+    const Matrix3d R_WB = (AngleAxisd(theta[2], Vector3d::UnitZ()) *
+                           AngleAxisd(theta[1], Vector3d::UnitY()) *
+                           AngleAxisd(theta[0], Vector3d::UnitX())).toRotationMatrix();
+
+    // Swing references are evaluated from the cached trajectories at the current
+    // time. This is cheap -- a spline evaluation -- and the rig showed the
+    // reference rate itself does not matter, but evaluating it here costs nothing
+    // and keeps position and velocity references consistent with this instant.
+    // Evaluate the snapshotted splines at this instant. This is the part that
+    // genuinely benefits from the fast rate: the reference and the measured foot
+    // state are sampled together, so the PD error is not computed against a
+    // stale reference.
+    // Position, velocity AND acceleration: the acceleration feeds the paper's
+    // eq. (2) feedforward term, Lambda*a_ref.
+    struct SwingRef { Vector3d p, v, a; };
+    std::unordered_map<std::string, SwingRef> footstep_targets;
+    for (const auto& [leg, traj] : swing_trajectories)
+    {
+        if (now_s < traj.get_start_time() || now_s > traj.get_end_time()) continue;
+        Vector3d pos, vel, acc;
+        traj.evaluate(now_s, pos, vel, acc);
+        footstep_targets[leg] = {pos, vel, acc};
+    }
+
+    // Loop-rate census, counted unconditionally so it does not depend on how
+    // many legs happen to be swinging. Reported alongside SWINGSAT.
+    publish_cmd_count_++;
+
+    // Decide stance/swing from the gait clock at THIS instant, not from the flag
+    // cached by the last plan. publish_cmd runs several times per planning cycle,
+    // so the cached set can be a planning period out of date; measured at 5% of
+    // leg-samples during healthy stepping. Across a phase flip that means a leg
+    // which has just lifted still receives the MPC's stance torque -- a force
+    // sized to push against the ground, applied to a foot now in the air -- and a
+    // leg which has just landed is still driven by an expired swing spline.
+    //
+    // The gait schedule is a pure function of time, so evaluating it here is exact
+    // and costs only the phase arithmetic. The cached set is still used as the
+    // fallback before the gait starts, when the planner is in STAND and every leg
+    // is in stance anyway.
+    std::array<bool, 4> solved_stance = stance;  // What the cached GRFs assumed
+    if (gait_started_)
+    {
+        const auto live = gait_planner->get_contact_schedule(now_s, mpc_params->dt, 1);
+        for (int i = 0; i < 4; i++)
+        {
+            stance_check_samples_++;
+            if (live[0][i] != stance[i]) stance_mismatch_samples_++;
+            stance[i] = live[0][i];
+        }
+    }
+
+    Vector<double, 12> joint_torques = Vector<double, 12>::Zero();
+    for (int leg_index = 0; leg_index < 4; leg_index++)
+    {
+        const std::string& leg = quadruped_params->LEG_INDEX_TO_NAME.at(leg_index);
+        const int joint_start_idx = leg_index * 3;
+
+        if (stance[leg_index])
+        {
+            // Only hold stance legs once the gait has actually started. Before
+            // handover the MPC is standing the robot up, and the hold posture has
+            // not been latched yet -- servoing to an unlatched (zero) target would
+            // command straight legs and tip the robot over during the settle.
+            // Applies before handover too, not just once the gait starts: the MPC
+            // would otherwise spend the startup stance walking the feet outward
+            // (measured on a welded base, front feet sliding 0.124 -> 0.456 and
+            // locking at full extension), and the swing splines would then be
+            // seeded from that. With the hold active from the first tick the feet
+            // stay where the keyframe put them.
+            if (cartesian_stance_hold_)
+            {
+                // Diagnostic: hold the stance foot where it landed, using the SAME
+                // Cartesian PD law the swing legs use. The MPC's GRF solution is not
+                // applied at all, so every one of the twelve joints is driven by
+                // tau = J^T (Kp (p_ref - p) + Kd (v_ref - v)) and nothing else.
+                //
+                // This tests the swing control law on all four legs at once. If a
+                // leg tracks its swing arc well but cannot hold a fixed point while
+                // bearing the body, the fault is in the law rather than in the
+                // trajectory; if both work, the law is sound and the problem is in
+                // the GRF path it replaces.
+                //
+                // p_ref is latched when the leg ENTERS stance, not at gait start, so
+                // it is the actual touchdown point rather than a pose that drifts
+                // further out of date every step.
+                if (!was_in_stance_[leg_index])
+                {
+                    // First stance entry uses the NOMINAL stance geometry rather
+                    // than the measured foot position. On a welded base the legs
+                    // have always collapsed by the time the controller is up: with
+                    // no body weight to hold them, gravity takes them off the
+                    // keyframe pose within ~250 ms, well before Gurobi and
+                    // Pinocchio finish loading. Latching the measured position
+                    // would anchor the hold to that collapsed pose and the feet
+                    // would never return. Later touchdowns latch the measurement,
+                    // which by then is a real foothold.
+                    stance_hold_p_[leg_index] =
+                        have_held_once_[leg_index] ? foot_positions_meas.col(leg_index)
+                                                   : nominal_foot_p_[leg_index];
+                    have_held_once_[leg_index] = true;
+                    was_in_stance_[leg_index] = true;
+                }
+
+                joint_torques.segment<3>(joint_start_idx) =
+                    swing_leg_torques(
+                        *swing_kin, leg_index, foot_jacobians[leg_index],
+                        swing_Kp_, swing_Kd_,
+                        foot_positions_meas.col(leg_index),
+                        foot_velocities_meas.col(leg_index),
+                        stance_hold_p_[leg_index], Vector3d::Zero(), Vector3d::Zero(),
+                        /*use_feedforward=*/false);
+                continue;
+            }
+
+            if (freeze_stance_legs_)
+            {
+                // Diagnostic: anchor the leg at the posture it was holding when the
+                // gait started, with a plain joint-space PD. No Jacobian, no GRF, no
+                // MPC -- so nothing from the stance path can reach the swing legs
+                // through the plant.
+                for (int j = 0; j < 3; j++)
+                {
+                    const int k = joint_start_idx + j;
+                    joint_torques[k] = stance_hold_Kp_ * (stance_hold_q_[k] - joint_angles[k])
+                                     - stance_hold_Kd_ * joint_velocities[k];
+                }
+                continue;
+            }
+
+            // Stance torques come from the MPC and are held between solves: the
+            // GRF is a horizon quantity and does not become more correct by being
+            // re-read at a higher rate.
+            //
+            // But only if that solve actually treated this leg as stance. A leg
+            // that has just touched down is stance by the live gait clock while
+            // the cached solve still had it in swing, where its GRF was
+            // constrained to exactly zero -- so reusing that torque would command
+            // ~0 Nm to a leg now expected to bear load, and the body drops onto
+            // it. Hold the foot in place until the next solve covers it instead.
+            if (!solved_stance[leg_index])
+            {
+                const Vector3d p_hold = foot_positions_meas.col(leg_index);
+                const Vector3d v_hold = foot_velocities_meas.col(leg_index);
+                joint_torques.segment<3>(joint_start_idx) =
+                    swing_leg_torques(
+                        *swing_kin, leg_index, foot_jacobians[leg_index],
+                        swing_Kp_, swing_Kd_, p_hold, v_hold,
+                        p_hold, Vector3d::Zero(), Vector3d::Zero(),
+                        /*use_feedforward=*/false);
+                continue;
+            }
+
+            joint_torques.segment<3>(joint_start_idx) =
+                mpc_joint_torques.segment<3>(joint_start_idx);
+            continue;
         }
 
+        was_in_stance_[leg_index] = false;  // Swing: next touchdown re-latches the hold point
+
+        // Everything below is in the BASE frame, because that is the frame the
+        // Jacobian maps. get_foot_jacobians() asks Pinocchio for
+        // LOCAL_WORLD_ALIGNED, but the model is FIXED BASE -- there is no floating
+        // joint for Pinocchio to align to the world, so its "world" is the base
+        // link and the Jacobian's axes are base axes. JACCHECK confirms this: J
+        // matches a finite difference of oMf[].translation(), which is exactly
+        // what get_foot_positions_body() returns.
+        //
+        // These were previously rotated into world axes by R_WB while J^T still
+        // expected base axes. The two agreed only while the body was level, which
+        // is why standing was unaffected. Tilted, a purely vertical commanded
+        // error leaked sideways: at the observed roll of 0.17 rad a 5 cm z error
+        // put -8.4 mm into y, a force on an axis the swing trajectory never
+        // commands -- and self-reinforcing, since the resulting y motion feeds
+        // back into roll.
+        const Vector3d p_meas = foot_positions_meas.col(leg_index);
+        const Vector3d v_meas = foot_velocities_meas.col(leg_index);
+
+        auto target = footstep_targets.find(leg);
+        if (target == footstep_targets.end())
+        {
+            // No trajectory for this leg: damp in place rather than go limp.
+            joint_torques.segment<3>(joint_start_idx) =
+                swing_leg_torques(
+                    *swing_kin, leg_index, foot_jacobians[leg_index],
+                    swing_Kp_, swing_Kd_, p_meas, v_meas,
+                    p_meas, Vector3d::Zero(), Vector3d::Zero(),
+                    /*use_feedforward=*/false);
+            continue;
+        }
+
+        // The trajectory is planned in world coordinates, so bring it into the
+        // base frame to match p_meas: subtract the body origin, rotate by R_WB^T,
+        // then shift to the CoM-relative origin get_foot_positions_body() uses.
+        const Vector3d p_ref =
+            R_WB.transpose() * (target->second.p - p_body_W) - com_offset_B;
+
+        // Likewise for velocity. v_meas is J*qdot, the foot's velocity relative to
+        // the base expressed in base axes, so the body's own world velocity has to
+        // come out of the world-frame reference before rotating it in.
+        const Vector3d v_body_W(p_dot[0], p_dot[1], p_dot[2]);
+        const Vector3d v_ref =
+            R_WB.transpose() * (target->second.v - v_body_W);
+
+        // Reference acceleration, rotated into the base frame like p_ref/v_ref.
+        // The body is not accelerating in these diagnostics, so no body term is
+        // subtracted; on a translating gait that would need the body's own
+        // acceleration, which the state estimate does not currently provide.
+        const Vector3d a_ref = R_WB.transpose() * target->second.a;
+
+        // Three selectable laws:
+        //   swing_natural_freq_gains: paper eq. (3), gains scheduled from Lambda
+        //   swing_feedforward:        paper eq. (2) feedforward on fixed gains
+        //   neither:                  plain fixed-gain Cartesian PD
+        const Vector3d tau = swing_natural_freq_gains_
+            ? swing_leg_torques_scheduled(
+                  *swing_kin, leg_index, foot_jacobians[leg_index],
+                  swing_omega_, swing_zeta_,
+                  p_meas, v_meas, p_ref, v_ref, a_ref, swing_feedforward_)
+            : swing_leg_torques(
+                  *swing_kin, leg_index, foot_jacobians[leg_index],
+                  swing_Kp_, swing_Kd_,
+                  p_meas, v_meas, p_ref, v_ref, a_ref, swing_feedforward_);
+
+        joint_torques.segment<3>(joint_start_idx) = tau;
+
+        // Saturation census over every swing sample. Counted here, pre-clamp,
+        // because this is the question the split-rate loop was built to answer:
+        // the standalone rig showed swing tracking is feedback-rate limited, and
+        // at 40 Hz 71% of swing samples were pinned to the actuator limit. A
+        // throttled per-sample print cannot measure that -- it samples 1 in 20 and
+        // aliases against the gait half-period -- so accumulate over all samples
+        // and report the rate periodically instead.
+        for (int j = 0; j < 3; j++) {
+            swing_sample_count_++;
+            if (std::abs(tau[j]) >= quadruped_params->joint_torque_limit(j)) {
+                swing_saturated_count_++;
+            }
+        }
+        swing_tau_peak_ = std::max(swing_tau_peak_, tau.cwiseAbs().maxCoeff());
+        swing_perr_sum_ += (p_ref - p_meas).norm();
+        swing_perr_samples_++;
+
+        // Reference breakdown. perr reaching values far larger than the robot
+        // means the reference itself has run away, not that the PD is tracking
+        // badly, so log the world-frame spline output and the body-frame target
+        // it converts to alongside the measurement. Throttled per leg, otherwise
+        // a single shared throttle starves whichever legs come later in the loop.
+        // Per-axis swing trace for the arc visualisation. For a step in place with
+        // zero commanded velocity the Raibert term is zero, so x and y should be
+        // flat and only z should move -- the foot tip going straight up and back
+        // down. Deviation in x or y is the thing to look for.
+        RCLCPP_INFO(this->get_logger(),
+            "SWINGARC %s t=%.3f | ref %+7.4f %+7.4f %+7.4f | meas %+7.4f %+7.4f %+7.4f"
+            " | dx %+6.4f dy %+6.4f dz %+6.4f | q %+7.4f %+7.4f %+7.4f"
+            " | dq %+8.3f %+8.3f %+8.3f | tau %+7.3f %+7.3f %+7.3f",
+            leg.c_str(), now_s - swing_log_t0_,
+            p_ref.x(), p_ref.y(), p_ref.z(),
+            p_meas.x(), p_meas.y(), p_meas.z(),
+            p_meas.x() - p_ref.x(), p_meas.y() - p_ref.y(), p_meas.z() - p_ref.z(),
+            // Joint state and the torque actually commanded, so this trace can be
+            // compared directly against scripts/swing_mujoco_pd.py, which drives
+            // the same arc through joint-space position servos. If the Cartesian
+            // law is mistuned the joint trajectories will diverge even where the
+            // Cartesian reference agrees.
+            joint_angles[joint_start_idx + 0], joint_angles[joint_start_idx + 1],
+            joint_angles[joint_start_idx + 2],
+            joint_velocities[joint_start_idx + 0], joint_velocities[joint_start_idx + 1],
+            joint_velocities[joint_start_idx + 2],
+            tau[0], tau[1], tau[2]);
+
+        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
+            "SWINGREF %s | spline_W %+7.3f %+7.3f %+7.3f | body_W %+7.3f %+7.3f %+7.3f"
+            " | p_ref_B %+7.3f %+7.3f %+7.3f | p_meas_B %+7.3f %+7.3f %+7.3f | perr %.4f",
+            leg.c_str(),
+            target->second.p[0], target->second.p[1], target->second.p[2],
+            p_body_W[0], p_body_W[1], p_body_W[2],
+            p_ref[0], p_ref[1], p_ref[2],
+            p_meas[0], p_meas[1], p_meas[2],
+            (p_ref - p_meas).norm());
     }
 
-    // Remap torques back to Unitree motor order (inverse of the joint-angle swap).
-    // Motor order is FR, FL, RR, RL; foot order here is FL, FR, RL, RR.
-    //   joint_torques[0-2]  (Foot 0 / FL) -> motors 3-5   (FL)
-    //   joint_torques[3-5]  (Foot 1 / FR) -> motors 0-2   (FR)
-    //   joint_torques[6-8]  (Foot 2 / RL) -> motors 9-11  (RL)
-    //   joint_torques[9-11] (Foot 3 / RR) -> motors 6-8   (RR)
+    // Periodic saturation summary. Reported on a plain elapsed-time check rather
+    // than RCLCPP_*_THROTTLE so the counters reset with the report and each line
+    // covers one disjoint window.
+    {
+        const double since_report_s = now_s - last_swing_report_s_;
+        if (since_report_s >= 1.0)
+        {
+            // Loop rate first, and unconditional: it is the figure that says
+            // whether publish_cmd is actually achieving SWING_CONTROL_RATE_MS,
+            // independent of how many legs were swinging in this window.
+            if (stance_check_samples_ > 0)
+            {
+                RCLCPP_INFO(this->get_logger(),
+                    "STANCESTALE %.1f%% of leg-samples commanded with a stale stance flag (%ld/%ld)",
+                    100.0 * static_cast<double>(stance_mismatch_samples_) /
+                        static_cast<double>(stance_check_samples_),
+                    stance_mismatch_samples_, stance_check_samples_);
+                stance_check_samples_ = 0;
+                stance_mismatch_samples_ = 0;
+            }
+
+            if (plan_tick_count_ > 0 || swing_tick_count_ > 0)
+            {
+                RCLCPP_INFO(this->get_logger(),
+                    "LOOPJITTER swing-only ticks: mean %.2f ms max %.2f ms (n=%ld)"
+                    " | plan-carrying ticks: mean %.2f ms max %.2f ms (n=%ld)",
+                    swing_tick_count_ ? swing_tick_gap_sum_ / swing_tick_count_ : 0.0,
+                    swing_tick_gap_max_, swing_tick_count_,
+                    plan_tick_count_ ? plan_tick_gap_sum_ / plan_tick_count_ : 0.0,
+                    plan_tick_gap_max_, plan_tick_count_);
+                plan_tick_gap_sum_ = 0.0; plan_tick_gap_max_ = 0.0; plan_tick_count_ = 0;
+                swing_tick_gap_sum_ = 0.0; swing_tick_gap_max_ = 0.0; swing_tick_count_ = 0;
+            }
+
+            RCLCPP_INFO(this->get_logger(),
+                "LOOPRATE publish_cmd %.1f Hz (%ld calls in %.2f s) | swing samples %ld",
+                publish_cmd_count_ / since_report_s, publish_cmd_count_,
+                since_report_s, swing_sample_count_);
+
+            if (swing_sample_count_ > 0)
+            {
+                RCLCPP_INFO(this->get_logger(),
+                "SWINGSAT %.0f%% saturated (%ld/%ld joint-samples) | peak |tau| %.2f Nm | mean perr %.4f m",
+                100.0 * static_cast<double>(swing_saturated_count_) /
+                    static_cast<double>(swing_sample_count_),
+                swing_saturated_count_, swing_sample_count_, swing_tau_peak_,
+                swing_perr_samples_ > 0 ? swing_perr_sum_ / swing_perr_samples_ : 0.0);
+            }
+
+            publish_cmd_count_ = 0;
+            swing_sample_count_ = 0;
+            swing_saturated_count_ = 0;
+            swing_tau_peak_ = 0.0;
+            swing_perr_sum_ = 0.0;
+            swing_perr_samples_ = 0;
+            last_swing_report_s_ = now_s;
+        }
+    }
+
+    // Per-joint clamp: hip/thigh 23.7 Nm, calf 45.43. Stance torques were already
+    // clamped in solve_joint_torques(), but the swing torques are computed here.
+    for (int i = 0; i < 12; i++) {
+        const double limit = quadruped_params->joint_torque_limit(i % 3);
+        joint_torques[i] = std::clamp(joint_torques[i], -limit, limit);
+    }
+
+    // Remap to Unitree motor order (FR, FL, RR, RL) from foot order (FL, FR, RL, RR).
     for (int i = 0; i < 3; i++) {
-        low_cmd.motor_cmd[0 + i].tau = joint_torques[3 + i]; // Motors 0-2 (FR) get Foot 1/FR torques
-        low_cmd.motor_cmd[3 + i].tau = joint_torques[0 + i]; // Motors 3-5 (FL) get Foot 0/FL torques
-        low_cmd.motor_cmd[6 + i].tau = joint_torques[9 + i]; // Motors 6-8 (RR) get Foot 3/RR torques
-        low_cmd.motor_cmd[9 + i].tau = joint_torques[6 + i]; // Motors 9-11 (RL) get Foot 2/RL torques
+        low_cmd.motor_cmd[0 + i].tau = joint_torques[3 + i];
+        low_cmd.motor_cmd[3 + i].tau = joint_torques[0 + i];
+        low_cmd.motor_cmd[6 + i].tau = joint_torques[9 + i];
+        low_cmd.motor_cmd[9 + i].tau = joint_torques[6 + i];
     }
 
-    if (mpc_params->verbose_diagnostics) {
-        RCLCPP_INFO(this->get_logger(), "Publishing joint torques: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
-            joint_torques[0], joint_torques[1], joint_torques[2], joint_torques[3], joint_torques[4], joint_torques[5],
-            joint_torques[6], joint_torques[7], joint_torques[8], joint_torques[9], joint_torques[10], joint_torques[11]);
-    }
-    joint_torque_pub_->publish(low_cmd); // Publish the joint torque commands
-
+    joint_torque_pub_->publish(low_cmd);
 }
 
 unordered_map<string, Vector3d> QuadConvexMPCNode::matrix_to_foot_positions_map(const Eigen::Matrix<double, 3, 4>& foot_matrix)
@@ -670,8 +1595,35 @@ int main(int argc, char * argv[])
         options.automatically_declare_parameters_from_overrides(true);
         // auto node = std::make_shared<QuadConvexMPCNode>(options);
         auto node = std::make_shared<QuadConvexMPCNode>();
-        
-        rclcpp::spin(node);
+
+        // Multi-threaded, so the 5 ms swing timer runs while the ~12 ms solve is in
+        // progress on the other thread. This works now only because the two
+        // callbacks no longer share any state: update_plan owns `convex_mpc` and
+        // publish_cmd owns `swing_kin`, a LegKinematics instance with its own
+        // pinocchio::Data. The plan itself is handed over through plan_mutex_,
+        // which is held for four assignments (microseconds), not across the solve.
+        //
+        // The earlier attempt at this failed for a specific reason worth recording:
+        // publish_cmd's first act was to take mpc_mutex_, which update_plan held
+        // across the ENTIRE solve. A std::mutex makes the second thread wait, it
+        // does not let it skip, so the swing timer blocked on the lock for the full
+        // 12 ms and the starvation simply moved from the thread to the mutex.
+        // STAND degraded to max |roll| 3.14 as a result. Removing the shared state
+        // is what fixes it; a better lock could not.
+        // The node puts its callbacks in explicit callback groups, and a group is
+        // only serviced by an executor the node is added to. rclcpp::spin() builds
+        // a SingleThreadedExecutor and add_node() picks up only AUTOMATICALLY_ADD
+        // groups -- i.e. the default group. With the swing timer in swing_cb_group_
+        // and the subscriptions in state_cb_group_, spin() serviced neither: the
+        // process ran, construction logged normally, and then nothing was ever
+        // called. publish_cmd never emitted a single LOOPRATE line.
+        //
+        // Three threads: one per timer group plus one for state intake, so neither
+        // timer can be delayed by the other or by a burst of 500 Hz lowstate.
+        rclcpp::executors::MultiThreadedExecutor executor(
+            rclcpp::ExecutorOptions(), 3);
+        executor.add_node(node);
+        executor.spin();
         rclcpp::shutdown();
     }
     catch(GRBException& e) {
@@ -679,15 +1631,9 @@ int main(int argc, char * argv[])
         std::cerr << "Gurobi error message: " << e.getMessage() << std::endl;
         return 1;
     }
-    catch(std::exception& e) {
+    catch(const std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
         return 1;
     }
-    catch(...) {
-        std::cerr << "Unknown exception occurred" << std::endl;
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Unknown exception occurred");
-        return 1;
-    }
-
     return 0;
 }

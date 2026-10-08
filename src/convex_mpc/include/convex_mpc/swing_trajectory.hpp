@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
+#include <cassert>
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -134,6 +135,13 @@ public:
   SwingLegTrajectory(double t_start, double t_end, Eigen::Vector3d p_start, Eigen::Vector3d p_end, double swing_height)
   : t0_(t_start), t2_(t_end), height_(swing_height), p0_(p_start), p2_(p_end)
   {
+    // A zero- or negative-duration window makes the cubic coefficients divide by
+    // the duration, giving a degenerate curve that evaluated to enormous
+    // velocities and accelerations -- the source of 1e6-1e7 Nm swing torques
+    // before get_future_swing_times stopped clipping swing ends to the planning
+    // horizon. Assert rather than silently clamp: it always indicates a scheduler
+    // bug upstream, and a clamped swing would hide it.
+    assert(t_end > t_start && "SwingLegTrajectory: non-positive swing duration");
     spline_.build3ClampedAutoMid(t0_, p_start, t2_, p_end, height_);
   }
 
@@ -146,23 +154,51 @@ public:
   // }
 
   /**
-   * @brief Evaluate the swing leg trajectory at 
+   * @brief Evaluate the swing leg trajectory at
    * @param t Time in seconds
    * @param p Position output (3D)
    * @param v Velocity output (3D)
    * @param a Acceleration output (3D)
-   * 
-   * Note: t should be in [t0, t2]
+   *
+   * t is clamped to [t0, t2]. Outside that window the underlying cubic
+   * extrapolates without bound, which would command a foot target far from
+   * anything reachable; holding the endpoint is the safe behavior.
    */
   void evaluate(double t, Eigen::Vector3d& p, Eigen::Vector3d& v, Eigen::Vector3d& a) const {
-    spline_.evaluate3(t, p, v, a);
+    spline_.evaluate3(std::clamp(t, t0_, t2_), p, v, a);
   }
 
   double t0() const { return t0_; }
   double t2() const { return t2_; }
 
-  inline void set_start_position(const Eigen::Vector3d& p) { p0_ = p; }
-  inline void set_end_position(const Eigen::Vector3d& p) { p2_ = p; }
+  // Both setters rebuild the spline. Writing only the member left the evaluated
+  // curve stale, which silently made the in-flight Raibert touchdown update in
+  // GaitPlanner::update_swing_leg_trajectories() a no-op.
+  inline void set_start_position(const Eigen::Vector3d& p) { p0_ = p; rebuild(); }
+  inline void set_end_position(const Eigen::Vector3d& p) { p2_ = p; rebuild(); }
+
+  /**
+   * @brief Retarget an in-flight swing from the foot's current state.
+   *
+   * Rebuilding from the original lift-off point would step the foot to a new
+   * curve that does not pass through where it currently is. Re-anchoring the
+   * start at the measured position and carrying its velocity into the clamped
+   * spline keeps position and velocity continuous across the update.
+   *
+   * @param t_now Current time, used as the new start of the swing.
+   * @param p_now Current foot position.
+   * @param v_now Current foot velocity.
+   * @param p_end New touchdown target.
+   */
+  void retarget(double t_now, const Eigen::Vector3d& p_now, const Eigen::Vector3d& v_now,
+                const Eigen::Vector3d& p_end) {
+    if (!(t_now < t2_)) return; // swing already over; nothing to retarget
+
+    t0_ = t_now;
+    p0_ = p_now;
+    p2_ = p_end;
+    spline_.build3ClampedAutoMid(t0_, p0_, t2_, p2_, height_, v_now, Eigen::Vector3d::Zero());
+  }
 
   inline Eigen::Vector3d get_start_position() const { return p0_; }
   inline Eigen::Vector3d get_end_position() const { return p2_; }
@@ -171,6 +207,11 @@ public:
   inline double get_start_time() const { return t0_; }
   inline double get_end_time() const { return t2_; }
 private:
+  // Rebuild the spline from the current endpoints, both clamped to zero velocity.
+  void rebuild() {
+    spline_.build3ClampedAutoMid(t0_, p0_, t2_, p2_, height_);
+  }
+
   double t0_{}, t2_{}, height_{};
   Eigen::Vector3d p0_{}, p2_{};
   SwingLeg3DSpline spline_;

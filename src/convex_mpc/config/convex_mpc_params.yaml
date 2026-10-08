@@ -56,8 +56,75 @@
     mass: 15.2064 # Mass in kg of quadruped
     JOINT_TORQUE_PUBLISH_RATE_MS: 25 # Rate in ms to publish joint torques, reusing previous MPC solutions.
     MPC_STATE_UPDATE_RATE_MS: 25
+    # Swing PD feedback + torque publish rate, decoupled from the MPC solve above.
+    # The swing controller's tracking is limited by how stale its velocity feedback
+    # is: in scripts/swing_leg_rig.py, raising only the spline reference rate
+    # 40->500Hz changed nothing, while raising only the feedback rate 40->200Hz cut
+    # peak torque from 61 Nm to 9 Nm and removed all saturation (the instability
+    # sets in around Kd*dt ~ 1, i.e. Kd=40 at 25ms). 5ms = 200Hz.
+    SWING_CONTROL_RATE_MS: 5
     mu_static_friction: 0.6
-    footstep_planning_horizon_s: 0.1
+    # Per-joint torque limits [hip, thigh, calf], from the MuJoCo actuator
+    # ctrlranges in go2.xml: abduction and thigh motors are +/-23.7 Nm, only the
+    # knee reaches +/-45.43. The previous single torque_limit of 45.0 applied the
+    # knee's limit to all twelve joints, so hip and thigh commands were allowed
+    # through at nearly 2x what the actuators can produce.
+    joint_torque_limits: [23.7, 23.7, 45.43]
+
+    # --- Gait configuration ---
+    # gait_type: STAND | TROT | BOUND. STAND with duty_factor 1.0 keeps all four
+    # feet in stance permanently, which is the standing behaviour this controller
+    # was tuned against -- switch to TROT only once that regression is confirmed.
+    #
+    # Bring-up order is: STAND (regression), then TROT with the joystick centred
+    # so the Raibert velocity term is ~0 and the feet step in place, then TROT
+    # translating. That isolates gait scheduling and swing tracking from footstep
+    # planning, which is otherwise hard to tell apart when the robot falls over.
+    gait_type: "TROT"
+    duty_factor: 0.5 # TROT
+    gait_duration_s: 0.5 # Gait period. A trot typically wants ~0.4-0.5 s.
+    swing_height_m: 0.08 # Peak foot clearance above the lift-off/touchdown chord
+    # Must reach at least one gait period ahead so swings are planned before
+    # lift-off. This may exceed the MPC horizon (N_MPC * mpc_dt); the reference
+    # trajectory is extrapolated at constant commanded velocity past the horizon
+    # rather than clipped. See get_state_at_time_from_ref_traj().
+    footstep_planning_horizon_s: 1.0
+
+    # Swing-leg Cartesian PD gains, per axis (x, y, z), applied as
+    # tau = J^T (Kp (p_ref - p) + Kd (v_ref - v)).
+    # Tune these first when bringing up a gait: too soft and the foot lags its
+    # trajectory and stubs on touchdown, too stiff and it rings at the gait
+    # frequency. These are untuned starting values.
+    swing_Kp: [400.0, 400.0, 400.0] # reference impl, isotropic
+    swing_Kd: [75.0, 75.0, 75.0] # reference impl ratio
+
+    # Minimum time held in stance at startup before the gait begins. The robot
+    # spawns with its legs collapsed (feet ~0.07 m below the CoM instead of the
+    # nominal ~0.31 m), and a trot started from that pose rolls the body over
+    # within a few cycles -- there is no stance to push against yet. The handover
+    # additionally waits for roll, pitch and height to be within tolerance, so
+    # this is a floor on the wait, not the whole condition.
+    startup_stance_s: 2.0
+
+    # Diagnostic: pin each touchdown back to its lift-off point, disabling the
+    # Raibert heuristic's horizontal contribution. Feet lift and set down in
+    # place, so the robot cannot translate. Use this to tell a footstep-placement
+    # fault apart from a swing-tracking fault when a gait is unstable.
+    step_in_place: false
+    # Diagnostic: hold stance legs with a joint-space PD instead of the MPC's GRFs,
+    # to test the swing controller with the GRF-to-torque mapping out of the loop.
+    # Only valid with a welded base (scripts/make_pinned_scene.py).
+    swing_natural_freq_gains: false # using explicit Kp/Kd instead of eq.3
+    swing_omega: [35.0, 57.0, 27.0]
+    swing_zeta: 0.3
+    swing_feedforward: true # Lambda*(a_ref - Jdot*qdot) + C*qdot + G
+    nest_plan_in_swing_tick: false
+    skip_mpc_solve: false
+    freeze_stance_legs: false
+    cartesian_stance_hold: false
+    stance_hold_Kp: 80.0
+    stance_hold_Kd: 4.0
+
     # Q weights matching MATLAB: [RPY(3), p(3), omega(3), p_dot(3), g(1)]
     # State order: [roll, pitch, yaw, px, py, pz, wx, wy, wz, vx, vy, vz, g]
     # MATLAB: RPY_weight=1, pz_weight=50, yaw_dot_weight=1, p_dot_weight=1

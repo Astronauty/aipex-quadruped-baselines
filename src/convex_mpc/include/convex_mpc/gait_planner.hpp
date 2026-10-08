@@ -3,6 +3,9 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <vector>
+#include <array>
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <unordered_map>
 #include <functional>
@@ -10,6 +13,7 @@
 
 #include "convex_mpc/swing_trajectory.hpp"
 #include "convex_mpc/mpc_params.hpp"
+#include "convex_mpc/state_indices.hpp"
 #include "convex_mpc/trajectory_utils.hpp"
 
 
@@ -40,11 +44,31 @@ class GaitPlanner
         GaitPlanner(GaitType gait_type, double duty_factor = 0.5, double gait_duration_s = 1.0, double swing_height_m = 0.08, double footstep_planning_horizon_s = 2.0, double start_time_s = 0.0);
 
         /**
-         * @brief 
+         * @brief Contact state at the planner's current phase (set by update_time_and_phase).
          * @return A map with leg names as keys and contact state (0 or 1) as values.
          * 0 indicates the leg is in swing, 1 indicates the leg is in stance.
          */
         std::unordered_map<std::string, int> get_contact_state();
+
+        /**
+         * @brief Contact state at an arbitrary gait phase.
+         * @param phase The phase of the gait cycle, nominally in [0, 1).
+         * @return A map with leg names as keys and contact state (0 or 1) as values.
+         */
+        std::unordered_map<std::string, int> get_contact_state_at_phase(double phase);
+
+        /**
+         * @brief Contact schedule sampled across an MPC horizon.
+         *
+         * Needed because the MPC constrains every horizon timestep, and contact
+         * flips within the horizon for any real gait. Indexed [k][leg] with the
+         * leg order FL, FR, RL, RR; true means stance.
+         *
+         * @param start_time_s Time in seconds of horizon step k = 0.
+         * @param dt Horizon discretization in seconds.
+         * @param N Number of horizon steps to sample.
+         */
+        std::vector<std::array<bool, 4>> get_contact_schedule(double start_time_s, double dt, int N) const;
 
         /**
          * @brief Set the gait type for the planner.
@@ -54,6 +78,14 @@ class GaitPlanner
          * It will update the phase offsets accordingly.
          */
         void set_gait_type(GaitType gait_type);
+
+        /**
+         * @brief Switch gait and restart the gait clock, so the new gait begins at phase 0.
+         * @param gait_type The gait to switch to.
+         * @param duty_factor Duty factor for the new gait (STAND's 1.0 must not carry over).
+         * @param start_time_s New phase origin, normally "now".
+         */
+        void start_gait(GaitType gait_type, double duty_factor, double start_time_s);
         double get_phase(double current_time) const;
 
         /** Update the current time and phase of the gait planner.
@@ -62,6 +94,14 @@ class GaitPlanner
         void update_time_and_phase(double current_time_s);
 
 
+        /**
+         * @brief Plan/refresh swing trajectories across the footstep planning horizon.
+         * @param X_ref MPC reference trajectory, used to evaluate the Raibert heuristic at touchdown.
+         * @param mpc_params MPC horizon parameters, for indexing into X_ref.
+         * @param current_foot_positions Measured foot positions in the WORLD frame, keyed
+         *        "FL"/"FR"/"RL"/"RR". These become the lift-off points of first swings, and
+         *        must share a frame with the Raibert touchdown targets, which are world frame.
+         */
         std::unordered_map<std::string, std::deque<SwingLegTrajectory>> update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, const MPCParams& mpc_params, const unordered_map<string, Vector3d> &current_foot_positions);
  
         /**
@@ -81,11 +121,50 @@ class GaitPlanner
          * @param current_time_s The current time in seconds
          * @return A map with leg names as keys and pairs of (position, velocity) as values
          */
-        std::unordered_map<std::string, std::pair<Eigen::Vector3d, Eigen::Vector3d>> 
+        std::unordered_map<std::string, std::pair<Eigen::Vector3d, Eigen::Vector3d>>
         get_all_current_footstep_targets(double current_time_s) const;
+
+        /**
+         * @brief The currently-planned swing trajectory for each swinging leg.
+         *
+         * One trajectory per leg -- the earliest unexpired one, which is the
+         * swing in progress or the next to begin. Legs with no planned swing are
+         * absent from the result.
+         *
+         * Exists so a caller running on another thread can take a snapshot and
+         * evaluate the splines itself, instead of holding a reference into the
+         * planner's deques while the planning thread mutates them. Returning the
+         * trajectories rather than a sampled position keeps the caller free to
+         * evaluate at its own, faster rate.
+         */
+        std::unordered_map<std::string, SwingLegTrajectory>
+        get_active_swing_trajectories() const;
+
+        /**
+         * @brief Enable per-cycle diagnostic printing.
+         *
+         * Off by default: these paths run once per leg per control cycle at 40 Hz,
+         * and unconditional printing here is enough to distort the loop timing
+         * being measured.
+         */
+        void set_verbose(bool verbose) { verbose_ = verbose; }
+
+        /**
+         * @brief Diagnostic mode: place every touchdown back at its lift-off point.
+         *
+         * Disables the Raibert heuristic's contribution, so feet lift and set down
+         * in place with no horizontal travel. Used to tell a footstep-placement
+         * fault apart from a swing-tracking fault when a gait diverges. The robot
+         * cannot translate in this mode.
+         */
+        void set_step_in_place(bool step_in_place) { step_in_place_ = step_in_place; }
+
 
 
     private:
+        bool verbose_ = false; // Gates the per-cycle diagnostic printing
+        bool step_in_place_ = false; // Diagnostic: hold touchdown at lift-off
+
         double start_time_s_; // Start time of the gait planning in seconds
         double current_time_s_; // Current time in seconds
         double gait_phase_; // Current phase of the gait, between 0 and 1
@@ -94,6 +173,14 @@ class GaitPlanner
 
         double time_to_phase(double current_time_s);
         double phase_to_time(double phase);
+
+        /**
+         * @brief Stance test for one leg at a given phase, shared by every contact query.
+         * @param phase Gait phase.
+         * @param phase_offset This leg's offset within the gait cycle.
+         * @return true if the leg is in stance.
+         */
+        bool leg_in_stance(double phase, double phase_offset) const;
         double swing_height_m_; // Height of the swing trajectory in meters
         GaitType gait_type_;
         double duty_factor_; // Duty factor for the gait, default is 0.5
@@ -103,12 +190,37 @@ class GaitPlanner
         std::unordered_map<string, deque<SwingLegTrajectory>>  swing_leg_trajectories_;
  
         std::unordered_map<std::string, Eigen::MatrixXd> desired_footstep_locations_; // Desired footstep locations for each foot in world frame
+        // Nominal STANCE FOOT positions in the body frame -- the point each leg
+        // hangs its footstep target around. These are the feet, not the hip roll
+        // joints.
+        //
+        // This table previously held y = +/-0.0465, which is the hip ROLL JOINT
+        // offset from the body centerline. The foot sits at |y| ~ 0.142 because
+        // the thigh is offset outboard of that joint, so every Raibert touchdown
+        // target was placed ~0.095 m inboard of where the leg can actually stand:
+        // all four feet commanded toward the centerline, unreachable and
+        // destabilising. Measured on the pinned rig, the resulting references were
+        // 0.23 m above the ground and 0.49 m forward, driving 39-45% torque
+        // saturation.
+        //
+        // Values are from get_foot_positions_body() at the nominal stance joint
+        // angles -- the same numbers FKCHECK and the stance-hold targets print:
+        //   X 0.1982 0.1982 -0.1886 -0.1886 | Y 0.1403 -0.1437 0.1403 -0.1437
+        // The y asymmetry (0.1403 vs -0.1437) is real and comes from the CoM
+        // offset the body frame is referenced to, so it is kept rather than
+        // averaged. z is left at 0: the footstep target is projected to the
+        // ground plane, so only the horizontal components of this offset are used.
+        // How far the Raibert touchdown target must move before an in-flight
+        // swing is rebuilt. A rebuild re-derives the apex from the remaining
+        // window, so doing it for sub-centimetre target jitter corrupts the arc.
+        static constexpr double kRetargetDeadbandM = 0.02;
+
         const std::unordered_map<std::string, Eigen::Vector3d> HIP_POSITIONS = {
-            {"FL", Eigen::Vector3d(0.1934, 0.0465, 0.0)},   // Front Left
-            {"FR", Eigen::Vector3d(0.1934, -0.0465, 0.0)},  // Front Right
-            {"RL", Eigen::Vector3d(-0.1934, 0.0465, 0.0)},  // Rear Left
-            {"RR", Eigen::Vector3d(-0.1934, -0.0465, 0.0)}  // Rear Right
-        }; // TODO: parse from URDF
+            {"FL", Eigen::Vector3d(0.1982, 0.1403, 0.0)},   // Front Left
+            {"FR", Eigen::Vector3d(0.1982, -0.1437, 0.0)},  // Front Right
+            {"RL", Eigen::Vector3d(-0.1886, 0.1403, 0.0)},  // Rear Left
+            {"RR", Eigen::Vector3d(-0.1886, -0.1437, 0.0)}  // Rear Right
+        }; // TODO: parse from URDF / derive from FK at the nominal stance
         
         /**
          * @brief Set the phase offsets for each leg based on the selected gait type.

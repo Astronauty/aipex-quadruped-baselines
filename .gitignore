@@ -7,3 +7,7 @@ ros_logs/
 
 *.log
 convex_mpc.log
+
+# MuJoCo scratch output
+MUJOCO_LOG.TXT
+__pycache__/
