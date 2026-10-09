@@ -1,3 +1,4 @@
+#include <mutex>
 #ifndef UNITREE_SDK2_BRIDGE_H
 #define UNITREE_SDK2_BRIDGE_H
 
@@ -103,6 +104,7 @@ public:
     void LowCmdGoHandler(const void *msg);
     void LowCmdHgHandler(const void *msg);
 
+    void SetPhysicsMutex(std::recursive_mutex *mtx) { physics_mtx_ = mtx; }
     void PublishLowStateGo();
     void PublishLowStateHg();
     void PublishHighState();
@@ -145,6 +147,16 @@ public:
     int have_imu_ = false;
     int have_frame_sensor_ = false;
     int idl_type_ = 0; // 0: unitree_go, 1: unitree_hg
+
+    // Contact geoms for the four feet, in the FL/FR/RL/RR order the foot_force
+    // field uses. Resolved once from the model; -1 means the model does not name
+    // that geom, in which case its contact force is reported as zero.
+    int foot_geom_ids_[4] = {-1, -1, -1, -1};
+
+    // Physics mutex, owned by main()'s Simulate instance. The publisher threads
+    // read mjData while PhysicsLoop is inside mj_step writing it; locking this
+    // serialises the two. Null means unguarded (the old, crash-prone behaviour).
+    std::recursive_mutex *physics_mtx_ = nullptr;
 
 private:
     void GetWirelessRemote();

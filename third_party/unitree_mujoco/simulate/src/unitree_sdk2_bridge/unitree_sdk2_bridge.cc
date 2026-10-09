@@ -1,8 +1,28 @@
 #include "unitree_sdk2_bridge.h"
+#include <algorithm>
+#include <array>
 
 UnitreeSdk2Bridge::UnitreeSdk2Bridge(mjModel *model, mjData *data) : mj_model_(model), mj_data_(data)
 {
     CheckSensor();
+    // std::cout << "have_frame_Sensor:" << this->have_frame_sensor_ << std::endl;
+    // std::cout << "have_imu_:" << this->have_imu_ << std::endl;
+
+    // Resolve the foot contact geoms once, for the foot_force publishing below.
+    // mj_name2id returns -1 for a name the model does not define, which the
+    // publisher treats as "no force available" rather than indexing out of range.
+    {
+        static const char *foot_geom_names[4] = {"FL", "FR", "RL", "RR"};
+        for (int i = 0; i < 4; i++)
+        {
+            foot_geom_ids_[i] = mj_name2id(mj_model_, mjOBJ_GEOM, foot_geom_names[i]);
+            if (foot_geom_ids_[i] < 0)
+            {
+                std::cout << "[bridge] no geom named '" << foot_geom_names[i]
+                          << "'; its contact force will be published as zero" << std::endl;
+            }
+        }
+    }
 
     if (idl_type_ == 0)
     {
@@ -71,6 +91,12 @@ void UnitreeSdk2Bridge::PublishLowStateGo()
 {
     if (mj_data_)
     {
+        // Serialise every mjData read in this function against mj_step. See
+        // physics_mtx_ in the header: without this the 500 Hz publisher raced the
+        // physics thread and a torn contact array crashed mj_contactForce.
+        std::unique_lock<std::recursive_mutex> physics_lock;
+        if (physics_mtx_) physics_lock = std::unique_lock<std::recursive_mutex>(*physics_mtx_);
+
         for (int i = 0; i < num_motor_; i++)
         {
             low_state_go_.motor_state()[i].q() = mj_data_->sensordata[i];
@@ -103,6 +129,72 @@ void UnitreeSdk2Bridge::PublishLowStateGo()
             low_state_go_.imu_state().accelerometer()[2] = mj_data_->sensordata[dim_motor_sensor_ + 9];
         }
 
+        // Custom foot contact force publish.
+        //
+        // foot_force is otherwise left at zero by this bridge, so a controller
+        // reading it sees nothing. Filling it with the real contact normal force
+        // lets a controller compare the ground reaction forces it commanded
+        // against the ones the simulator actually applied, which is the only way
+        // to tell a force-solution problem from a force-realisation one.
+        //
+        // mj_contactForce returns the force in the contact frame, whose first axis
+        // is the normal, so the world-frame force is frame^T * f and its z
+        // component is what a vertical load cell would read. Contacts are
+        // accumulated per foot because a foot can touch more than one geom.
+        {
+            double fz[4] = {0.0, 0.0, 0.0, 0.0};
+
+            // ncon is snapshotted and clamped because this runs on the
+            // 500 Hz publisher thread while the physics thread is inside mj_step
+            // rewriting the contact array (main.cc guards mj_step with sim.mtx,
+            // which this thread does not hold). Re-reading mj_data_->ncon inside
+            // the loop condition let it grow or shrink mid-iteration, so
+            // mj_contactForce could be handed an index that no longer exists --
+            // an out-of-bounds read that surfaced as an intermittent SIGSEGV in
+            // __memmove_avx512 under PublishLowStateGo, killing the simulator on
+            // roughly 2 of 8 launches and sometimes mid-run.
+            //
+            // This narrows the race rather than removing it: the right fix is for
+            // the bridge to share main.cc's sim.mtx. Clamping keeps every access
+            // in bounds, which is what turns a crash into at worst a stale force
+            // reading for one cycle.
+            // Snapshot once. nconmax is legacy in MuJoCo 3.x (contacts live in the
+            // arena and it can read 0 or -1), so it is not a usable bound; a fixed
+            // sane ceiling is. A Go2 on flat ground has a handful of contacts, so
+            // 512 is far above anything legitimate while still bounding a torn read.
+            constexpr int kMaxContactsScanned = 512;
+            int ncon = mj_data_->ncon;
+            if (ncon < 0) ncon = 0;
+            if (ncon > kMaxContactsScanned) ncon = kMaxContactsScanned;
+            for (int c = 0; c < ncon; c++)
+            {
+                const mjContact &con = mj_data_->contact[c];
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (foot_geom_ids_[i] < 0) continue;
+                    if (con.geom[0] != foot_geom_ids_[i] && con.geom[1] != foot_geom_ids_[i]) continue;
+
+                    mjtNum f6[6] = {0};
+                    mj_contactForce(mj_model_, mj_data_, c, f6);
+
+                    // frame is a row-major 3x3 whose rows are the contact axes, so
+                    // the world-frame force is the transpose applied to f6[0..2].
+                    const mjtNum fz_world = con.frame[2] * f6[0] + con.frame[5] * f6[1] + con.frame[8] * f6[2];
+
+                    // geom[0] is the contact's first body; MuJoCo reports the force
+                    // applied to geom[1] by geom[0], so flip when the foot is first.
+                    fz[i] += (con.geom[0] == foot_geom_ids_[i]) ? -fz_world : fz_world;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                low_state_go_.foot_force()[i] = static_cast<int16_t>(fz[i]);
+            }
+        }
+
         if (js_)
         {
             GetWirelessRemote();
@@ -117,6 +209,12 @@ void UnitreeSdk2Bridge::PublishLowStateHg()
 {
     if (mj_data_)
     {
+        // Serialise every mjData read in this function against mj_step. See
+        // physics_mtx_ in the header: without this the 500 Hz publisher raced the
+        // physics thread and a torn contact array crashed mj_contactForce.
+        std::unique_lock<std::recursive_mutex> physics_lock;
+        if (physics_mtx_) physics_lock = std::unique_lock<std::recursive_mutex>(*physics_mtx_);
+
         for (int i = 0; i < num_motor_; i++)
         {
             low_state_hg_.motor_state()[i].q() = mj_data_->sensordata[i];
@@ -164,6 +262,12 @@ void UnitreeSdk2Bridge::PublishHighState()
     if (mj_data_ && have_frame_sensor_)
     {
 
+        // Serialise every mjData read in this function against mj_step. See
+        // physics_mtx_ in the header: without this the 500 Hz publisher raced the
+        // physics thread and a torn contact array crashed mj_contactForce.
+        std::unique_lock<std::recursive_mutex> physics_lock;
+        if (physics_mtx_) physics_lock = std::unique_lock<std::recursive_mutex>(*physics_mtx_);
+
         high_state_.position()[0] = mj_data_->sensordata[dim_motor_sensor_ + 10];
         high_state_.position()[1] = mj_data_->sensordata[dim_motor_sensor_ + 11];
         high_state_.position()[2] = mj_data_->sensordata[dim_motor_sensor_ + 12];
@@ -171,6 +275,20 @@ void UnitreeSdk2Bridge::PublishHighState()
         high_state_.velocity()[0] = mj_data_->sensordata[dim_motor_sensor_ + 13];
         high_state_.velocity()[1] = mj_data_->sensordata[dim_motor_sensor_ + 14];
         high_state_.velocity()[2] = mj_data_->sensordata[dim_motor_sensor_ + 15];
+
+        std::array<int, 4> foot_indices = {5, 9, 13, 17};
+        
+        // Custom foot position publish
+        for (int i = 0; i < 4; i++)
+        {
+            high_state_.foot_position_body()[3*i + 0] = mj_data_->xpos[3*foot_indices[i] + 0];
+            high_state_.foot_position_body()[3*i + 1] = mj_data_->xpos[3*foot_indices[i] + 1];
+            high_state_.foot_position_body()[3*i + 2] = mj_data_->xpos[3*foot_indices[i] + 2];
+
+            high_state_.foot_speed_body()[3*i + 0] = mj_data_->cvel[6*foot_indices[i] + 3]; // vx
+            high_state_.foot_speed_body()[3*i + 1] = mj_data_->cvel[6*foot_indices[i] + 4]; // vy
+            high_state_.foot_speed_body()[3*i + 2] = mj_data_->cvel[6*foot_indices[i] + 5]; // vz
+        }
 
         high_state_puber_->Write(high_state_);
     }

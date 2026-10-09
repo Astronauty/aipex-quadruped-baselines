@@ -20,6 +20,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <atomic>
 #include <new>
 #include <string>
 #include <thread>
@@ -247,6 +248,27 @@ namespace
 
   //------------------------------------------- simulation -------------------------------------------
 
+// Reset to the model's first keyframe, if it has one.
+//
+// MuJoCo's simulate starts from qpos0, which for a joint without an explicit
+// `ref` is zero -- for the Go2 that means the legs straight down. On the
+// free-base robot the body simply falls onto its legs, but with the base welded
+// (see scripts/make_pinned_scene.py in the convex_mpc workspace) the legs hang
+// free and the straight pose puts the feet through the floor; the contact solver
+// then drives the hips onto their travel limits and the controller cannot
+// recover the pose. go2.xml ships a "home" keyframe holding the nominal stance,
+// so loading it gives a sane initial condition in both cases.
+//
+// Keyframe 0 is used rather than one looked up by name, so this works for any
+// model that defines keyframes and is a no-op for models that define none.
+static void ResetToKeyframe(const mjModel *m, mjData *d)
+{
+  if (m && d && m->nkey > 0)
+  {
+    mj_resetDataKeyframe(m, d, 0);
+  }
+}
+
   mjModel *LoadModel(const char *file, mj::Simulate &sim)
   {
     // this copy is needed so that the mju::strlen call below compiles
@@ -336,6 +358,7 @@ namespace
 
           m = mnew;
           d = dnew;
+          ResetToKeyframe(m, d);
           mj_forward(m, d);
 
           // allocate ctrlnoise
@@ -366,6 +389,7 @@ namespace
 
           m = mnew;
           d = dnew;
+          ResetToKeyframe(m, d);
           mj_forward(m, d);
 
           // allocate ctrlnoise
@@ -529,6 +553,7 @@ void PhysicsThread(mj::Simulate *sim, const char *filename)
     if (d)
     {
       sim->Load(m, d, filename);
+      ResetToKeyframe(m, d);
       mj_forward(m, d);
 
       // allocate ctrlnoise
@@ -551,6 +576,17 @@ void PhysicsThread(mj::Simulate *sim, const char *filename)
 
   exit(0);
 }
+
+// Physics mutex shared with the SDK bridge.
+//
+// The bridge publishes /lowstate and /sportmodestate from its own 500 Hz threads,
+// reading mjData (sensordata, ncon, contact[], xpos, cvel) while PhysicsLoop is
+// inside mj_step rewriting all of it. PhysicsLoop takes sim->mtx; the bridge took
+// nothing, so a torn read of the contact array crashed the simulator in
+// mj_contactForce roughly 1-2 launches in 8. `sim` is a unique_ptr local to main()
+// and is created after this thread starts, so its mutex is exposed through this
+// pointer, set once in main() before the physics loop begins.
+std::atomic<std::recursive_mutex *> g_physics_mtx{nullptr};
 
 void *UnitreeSdk2BridgeThread(void *arg)
 {
@@ -575,7 +611,15 @@ void *UnitreeSdk2BridgeThread(void *arg)
   }
 
   ChannelFactory::Instance()->Init(config.domain_id, config.interface);
+  // Wait for main() to publish the physics mutex before touching mjData. Without
+  // this the pointer is read before main() assigns it and the bridge would run
+  // unguarded, which is the bug this is meant to fix.
+  while (!g_physics_mtx)
+  {
+    usleep(1000);
+  }
   UnitreeSdk2Bridge unitree_interface(m, d);
+  unitree_interface.SetPhysicsMutex(g_physics_mtx.load());
 
   if (config.use_joystick == 1)
   {
@@ -639,6 +683,9 @@ int main(int argc, char **argv)
   auto sim = std::make_unique<mj::Simulate>(
       std::make_unique<mj::GlfwAdapter>(),
       &cam, &opt, &pert, /* is_passive = */ false);
+  // Publish the physics mutex to the SDK bridge thread before any stepping starts.
+  g_physics_mtx.store(&sim->mtx);
+
 
   // Load simulation configuration
   YAML::Node yaml_node = YAML::LoadFile("../config.yaml");
