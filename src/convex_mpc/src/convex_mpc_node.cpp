@@ -905,6 +905,19 @@ void QuadConvexMPCNode::update_mpc_state()
         RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
             "FMEAS fz %d %d %d %d | sum %.2f",
             foot_force[0], foot_force[1], foot_force[2], foot_force[3], fz_meas);
+
+        // Accumulate for the TROTHEALTH trend line. Sampled here because this runs
+        // once per plan cycle on freshly read state, so every term describes the
+        // same instant.
+        health_samples_++;
+        health_roll_sum_  += theta[0];
+        health_pitch_sum_ += theta[1];
+        health_z_sum_     += p[2];
+        health_vxy_sum_   += std::hypot(p_dot[0], p_dot[1]);
+        health_yaw_last_   = theta[2];
+        health_fz_sum_    += fz_meas;
+        health_fz_min_     = std::min(health_fz_min_, fz_meas);
+        if (fz_meas <= 0.0) health_airborne_++;
     }
 
     if (mpc_params->verbose_diagnostics) {
@@ -1312,6 +1325,49 @@ void QuadConvexMPCNode::publish_cmd()
             if (live[0][i] != stance[i]) stance_mismatch_samples_++;
             stance[i] = live[0][i];
         }
+
+        // Scheduled vs ACTUAL touchdown, per leg.
+        //
+        // STANCESTALE compares the cached schedule against the live schedule --
+        // both are the controller's BELIEF, so it cannot see reality. This compares
+        // the live schedule against the simulator's measured contact force, which
+        // is ground truth. The paper runs a contact detection algorithm and
+        // switches to stance on EARLY contact; we have no such handling, so a foot
+        // that lands early keeps being driven by the swing law into the ground, and
+        // one that lands late leaves the body on three feet mid-stance. Either is a
+        // candidate for the force transient that kicks the gait out of its basin.
+        //
+        // Reported as a signed offset in ms: negative = landed EARLY (contact
+        // before the schedule says stance), positive = landed LATE.
+        for (int i = 0; i < 4; i++)
+        {
+            const bool contact = foot_force[i] > kContactForceThresholdN;
+            const bool sched = stance[i];
+
+            // Edge-triggered: record when each transition actually happened and
+            // when the schedule said it should.
+            if (sched && !td_sched_prev_[i]) td_sched_time_[i] = now_s; // schedule says land now
+            if (contact && !td_contact_prev_[i]) td_contact_time_[i] = now_s; // really landed
+
+            // Once both edges for this step are seen, log the offset.
+            if (td_sched_time_[i] > 0.0 && td_contact_time_[i] > 0.0)
+            {
+                const double off_ms = (td_contact_time_[i] - td_sched_time_[i]) * 1000.0;
+                if (std::abs(off_ms) < 400.0) // same step, not a stale pairing
+                {
+                    td_off_sum_[i] += off_ms;
+                    td_off_absmax_[i] = std::max(td_off_absmax_[i], std::abs(off_ms));
+                    td_off_n_[i]++;
+                    if (off_ms < -kTouchdownEarlyWarnMs) td_early_n_[i]++;
+                }
+                td_sched_time_[i] = 0.0;
+                td_contact_time_[i] = 0.0;
+            }
+
+            td_sched_prev_[i] = sched;
+            td_contact_prev_[i] = contact;
+        }
+
     }
 
     Vector<double, 12> joint_torques = Vector<double, 12>::Zero();
@@ -1548,6 +1604,8 @@ void QuadConvexMPCNode::publish_cmd()
         }
         swing_tau_peak_ = std::max(swing_tau_peak_, tau.cwiseAbs().maxCoeff());
         swing_perr_sum_ += (p_ref - p_meas).norm();
+        health_tau_pk_ = std::max(health_tau_pk_, tau.cwiseAbs().maxCoeff());
+        health_perr_sum_ += (p_ref - p_meas).norm();
         swing_perr_samples_++;
 
         // Reference breakdown. perr reaching values far larger than the robot
@@ -1596,6 +1654,70 @@ void QuadConvexMPCNode::publish_cmd()
         const double since_report_s = now_s - last_swing_report_s_;
         if (since_report_s >= 1.0)
         {
+            // One line per second carrying everything needed to see a slow
+            // divergence coming, so an intermittent late failure can be traced to
+            // a trend rather than guessed at. Printed unconditionally and in a
+            // fixed column order so it can be parsed straight out of the log.
+            //
+            // The quantities are chosen to separate the candidate mechanisms:
+            //   roll/pitch      - attitude drift, the axis that actually fails
+            //   z               - height drift, which moves the swing aiming error
+            //                     because p_ref uses the COMMANDED height
+            //   |v_xy|          - unintended translation; the Raibert term feeds
+            //                     commanded velocity, so real drift is not planned for
+            //   yaw             - accumulated heading error, which rotates the
+            //                     footstep targets away from the stance geometry
+            //   fz_sum          - measured support; a sagging mean means the stance
+            //                     is losing the body
+            //   airborne        - fraction of samples with NO foot loaded, the
+            //                     signature of the bouncing failure mode
+            if (gait_started_)
+            {
+                const double n = std::max<int64_t>(health_samples_, 1);
+                RCLCPP_INFO(this->get_logger(),
+                    "TROTHEALTH t=%.1f | roll %+.4f pitch %+.4f z %.4f | |v_xy| %.4f"
+                    " yaw %+.4f | fz_sum mean %.1f min %.1f | airborne %.0f%%"
+                    " | swing_perr %.4f | tau_pk %.1f",
+                    now_s - swing_log_t0_,
+                    health_roll_sum_ / n, health_pitch_sum_ / n, health_z_sum_ / n,
+                    health_vxy_sum_ / n, health_yaw_last_,
+                    health_fz_sum_ / n, health_fz_min_,
+                    100.0 * static_cast<double>(health_airborne_) / n,
+                    health_samples_ ? health_perr_sum_ / n : 0.0,
+                    health_tau_pk_);
+                health_samples_ = 0;
+                health_roll_sum_ = health_pitch_sum_ = health_z_sum_ = 0.0;
+                health_vxy_sum_ = health_fz_sum_ = health_perr_sum_ = 0.0;
+                health_fz_min_ = 1e9; health_airborne_ = 0; health_tau_pk_ = 0.0;
+            }
+
+            // Scheduled vs actual touchdown, per leg. A consistently early
+            // contact means the swing law is still driving a foot that is already
+            // loaded; a late one means the body is on three feet when the plan
+            // assumes four. Both produce the kind of force transient that was
+            // measured kicking the gait out of its stable basin (tau_pk jumping
+            // 5.6 -> 77.5 Nm BEFORE any attitude error, with the control loop
+            // provably uniform at 200 Hz through the event).
+            if (gait_started_)
+            {
+                char tdbuf[256];
+                int off = 0;
+                static const char *kLegNames[4] = {"FL", "FR", "RL", "RR"};
+                for (int i = 0; i < 4; i++)
+                {
+                    off += snprintf(tdbuf + off, sizeof(tdbuf) - off,
+                        " %s %+.0f/%.0fmx/%ldearly(n=%ld)", kLegNames[i],
+                        td_off_n_[i] ? td_off_sum_[i] / td_off_n_[i] : 0.0,
+                        td_off_absmax_[i], td_early_n_[i], td_off_n_[i]);
+                }
+                RCLCPP_INFO(this->get_logger(), "TOUCHDOWN mean/max ms (- = early):%s", tdbuf);
+                for (int i = 0; i < 4; i++)
+                {
+                    td_off_sum_[i] = 0.0; td_off_absmax_[i] = 0.0;
+                    td_off_n_[i] = 0; td_early_n_[i] = 0;
+                }
+            }
+
             // Loop rate first, and unconditional: it is the figure that says
             // whether publish_cmd is actually achieving SWING_CONTROL_RATE_MS,
             // independent of how many legs were swinging in this window.

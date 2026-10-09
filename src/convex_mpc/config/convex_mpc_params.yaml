@@ -81,7 +81,14 @@
     # translating. That isolates gait scheduling and swing tracking from footstep
     # planning, which is otherwise hard to tell apart when the robot falls over.
     gait_type: "TROT"
-    duty_factor: 0.5 # TROT
+    # 0.6, not 0.5. At exactly 0.5 the diagonal pairs hand over instantaneously:
+    # there is NO interval with four feet down, so any timing error means either
+    # 3-4 feet loaded (force fight) or zero (flight). Measured over 20 minutes of
+    # otherwise stable trot, instantaneous fz_sum reached 0 N -- it was a flying
+    # trot by accident. Two destabilisations both began at a diagonal swap.
+    # 0.6 gives 160 ms of genuine four-foot overlap per 0.8 s cycle, which also
+    # halves the peak per-foot load the actuators have to make.
+    duty_factor: 0.6 # TROT
     # Slowed 0.5 -> 0.8 s (2026-10-09). At 0.5 s with duty 0.5 the stance phase is
     # only 0.25 s, and the vertical force needed to arrest the body's excursion
     # within that window scales as 1/t_stance^2. Measured at 0.5 s: STANCECLAMP
@@ -134,6 +141,11 @@
     swing_zeta: 0.3
     swing_feedforward: false # free base: a_ref lacks the body acceleration term
     nest_plan_in_swing_tick: false
+    # Promote a swing leg to stance as soon as foot_force shows it is loaded,
+    # rather than waiting for the gait clock. Closes the loop on an otherwise
+    # open-loop contact schedule; this is what the Cheetah 3 paper does on early
+    # contact. Two destabilisations of an otherwise stable gait were traced to
+    # legs carrying 107-152 N while the schedule still called them swing.
     skip_mpc_solve: false
     freeze_stance_legs: false
     cartesian_stance_hold: false

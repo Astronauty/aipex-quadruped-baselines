@@ -887,16 +887,12 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // Compute joint torques by utilizing the foot jacobians
     Vector<double, 12> joint_torques;
 
-    // R_WB = Matrix3d::Identity(); // TODO: remove this line, just for testing purposes
-
     if (mpc_params.verbose_diagnostics)
     {
         RCLCPP_INFO(logger_, "Roll: %.3f, Pitch: %.3f, Yaw: %.3f", roll, pitch, yaw);
         print_eigen_matrix(R_WB, "R_WB", logger_);
         print_eigen_matrix(R_WB.transpose(), "R_BW", logger_);
 
-        // NOTE: grf_body_frame is only reported here -- the torque loop below uses the
-        // world-frame GRF directly. Kept as a diagnostic, not used in control.
         MatrixXd grf_body_frame = R_WB.transpose() * grf; // Transform GRF to body frame
         print_eigen_matrix(grf_body_frame, "GRF in Body Frame", logger_);
     }
@@ -904,8 +900,39 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     for (int foot = 0; foot < 4; foot++)
     {
+        // FRAME NOTE, left deliberately unresolved. tau = J^T f needs J and f in
+        // the same frame, and by measurement they are not:
+        //   - JACCHECK validates the Jacobian against a finite difference of
+        //     get_foot_positions_body(), which is BASE frame, to 1.4e-07. So J's
+        //     axes are the base's.
+        //   - The model is fixed-base (asserted nq=12, nv=12), so q carries no body
+        //     orientation and J structurally cannot encode R_WB.
+        //   - The QP solves in WORLD frame (simplified_quad_dynamics.cpp has
+        //     B[9:12] = I/mass with no rotation; convex_mpc.cpp rotates the moment
+        //     arms out with r_W = R_WB * p_B).
+        // So f is world, J is base, and the paper's tau_i = J_i^T R_i f_i (eq. 4)
+        // has an R for exactly this reason.
+        //
+        // Inserting R_WB^T here was TRIED AND REVERTED on 2026-10-09. It is very
+        // likely correct, but it measurably degraded STAND -- roll 0.0062 -> 0.0190,
+        // pitch 0.0270 -> 0.0573, with the GRF shifting rearward (front 33.2 -> 31.6
+        // N, rear 36.7 -> 38.0 N), a coherent pitch-axis redistribution rather than
+        // noise. A correct fix should not make standing attitude 2-3x worse, so
+        // something else is inconsistent with it and that was not identified.
+        //
+        // Omitting it is a small-angle approximation. Error on a 37.3 N vertical
+        // GRF: 2.8% at the standing attitude, 15.2% at roll 0.152, 70.5% at roll
+        // 0.720. Harmless where the robot actually operates, which is why STAND has
+        // always been solid.
+        //
+        // Do not re-apply this until the trot is robust. The gait is currently
+        // marginally stable (two runs from initial conditions matching to 4 decimal
+        // places diverged at t~1.07 s, one surviving 25.6 s and one inverting), so a
+        // single run cannot evaluate a 3% correction. The established root cause is
+        // elsewhere: the Raibert heuristic reads COMMANDED velocity, never measured,
+        // so the gait is open-loop in horizontal velocity.
         Vector3d foot_grf = grf_vec[0].col(foot); // Extract the grf for the current foot (world frame)
-        
+
         Vector3d foot_joint_torques = foot_jacobians[foot].transpose()* (-foot_grf); // Compute joint torques for the current foot (correpsonding to its 3 actuators)
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector
 

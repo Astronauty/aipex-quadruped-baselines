@@ -84,6 +84,39 @@ class QuadConvexMPCNode : public rclcpp::Node
         // body transient does not propagate into the foot target.
         double cmd_vx_ = 0.0;
         double cmd_vy_ = 0.0;
+
+        // TROTHEALTH trend accumulators, reset every report. Exists to make an
+        // intermittent late destabilisation traceable to a drifting quantity
+        // instead of a guess: one parseable line per second covering attitude,
+        // height, translation, heading, measured support, airborne fraction and
+        // swing tracking.
+        // Scheduled vs actual touchdown tracking. foot_force is the simulator's
+        // measured contact normal force, so this compares the gait schedule
+        // against ground truth rather than against another copy of the schedule
+        // (which is what STANCESTALE does).
+        static constexpr double kContactForceThresholdN = 5.0;
+
+        static constexpr double kTouchdownEarlyWarnMs = 10.0;
+        std::array<bool, 4> td_sched_prev_{false, false, false, false};
+        std::array<bool, 4> td_contact_prev_{false, false, false, false};
+        std::array<double, 4> td_sched_time_{0.0, 0.0, 0.0, 0.0};
+        std::array<double, 4> td_contact_time_{0.0, 0.0, 0.0, 0.0};
+        std::array<double, 4> td_off_sum_{0.0, 0.0, 0.0, 0.0};
+        std::array<double, 4> td_off_absmax_{0.0, 0.0, 0.0, 0.0};
+        std::array<int64_t, 4> td_off_n_{0, 0, 0, 0};
+        std::array<int64_t, 4> td_early_n_{0, 0, 0, 0};
+
+        int64_t health_samples_ = 0;
+        int64_t health_airborne_ = 0;
+        double health_roll_sum_ = 0.0;
+        double health_pitch_sum_ = 0.0;
+        double health_z_sum_ = 0.0;
+        double health_vxy_sum_ = 0.0;
+        double health_yaw_last_ = 0.0;
+        double health_fz_sum_ = 0.0;
+        double health_fz_min_ = 1e9;
+        double health_perr_sum_ = 0.0;
+        double health_tau_pk_ = 0.0;
         bool p_ref_latched = false;
         // MPCParams mpc_params; // MPC parameters
 
