@@ -923,8 +923,33 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     
 
 
+    // What the QP actually asked each foot to push with, before the Jacobian and
+    // the clamp. Compare against the simulator's FMEAS: if GRFZ sums to the robot
+    // weight but FMEAS does not, the force is being lost between the solution and
+    // the joints (frame, sign or clamp); if GRFZ itself is short, it is the QP.
+    {
+        const Matrix<double, 3, 4> &g0 = grf_vec[0];
+        // Print the stance flags the constraints were built from alongside the
+        // solved force, so a force-on-a-swing-leg mismatch is unambiguous rather
+        // than inferred by eye from two separately throttled log lines.
+        RCLCPP_INFO_THROTTLE(logger_, *clock_, 500,
+            "GRFZ stance %d%d%d%d | solved %.1f %.1f %.1f %.1f | sum %.1f N (weight %.1f N)",
+            stance_[0] ? 1 : 0, stance_[1] ? 1 : 0, stance_[2] ? 1 : 0, stance_[3] ? 1 : 0,
+            g0(2,0), g0(2,1), g0(2,2), g0(2,3),
+            g0.row(2).sum(), quad_params.mass * quad_params.g);
+    }
+
+    const VectorXd joint_torques_preclamp = joint_torques;
     joint_torques = clamp_joint_torques(joint_torques); // Clamp the joint torques to the limits
-    
+
+    {
+        const double dmax = (joint_torques - joint_torques_preclamp).cwiseAbs().maxCoeff();
+        if (dmax > 1e-9) {
+            RCLCPP_WARN_THROTTLE(logger_, *clock_, 500,
+                "STANCECLAMP stance torques clipped, max change %.2f Nm", dmax);
+        }
+    }
+
     return joint_torques;
 }
 

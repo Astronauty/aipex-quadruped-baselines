@@ -338,13 +338,43 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // against: the body rolls over and drifts metres sideways within a few gait
     // cycles. Letting the MPC stand up first gives the gait a stable initial
     // condition, which is what the trot formulation assumes.
-    this->declare_parameter("startup_stance_s", 2.0);
+    this->declare_parameter("startup_stance_s", 5.0);
     startup_stance_s_ = this->get_parameter("startup_stance_s").as_double();
 
     // Stash the target gait; the planner starts in STAND regardless.
     target_gait_type_ = gait_type;
     target_duty_factor_ = duty_factor;
     gait_started_ = (gait_type == GaitType::STAND); // Nothing to switch to
+
+    // Hold in STAND until explicitly released, rather than on a timer alone.
+    //
+    // This exists because killing and restarting the controller to change gait
+    // leaves /lowcmd unpublished for the gap, the robot goes limp and falls, and
+    // the new process then starts its trot from a robot already on its side --
+    // measured twice as roll -0.73 rad and 59 N of contact force at the first
+    // sample, which looks exactly like a trot that diverged. Switching gait inside
+    // one process keeps torque continuous across the transition.
+    //
+    //   ros2 topic pub --once /start_gait std_msgs/msg/Bool "{data: true}"
+    //
+    // With wait_for_gait_trigger true the timer is ignored and the gait starts only
+    // on that message, so an operator can confirm the stance first. This is the
+    // mechanism a high-level gait command should eventually drive.
+    this->declare_parameter("wait_for_gait_trigger", false);
+    wait_for_gait_trigger_ = this->get_parameter("wait_for_gait_trigger").as_bool();
+
+    start_gait_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+        "start_gait", 1,
+        [this](const std_msgs::msg::Bool::SharedPtr msg) {
+            if (!msg->data) return;
+            if (gait_started_) {
+                RCLCPP_INFO(this->get_logger(), "start_gait ignored: gait already running.");
+                return;
+            }
+            gait_trigger_received_ = true;
+            RCLCPP_INFO(this->get_logger(), "start_gait received - releasing stance hold.");
+        },
+        state_sub_opts);
 
     RCLCPP_INFO(this->get_logger(),
         "Gait: %s, duty_factor %.3f, period %.3f s, swing height %.3f m, planning horizon %.3f s",
@@ -803,6 +833,12 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
         p_ref[1] += vy * mpc_params->dt;
     }
 
+    // Cache the commanded horizontal velocity for the swing reference, which
+    // subtracts the COMMANDED body velocity rather than the measured one. See
+    // the frame discussion in publish_cmd().
+    cmd_vx_ = vx;
+    cmd_vy_ = vy;
+
     for (int k=0; k < mpc_params->N_MPC; k++)
     {
         X_ref.segment<13>(k * mpc_params->N_STATES) = (Eigen::Matrix<double, 13, 1>() <<
@@ -956,12 +992,23 @@ void QuadConvexMPCNode::update_plan()
     const double now_s = this->now().seconds();
 
     // Hand over from the startup stance to the walking gait once the startup
-    // timer expires. The robot spawns with collapsed legs, so some stance time is
-    // still needed before a foot may leave the ground -- but the handover no
-    // longer waits on the body having converged. See STANDING_HEIGHT_M for why
-    // the pose tolerances were removed. The pose at handover is logged so a
-    // failed gait can be read against the stance it started from.
-    if (!gait_started_ && (now_s - start_time_s) >= startup_stance_s_)
+    // timer expires. The robot spawns with collapsed legs, so stance time is
+    // needed before a foot may leave the ground. This is a fixed duration, not a
+    // convergence test: the gait switch is going to become a high-level ROS
+    // command, so the node only needs to not trot before the robot is standing.
+    //
+    // startup_stance_s must cover the measured rise. On the free base the body is
+    // still mid-rise at 2.0 s -- pitch -0.0529 against a settled -0.0191, and z
+    // 0.1333 still climbing to 0.1647 -- and settles around 4.5 s. Starting the
+    // trot from that nose-down, still-moving pose is what put the robot on two
+    // diagonal feet carrying minimum GRF. Default raised 2.0 -> 5.0 s.
+    //
+    // The pose at handover is logged so a failed gait can be read against the
+    // stance it started from.
+    const bool stance_time_elapsed = (now_s - start_time_s) >= startup_stance_s_;
+    const bool release_gait = wait_for_gait_trigger_ ? gait_trigger_received_
+                                                     : stance_time_elapsed;
+    if (!gait_started_ && release_gait)
     {
         gait_planner->start_gait(target_gait_type_, target_duty_factor_, now_s);
         gait_started_ = true;
@@ -1409,20 +1456,65 @@ void QuadConvexMPCNode::publish_cmd()
         // The trajectory is planned in world coordinates, so bring it into the
         // base frame to match p_meas: subtract the body origin, rotate by R_WB^T,
         // then shift to the CoM-relative origin get_foot_positions_body() uses.
-        const Vector3d p_ref =
-            R_WB.transpose() * (target->second.p - p_body_W) - com_offset_B;
+        //
+        // The body origin used here is the COMMANDED one, not the measured one.
+        //
+        // Subtracting the measured body position makes the foot reference inherit
+        // every body excursion: target_W is a fixed point on the ground, so
+        // ref_z ~ -(body height). Measured on the free base, a body that rose to
+        // z = 0.406 m produced ref_z = -0.4874, i.e. the foot was commanded 487 mm
+        // below the body when the leg only reaches ~330 mm. The swing PD then drove
+        // the foot down at Kp * 0.15-0.20 m = 60-80 N into the ground; single feet
+        // registered 107-124 N at touchdown (near full bodyweight), which threw the
+        // body higher, which raised the reference further. A positive feedback loop
+        // that bounced the robot between 124 N and fully airborne, and the MPC's
+        // stance force then correctly collapsed to min_vertical_grf because the body
+        // was above its height reference.
+        //
+        // Referencing the commanded body pose breaks the loop: the swing arc is
+        // tracked relative to where the body is SUPPOSED to be, so a body transient
+        // no longer propagates into the foot target. This is also what the Cheetah
+        // formulation assumes -- a well-regulated body -- and it is why the welded
+        // rig never saw this: there the body genuinely is where it is commanded, so
+        // the two forms coincide (perr 0.027 m, 0% saturation).
+        //
+        // Attitude still uses the measured R_WB: the legs do have to be aimed at
+        // the real ground, and roll/pitch are regulated far better than height.
+        const Vector3d p_body_cmd_W(p_ref[0], p_ref[1], STANDING_HEIGHT_M);
+        const Vector3d p_ref_B =
+            R_WB.transpose() * (target->second.p - p_body_cmd_W) - com_offset_B;
+        const Vector3d p_ref = p_ref_B;
 
-        // Likewise for velocity. v_meas is J*qdot, the foot's velocity relative to
-        // the base expressed in base axes, so the body's own world velocity has to
-        // come out of the world-frame reference before rotating it in.
-        const Vector3d v_body_W(p_dot[0], p_dot[1], p_dot[2]);
+        // Likewise for velocity, against the COMMANDED body velocity. v_meas is
+        // J*qdot, the foot's velocity relative to the base in base axes, so the
+        // body's own velocity has to come out of the world-frame reference before
+        // rotating it in. The commanded body velocity is the joystick command,
+        // with zero vertical component -- a standing or trotting-in-place body is
+        // not meant to be moving vertically, and feeding the measured vz in is the
+        // velocity-domain half of the same feedback loop.
+        const Vector3d v_body_cmd_W(cmd_vx_, cmd_vy_, 0.0);
         const Vector3d v_ref =
-            R_WB.transpose() * (target->second.v - v_body_W);
+            R_WB.transpose() * (target->second.v - v_body_cmd_W);
 
         // Reference acceleration, rotated into the base frame like p_ref/v_ref.
-        // The body is not accelerating in these diagnostics, so no body term is
-        // subtracted; on a translating gait that would need the body's own
-        // acceleration, which the state estimate does not currently provide.
+        //
+        // INCOMPLETE: unlike p_ref and v_ref, this does NOT subtract the body's own
+        // acceleration. On the welded rig that is exact -- the base cannot
+        // accelerate -- and swing tracked to perr 0.027 m at 0% saturation there.
+        // On a free base it is wrong: the body term leaks into Lambda*a_ref, and
+        // with swing_feedforward on, the trot showed 42% saturation at 100-109 Nm
+        // peaks (limits are 23.7 hip/thigh, 45.43 calf). The swing legs drove into
+        // the ground hard enough to throw the body from z 0.330 to 0.408 in 0.8 s,
+        // after which the MPC correctly cut stance force to min_vertical_grf
+        // because the body was 96 mm ABOVE its height reference.
+        //
+        // The missing term is measurable, not unavailable: LowState carries
+        // imu_state.accelerometer (the bridge fills it from MuJoCo's imu_acc
+        // sensor, and it exists on hardware), but the node currently only logs it
+        // in low_state_callback. Wiring it in means subtracting the body's
+        // proper acceleration -- accelerometer minus gravity, rotated into the base
+        // frame -- from target->second.a here. Until then swing_feedforward must
+        // stay OFF on a free base; eq. (2) is only valid with the full term.
         const Vector3d a_ref = R_WB.transpose() * target->second.a;
 
         // Three selectable laws:

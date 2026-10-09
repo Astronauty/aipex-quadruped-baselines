@@ -82,7 +82,15 @@
     # planning, which is otherwise hard to tell apart when the robot falls over.
     gait_type: "TROT"
     duty_factor: 0.5 # TROT
-    gait_duration_s: 0.5 # Gait period. A trot typically wants ~0.4-0.5 s.
+    # Slowed 0.5 -> 0.8 s (2026-10-09). At 0.5 s with duty 0.5 the stance phase is
+    # only 0.25 s, and the vertical force needed to arrest the body's excursion
+    # within that window scales as 1/t_stance^2. Measured at 0.5 s: STANCECLAMP
+    # clipping stance torques by up to 30.3 Nm against the actuators' hard
+    # ctrlrange (23.7 Nm abduction/thigh, 45.43 knee -- MuJoCo enforces these
+    # itself, so raising our clamp would only hide the saturation, not deliver the
+    # force). 0.8 s gives a 0.40 s stance, cutting that demand to ~39%.
+    gait_duration_s: 0.8 # Gait period. 0.4-0.5 s is typical for a trot, but see above:
+                         # at 0.5 s this robot cannot make the stance torque.
     swing_height_m: 0.08 # Peak foot clearance above the lift-off/touchdown chord
     # Must reach at least one gait period ahead so swings are planned before
     # lift-off. This may exceed the MPC horizon (N_MPC * mpc_dt); the reference
@@ -104,7 +112,14 @@
     # within a few cycles -- there is no stance to push against yet. The handover
     # additionally waits for roll, pitch and height to be within tolerance, so
     # this is a floor on the wait, not the whole condition.
-    startup_stance_s: 2.0
+    # Hold STAND until `ros2 topic pub --once /start_gait std_msgs/msg/Bool "{data: true}"`.
+    # Lets an operator confirm the stance before the gait starts, without restarting
+    # the controller -- a restart drops /lowcmd and the robot falls, so the gait would
+    # otherwise begin from a fallen pose.
+    wait_for_gait_trigger: true
+    startup_stance_s: 5.0 # Stand this long before switching to the gait. The body is
+                          # still mid-rise at 2.0 s and settles ~4.5 s; trotting from
+                          # the half-risen pose collapses onto two diagonal feet.
 
     # Diagnostic: pin each touchdown back to its lift-off point, disabling the
     # Raibert heuristic's horizontal contribution. Feet lift and set down in
@@ -117,7 +132,7 @@
     swing_natural_freq_gains: false # using explicit Kp/Kd instead of eq.3
     swing_omega: [35.0, 57.0, 27.0]
     swing_zeta: 0.3
-    swing_feedforward: true # Lambda*(a_ref - Jdot*qdot) + C*qdot + G
+    swing_feedforward: false # free base: a_ref lacks the body acceleration term
     nest_plan_in_swing_tick: false
     skip_mpc_solve: false
     freeze_stance_legs: false
@@ -153,7 +168,26 @@
     # out. Lifting the body changes the leg geometry and hence the moment arms, so
     # the equilibrium moves as you push through it; this is not a plain second order
     # response that a larger weight settles faster.
-    Q_diag: [100.0, 100.0, 10.0, 500.0, 500.0, 500.0, 0.0, 0.0, 10.0, 50.0, 50.0, 500.0, 0.0]
+    # Q[6]/Q[7] (roll rate, pitch rate) are NONZERO as of 2026-10-09.
+    #
+    # The earlier ec0c5d6 sweep found them destabilising and they sat at 0 for a
+    # long time. Both of this session's retests at 5.0 and 20.0 also "failed" --
+    # but every one of those runs started from a robot that had already fallen
+    # (the controller was restarted to change gait, which drops /lowcmd and lets
+    # the robot collapse), so they measured nothing about the gain.
+    #
+    # Why rate cost is needed for a trot: on a diagonal stance the QP was observed
+    # pinning both stance legs at min_vertical_grf and never recovering. At t+0.40
+    # the body sat ~50 mm ABOVE the 0.312 reference with roll rate already at
+    # 0.157 rad/s. Q[5]=500 on that height error contributes ~1.25 to the cost
+    # while Q[0]=100 on the developing roll contributes only ~0.12-0.49 over the
+    # whole horizon, so "stop pushing" is genuinely optimal -- straight to the 10 N
+    # bound. At 10 N the 0.142 m roll lever yields just 2.8 Nm against the 112 Nm
+    # available at the force cap, so there is no authority left to arrest the roll.
+    # With Q[6]=0 the 2 rad/s roll rate that followed cost nothing until it had
+    # already become angle. Penalising the rate makes the QP act on it while
+    # correcting is still cheap.
+    Q_diag: [100.0, 100.0, 10.0, 500.0, 500.0, 500.0, 10.0, 10.0, 10.0, 50.0, 50.0, 500.0, 0.0]
     Q_scale: 1.0 # Weighting factor where Q = Q_scale * diag(Q_diag) - matches MATLAB
     Q_n_scale: 1.0 # Weighting factor Q_N for final state in horizon - matches MATLAB
     # Control regularization, balancing tracking against control effort. Halved

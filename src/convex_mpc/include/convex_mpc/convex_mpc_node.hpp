@@ -17,6 +17,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 
 #include "convex_mpc/convex_mpc.hpp"
@@ -77,6 +78,12 @@ class QuadConvexMPCNode : public rclcpp::Node
         // While the stick commands a velocity the latch is carried along with it,
         // so releasing the stick holds wherever the robot ended up.
         double p_ref[2] = {0.0, 0.0};
+
+        // Commanded horizontal body velocity, from the joystick. The swing
+        // reference subtracts this rather than the measured body velocity, so a
+        // body transient does not propagate into the foot target.
+        double cmd_vx_ = 0.0;
+        double cmd_vy_ = 0.0;
         bool p_ref_latched = false;
         // MPCParams mpc_params; // MPC parameters
 
@@ -167,6 +174,15 @@ class QuadConvexMPCNode : public rclcpp::Node
         GaitType target_gait_type_ = GaitType::STAND; // Gait to switch to once settled
         double target_duty_factor_ = 1.0;             // Duty factor for that gait
         double startup_stance_s_ = 2.0;               // Minimum stance time before handover
+
+        // Runtime gait release. wait_for_gait_trigger_ makes startup_stance_s_
+        // advisory and holds STAND until a /start_gait message arrives, so the gait
+        // can be started from a confirmed stance without restarting the process
+        // (a restart drops /lowcmd, the robot falls, and the gait then begins from
+        // a fallen pose).
+        bool wait_for_gait_trigger_ = false;
+        bool gait_trigger_received_ = false;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr start_gait_sub_;
 
         // Diagnostic: hold stance legs with a joint-space PD instead of applying the
         // MPC's GRFs, isolating the swing controller from the GRF-to-torque mapping.
