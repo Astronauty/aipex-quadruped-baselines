@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<package format="3">
+  <name>convex_mpc_viz</name>
+  <version>0.0.1</version>
+  <description>
+    RViz visualisation for the convex MPC controller: the robot URDF posed from
+    live joint states, and the gait planner's swing-leg splines drawn alongside
+    both measured foot sources. Separate from the convex_mpc package so that it
+    does not depend on the Gurobi/Pinocchio build.
+  </description>
+  <maintainer email="jezemba@andrew.cmu.edu">Daniel Nguyen</maintainer>
+  <license>MIT</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>convex_mpc_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
