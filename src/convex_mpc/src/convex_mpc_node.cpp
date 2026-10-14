@@ -28,6 +28,7 @@
 #include "convex_mpc/mpc_params.hpp"
 #include "convex_mpc/quad_params.hpp"
 #include "convex_mpc/convex_mpc.hpp"
+#include "convex_mpc/state_indices.hpp"
 
 // #include "common/motor_crc_hg.h"
 
@@ -174,6 +175,19 @@ QuadConvexMPCNode::QuadConvexMPCNode()
         "joy", 10, std::bind(&QuadConvexMPCNode::joy_callback, this, std::placeholders::_1),
         state_sub_opts
     );
+
+    // Visualisation outputs. Declared as a parameter so the whole path can be
+    // switched off: it costs a serialise-and-publish on the 40 Hz plan timer, and
+    // a logging call in this control path has already destabilised the gait once.
+    this->declare_parameter<bool>("publish_viz", true);
+    this->get_parameter("publish_viz", publish_viz_);
+    if (publish_viz_)
+    {
+        swing_plan_pub_ = this->create_publisher<convex_mpc_msgs::msg::SwingPlanArray>("swing_plan", 10);
+        joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+        tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+        RCLCPP_INFO(this->get_logger(), "Visualisation enabled: /swing_plan, /joint_states, TF world->base");
+    }
 
     // NOTE: update_mpc_state() is called directly at the top of publish_cmd(), which
     // guarantees x0 is fresh for the solve and avoids the timer-skew problem this
@@ -340,6 +354,18 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // condition, which is what the trot formulation assumes.
     this->declare_parameter("startup_stance_s", 5.0);
     startup_stance_s_ = this->get_parameter("startup_stance_s").as_double();
+
+    // IMU site Io relative to base origin Bo, in B. See p_BoIo_B_ in the header.
+    this->declare_parameter("p_BoIo_B",
+        std::vector<double>{p_BoIo_B_[0], p_BoIo_B_[1], p_BoIo_B_[2]});
+    const std::vector<double> p_BoIo_B = this->get_parameter("p_BoIo_B").as_double_array();
+    if (p_BoIo_B.size() != 3) {
+        throw std::invalid_argument("p_BoIo_B must have 3 elements");
+    }
+    p_BoIo_B_ = Eigen::Vector3d(p_BoIo_B[0], p_BoIo_B[1], p_BoIo_B[2]);
+    RCLCPP_INFO(this->get_logger(),
+        "Body position: /sportmodestate reports Io; shifting to Bo by p_BoIo_B [%.5f %.5f %.5f]",
+        p_BoIo_B_[0], p_BoIo_B_[1], p_BoIo_B_[2]);
 
     // Stash the target gait; the planner starts in STAND regardless.
     target_gait_type_ = gait_type;
@@ -693,13 +719,33 @@ void QuadConvexMPCNode::sport_mode_callback(const unitree_go::msg::SportModeStat
     //             3, foot_pos[9], foot_pos[10], foot_pos[11], foot_vel[9], foot_vel[10], foot_vel[11]);
 
 
-    // Update MPC state
-    p[0] = data->position[0]; // Position in x
-    p[1] = data->position[1]; // Position in y
-    p[2] = data->position[2]; // Position in z
-    p_dot[0] = data->velocity[0]; // Velocity in x
-    p_dot[1] = data->velocity[1]; // Velocity in y
-    p_dot[2] = data->velocity[2]; // Velocity in z
+    // Update MPC state.
+    //
+    // /sportmodestate position and velocity are those of the IMU site origin Io,
+    // not the base origin Bo: the sim's frame_pos / frame_vel sensors sit on site
+    // "imu", p_BoIo_B_ from Bo. Everything downstream -- FK feet in world, the swing
+    // references, the TF RViz draws -- treats p as Bo, so it is shifted here. Left
+    // unshifted, every world foot read 4.3 cm high and 2.5 cm back (FK minus the
+    // sim's own foot positions matched R_WB * p_BoIo_B to 0.1 mm), and the swing
+    // references were biased ~4 cm into the ground.
+    //
+    // Attitude and body rate come from the latest LowState (theta, omega).
+    const Eigen::Vector3d p_WIo_W(data->position[0], data->position[1], data->position[2]);
+    const Eigen::Vector3d v_WIo_W(data->velocity[0], data->velocity[1], data->velocity[2]);
+    const Eigen::Matrix3d R_WB = (Eigen::AngleAxisd(theta[2], Eigen::Vector3d::UnitZ()) *
+                                  Eigen::AngleAxisd(theta[1], Eigen::Vector3d::UnitY()) *
+                                  Eigen::AngleAxisd(theta[0], Eigen::Vector3d::UnitX())).toRotationMatrix();
+    const Eigen::Vector3d w_WB_B(omega[0], omega[1], omega[2]); // gyro: body axes
+    const Eigen::Vector3d p_BoIo_W = R_WB * p_BoIo_B_;
+    const Eigen::Vector3d p_WBo_W = p_WIo_W - p_BoIo_W;
+    // Io and Bo are points on the same rigid body: v_WIo = v_WBo + w_WB x p_BoIo.
+    const Eigen::Vector3d v_WBo_W = v_WIo_W - (R_WB * w_WB_B).cross(p_BoIo_W);
+
+    for (int i = 0; i < 3; i++)
+    {
+        p[i] = static_cast<float>(p_WBo_W[i]);
+        p_dot[i] = static_cast<float>(v_WBo_W[i]);
+    }
 
     
 }
@@ -779,23 +825,64 @@ void QuadConvexMPCNode::log_sport_mode_state(const unitree_go::msg::SportModeSta
 
 void QuadConvexMPCNode::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
+    std::lock_guard<std::mutex> jlock(joy_mutex_);
     this->joy_msg = msg; // Store the joystick message
+}
+
+// Hand back a stable reference to the latest joystick message. Copying the
+// shared_ptr under the lock means the caller keeps the referenced message alive
+// for as long as it needs it, even if joy_callback swaps in a new one midway.
+sensor_msgs::msg::Joy::SharedPtr QuadConvexMPCNode::latest_joy_msg()
+{
+    std::lock_guard<std::mutex> jlock(joy_mutex_);
+    return joy_msg;
 }
 
 VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
     VectorXd X_ref = VectorXd::Zero(mpc_params->N_MPC * mpc_params->N_STATES);
 
-    double max_translation_vel = 0.5;
+    // Capped for first-light testing of the footstep heuristic under a real
+    // velocity command. The Raibert offset is v * t_stance/2, so at duty 0.6 and
+    // a 0.8 s period (t_stance 0.48 s) full stick at 0.5 m/s asks for a 120 mm
+    // step against a ~390 mm nominal foot spacing -- a large first step for a
+    // term that has never been exercised with nonzero velocity. 0.15 m/s gives
+    // 36 mm. Raise once translation is shown to be stable.
+    double max_translation_vel = 0.15;
     double max_yaw_vel = 0.5;
     
-    double height = 0.312; // Desired height above ground
+    double height = STANDING_HEIGHT_M; // Desired base-origin height above ground
     double pitch = 0.0; 
     double roll = 0.0; 
     double current_yaw = theta[2]; // Current yaw angle from IMU
 
     // Extract axes from the joystick message
-    std::vector<float> axes = msg->axes; // Use '->' to access members of the object pointed to by msg
+    // Snapshot the message once. joy_callback replaces this->joy_msg from the
+    // state thread while this runs on the plan thread, so re-reading msg->axes
+    // mid-function could see a different vector than the one just sized.
+    std::vector<float> axes = msg->axes;
+
+    // A published /joy message is NOT guaranteed to carry the axes this code
+    // indexes. The constructor seeds joy_msg with 8 zeroed axes, so running the
+    // controller standalone is safe, but once joy_node starts publishing it
+    // replaces that with whatever the device reported -- and the F710 publishes
+    // an EMPTY axes vector until the first stick or trigger event. Indexing
+    // axes_double[3] then read out of bounds and segfaulted the controller
+    // (exit -11) within seconds, but ONLY under ros2 launch, because standalone
+    // runs never get a real joy message. Six standalone soak runs passed while
+    // every launch run died.
+    //
+    // Treat a short message as zero command rather than guessing: a missing axis
+    // is not a centred stick, but commanding zero is the safe interpretation.
+    constexpr int kAxesNeeded = 4; // indices 0,1,3 are used below
+    if (static_cast<int>(axes.size()) < kAxesNeeded)
+    {
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+            "/joy carries %zu axes, need %d - commanding zero velocity",
+            axes.size(), kAxesNeeded);
+        axes.assign(kAxesNeeded, 0.0f);
+    }
+
     Eigen::VectorXd axes_double = Eigen::Map<Eigen::VectorXf>(axes.data(), axes.size()).cast<double>();
 
     // Calculate the desired translation and rotation velocities
@@ -808,9 +895,26 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     controller_axis_indices["y"] = 0;
     controller_axis_indices["yaw"] = 3;
 
-    double vx = max_translation_vel * axes_double[controller_axis_indices["x"]]; // Forward/backward movement
-    double vy = max_translation_vel * axes_double[controller_axis_indices["y"]]; // Left/right movement
+    // The stick commands a BODY-frame velocity: "forward" means the robot's nose,
+    // whatever direction that happens to point. The reference trajectory, though,
+    // is WORLD frame -- x0[3..5] is world position and x0[9..11] world velocity,
+    // and the Raibert heuristic reads the same slots as world
+    // (gait_planner.cpp: "CoM velocity in world frame"). So the command has to be
+    // rotated by the current yaw before it goes in.
+    //
+    // This was previously written straight into the world slots. At yaw = 0 the
+    // two frames coincide, which is why trotting in place never exposed it, but at
+    // yaw = 90 deg pushing the stick forward drives the robot sideways, and at
+    // 180 deg it drives backwards. Only the yaw term matters here: roll and pitch
+    // are regulated to zero and a velocity command has no vertical component.
+    const double vx_body = max_translation_vel * axes_double[controller_axis_indices["x"]];
+    const double vy_body = max_translation_vel * axes_double[controller_axis_indices["y"]];
     double wz = max_yaw_vel * axes_double[controller_axis_indices["yaw"]]; // Yaw rotation
+
+    const double cy = std::cos(current_yaw);
+    const double sy = std::sin(current_yaw);
+    double vx = cy * vx_body - sy * vy_body; // world-frame x velocity
+    double vy = sy * vx_body + cy * vy_body; // world-frame y velocity
 
     // Latch the standing position on the first cycle, then advance it only by the
     // commanded velocity. Referencing absolute 0 made any drift from the world
@@ -839,12 +943,39 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     cmd_vx_ = vx;
     cmd_vy_ = vy;
 
+    // Latch the heading on the first cycle, then advance it only by the commanded
+    // yaw rate -- the same treatment p_ref gets. With the stick centred this holds
+    // the initial heading, so a yaw excursion is a real tracking error that Q[2]
+    // can act on; with the stick deflected it sweeps at wz and commands a turn.
+    if (!yaw_ref_latched_)
+    {
+        yaw_ref_ = current_yaw;
+        yaw_ref_latched_ = true;
+        RCLCPP_INFO(this->get_logger(), "Latched standing yaw reference: %.4f rad", yaw_ref_);
+    }
+    else
+    {
+        yaw_ref_ += wz * mpc_params->dt;
+    }
+
+    // KNOWN LIMITATION: the yaw reference sweeps across the horizon (wz * k * dt)
+    // but the position reference extrapolates along a straight line using the
+    // heading at k = 0, so a simultaneous turn-and-translate command describes a
+    // chord rather than the arc the robot will actually follow. The cross-track
+    // error is bounded by |v| * |wz| * (N_MPC * dt)^2 / 2, which at the current
+    // caps (max_translation_vel 0.15 m/s, max_yaw_vel 0.5 rad/s, horizon 0.25 s)
+    // is ~1.9 mm at the far end of the horizon -- below the footstep accuracy the
+    // Raibert heuristic achieves. It is exactly zero whenever either wz or the
+    // translation command is zero, so pure-yaw and pure-translation commands are
+    // unaffected. Worth revisiting if the velocity cap is raised or the horizon
+    // lengthened; the fix is to integrate the heading per step and rotate the
+    // body-frame command inside this loop rather than once before it.
     for (int k=0; k < mpc_params->N_MPC; k++)
     {
         X_ref.segment<13>(k * mpc_params->N_STATES) = (Eigen::Matrix<double, 13, 1>() <<
             0.0, 
             0.0,
-            current_yaw + wz * k * mpc_params->dt, // Fixed yaw rate interpolation
+            yaw_ref_ + wz * k * mpc_params->dt, // Latched heading + commanded yaw rate
             p_ref[0] + vx * k * mpc_params->dt, // x position (forward/backward movement)
             p_ref[1] + vy * k * mpc_params->dt, // y position (left/right movement)
             height, // z position (height above ground)
@@ -857,6 +988,29 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
             9.81 // Gravity state
         ).finished();
     }
+
+    // Cheetah 3 eq. (33): "The state estimator is used to determine these values
+    // for the current time step, and the reference trajectory is used for future
+    // values." Seeding slot 0 with the measured pose and velocity makes the
+    // footstep that is touching down now plan from where the robot actually IS and
+    // how fast it is actually going, while later steps keep the reference. The
+    // heuristic then needs no special case -- it just reads whichever slot the
+    // touchdown time falls in.
+    //
+    // This does NOT perturb the MPC cost. The condensed QP costs
+    // err = A_qp*x0 - X_ref, whose slot 0 is A*x0 (the state one step AHEAD), not
+    // x0 itself; x0 was eliminated as a decision variable when the problem was
+    // condensed into U alone. So slot 0 is differenced against a predicted state,
+    // never against the measurement it now holds, and no tracking error is zeroed.
+    //
+    // Roll and pitch are deliberately left at the reference zero: the target is
+    // projected to the ground plane, and feeding measured roll/pitch in would let
+    // body oscillation at gait frequency swing the footstep target sideways.
+    X_ref(IDX_Y)  = theta[2];   // measured yaw
+    X_ref(IDX_X)  = p[0];       // measured x
+    X_ref(IDX_X + 1) = p[1];    // measured y
+    X_ref(IDX_Xd)     = p_dot[0]; // measured x velocity
+    X_ref(IDX_Xd + 1) = p_dot[1]; // measured y velocity
 
     return X_ref;
 }
@@ -893,7 +1047,7 @@ void QuadConvexMPCNode::update_mpc_state()
     // roll, pitch, x, y, z so the dominant terms are easy to read off.
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
         "ERR roll %.4f pitch %.4f | x %.4f y %.4f z %.4f",
-        x0(0), x0(1), x0(3) - p_ref[0], x0(4) - p_ref[1], x0(5) - 0.312320);
+        x0(0), x0(1), x0(3) - p_ref[0], x0(4) - p_ref[1], x0(5) - STANDING_HEIGHT_M);
 
     // Vertical force actually measured at the feet, against the weight it has to
     // hold. Pair this with the GRF line from the solver: the MPC commands its own
@@ -909,6 +1063,7 @@ void QuadConvexMPCNode::update_mpc_state()
         // Accumulate for the TROTHEALTH trend line. Sampled here because this runs
         // once per plan cycle on freshly read state, so every term describes the
         // same instant.
+        std::lock_guard<std::mutex> hlock(health_mutex_);
         health_samples_++;
         health_roll_sum_  += theta[0];
         health_pitch_sum_ += theta[1];
@@ -942,7 +1097,7 @@ void QuadConvexMPCNode::update_mpc_state()
     // Update the reference trajectory
     // Reference state to repeat
     Eigen::Vector<double, 13> X_ref_single;
-    X_ref_single << 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.312320, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 9.810000;
+    X_ref_single << 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, STANDING_HEIGHT_M, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 9.810000;
 
     // Repeat X_ref_single N_MPC times to form X_ref
     int N_MPC = mpc_params->N_MPC;
@@ -952,7 +1107,7 @@ void QuadConvexMPCNode::update_mpc_state()
         X_ref.segment<13>(i * 13) = X_ref_single;
     }
 
-    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(joy_msg); // Get the reference trajectory from joystick input
+    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(latest_joy_msg()); // Get the reference trajectory from joystick input
     if (mpc_params->verbose_diagnostics) {
         RCLCPP_INFO(this->get_logger(), "Reference trajectory from joystick: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
             X_ref_joy[0], X_ref_joy[1], X_ref_joy[2], X_ref_joy[3], X_ref_joy[4], X_ref_joy[5],
@@ -1077,8 +1232,13 @@ void QuadConvexMPCNode::update_plan()
             p_body_W + R_WB * (foot_positions_meas.col(leg_index) + com_offset_B);
     }
 
-    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(joy_msg); // Get the reference trajectory from joystick input
-    gait_planner->update_swing_leg_trajectories(X_ref_joy, *mpc_params, foot_positions_map);
+    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(latest_joy_msg()); // Get the reference trajectory from joystick input
+    const auto swing_plans = gait_planner->update_swing_leg_trajectories(X_ref_joy, *mpc_params, foot_positions_map);
+
+    // Visualisation, from the plan that was just built so the picture and the
+    // control decision describe the same instant.
+    publish_visualization(now_s, swing_plans, foot_positions_meas,
+                          p_body_W, R_WB, com_offset_B, X_ref_joy);
 
     // Contact sampled per horizon step, not frozen at k=0 -- see
     // ConvexMPC::set_contact_constraints(schedule).
@@ -1326,47 +1486,6 @@ void QuadConvexMPCNode::publish_cmd()
             stance[i] = live[0][i];
         }
 
-        // Scheduled vs ACTUAL touchdown, per leg.
-        //
-        // STANCESTALE compares the cached schedule against the live schedule --
-        // both are the controller's BELIEF, so it cannot see reality. This compares
-        // the live schedule against the simulator's measured contact force, which
-        // is ground truth. The paper runs a contact detection algorithm and
-        // switches to stance on EARLY contact; we have no such handling, so a foot
-        // that lands early keeps being driven by the swing law into the ground, and
-        // one that lands late leaves the body on three feet mid-stance. Either is a
-        // candidate for the force transient that kicks the gait out of its basin.
-        //
-        // Reported as a signed offset in ms: negative = landed EARLY (contact
-        // before the schedule says stance), positive = landed LATE.
-        for (int i = 0; i < 4; i++)
-        {
-            const bool contact = foot_force[i] > kContactForceThresholdN;
-            const bool sched = stance[i];
-
-            // Edge-triggered: record when each transition actually happened and
-            // when the schedule said it should.
-            if (sched && !td_sched_prev_[i]) td_sched_time_[i] = now_s; // schedule says land now
-            if (contact && !td_contact_prev_[i]) td_contact_time_[i] = now_s; // really landed
-
-            // Once both edges for this step are seen, log the offset.
-            if (td_sched_time_[i] > 0.0 && td_contact_time_[i] > 0.0)
-            {
-                const double off_ms = (td_contact_time_[i] - td_sched_time_[i]) * 1000.0;
-                if (std::abs(off_ms) < 400.0) // same step, not a stale pairing
-                {
-                    td_off_sum_[i] += off_ms;
-                    td_off_absmax_[i] = std::max(td_off_absmax_[i], std::abs(off_ms));
-                    td_off_n_[i]++;
-                    if (off_ms < -kTouchdownEarlyWarnMs) td_early_n_[i]++;
-                }
-                td_sched_time_[i] = 0.0;
-                td_contact_time_[i] = 0.0;
-            }
-
-            td_sched_prev_[i] = sched;
-            td_contact_prev_[i] = contact;
-        }
 
     }
 
@@ -1604,8 +1723,12 @@ void QuadConvexMPCNode::publish_cmd()
         }
         swing_tau_peak_ = std::max(swing_tau_peak_, tau.cwiseAbs().maxCoeff());
         swing_perr_sum_ += (p_ref - p_meas).norm();
-        health_tau_pk_ = std::max(health_tau_pk_, tau.cwiseAbs().maxCoeff());
-        health_perr_sum_ += (p_ref - p_meas).norm();
+        {
+            std::lock_guard<std::mutex> hlock(health_mutex_);
+            health_tau_pk_ = std::max(health_tau_pk_, tau.cwiseAbs().maxCoeff());
+            health_perr_sum_ += (p_ref - p_meas).norm();
+            health_perr_n_++;
+        }
         swing_perr_samples_++;
 
         // Reference breakdown. perr reaching values far larger than the robot
@@ -1673,7 +1796,8 @@ void QuadConvexMPCNode::publish_cmd()
             //                     signature of the bouncing failure mode
             if (gait_started_)
             {
-                const double n = std::max<int64_t>(health_samples_, 1);
+                std::lock_guard<std::mutex> hlock(health_mutex_);
+                const double n = static_cast<double>(std::max<int64_t>(health_samples_, 1));
                 RCLCPP_INFO(this->get_logger(),
                     "TROTHEALTH t=%.1f | roll %+.4f pitch %+.4f z %.4f | |v_xy| %.4f"
                     " yaw %+.4f | fz_sum mean %.1f min %.1f | airborne %.0f%%"
@@ -1683,44 +1807,15 @@ void QuadConvexMPCNode::publish_cmd()
                     health_vxy_sum_ / n, health_yaw_last_,
                     health_fz_sum_ / n, health_fz_min_,
                     100.0 * static_cast<double>(health_airborne_) / n,
-                    health_samples_ ? health_perr_sum_ / n : 0.0,
+                    health_perr_n_ ? health_perr_sum_ / static_cast<double>(health_perr_n_) : 0.0,
                     health_tau_pk_);
                 health_samples_ = 0;
                 health_roll_sum_ = health_pitch_sum_ = health_z_sum_ = 0.0;
                 health_vxy_sum_ = health_fz_sum_ = health_perr_sum_ = 0.0;
+                health_perr_n_ = 0;
                 health_fz_min_ = 1e9; health_airborne_ = 0; health_tau_pk_ = 0.0;
             }
 
-            // Scheduled vs actual touchdown, per leg. A consistently early
-            // contact means the swing law is still driving a foot that is already
-            // loaded; a late one means the body is on three feet when the plan
-            // assumes four. Both produce the kind of force transient that was
-            // measured kicking the gait out of its stable basin (tau_pk jumping
-            // 5.6 -> 77.5 Nm BEFORE any attitude error, with the control loop
-            // provably uniform at 200 Hz through the event).
-            if (gait_started_)
-            {
-                char tdbuf[256];
-                int off = 0;
-                static const char *kLegNames[4] = {"FL", "FR", "RL", "RR"};
-                for (int i = 0; i < 4; i++)
-                {
-                    off += snprintf(tdbuf + off, sizeof(tdbuf) - off,
-                        " %s %+.0f/%.0fmx/%ldearly(n=%ld)", kLegNames[i],
-                        td_off_n_[i] ? td_off_sum_[i] / td_off_n_[i] : 0.0,
-                        td_off_absmax_[i], td_early_n_[i], td_off_n_[i]);
-                }
-                RCLCPP_INFO(this->get_logger(), "TOUCHDOWN mean/max ms (- = early):%s", tdbuf);
-                for (int i = 0; i < 4; i++)
-                {
-                    td_off_sum_[i] = 0.0; td_off_absmax_[i] = 0.0;
-                    td_off_n_[i] = 0; td_early_n_[i] = 0;
-                }
-            }
-
-            // Loop rate first, and unconditional: it is the figure that says
-            // whether publish_cmd is actually achieving SWING_CONTROL_RATE_MS,
-            // independent of how many legs were swinging in this window.
             if (stance_check_samples_ > 0)
             {
                 RCLCPP_INFO(this->get_logger(),
@@ -1850,4 +1945,179 @@ int main(int argc, char * argv[])
         return 1;
     }
     return 0;
+}
+
+/**
+ * @brief Publish everything RViz needs to draw the gait: TF, joint states, and
+ *        the planned swing splines with both measured foot sources.
+ *
+ * Deliberately output-only. The viz node does all marker construction, so this
+ * function just serialises state the control path already computed -- no extra
+ * kinematics, no logging, no blocking I/O. It runs on the 40 Hz plan timer and
+ * never on the 200 Hz swing timer.
+ *
+ * Everything is published in the WORLD frame, which is the frame the whole swing
+ * pipeline works in. That is a deliberate choice for a debugging tool: a frame
+ * error should show up as visibly wrong geometry rather than being absorbed by a
+ * transform on the way to the screen.
+ */
+void QuadConvexMPCNode::publish_visualization(
+    double now_s,
+    const std::unordered_map<std::string, std::deque<SwingLegTrajectory>>& plans,
+    const Eigen::Matrix<double, 3, 4>& foot_positions_meas,
+    const Eigen::Vector3d& p_body_W,
+    const Eigen::Matrix3d& R_WB,
+    const Eigen::Vector3d& com_offset_B,
+    const Eigen::VectorXd& X_ref)
+{
+    if (!publish_viz_ || !swing_plan_pub_) return;
+
+    const rclcpp::Time stamp = this->now();
+
+    // --- TF: world -> base. Without this the URDF sits at the origin and the
+    // swing markers (which are in world) appear detached from the robot.
+    {
+        geometry_msgs::msg::TransformStamped tf;
+        tf.header.stamp = stamp;
+        tf.header.frame_id = "world";
+        tf.child_frame_id = "base";
+        tf.transform.translation.x = p_body_W.x();
+        tf.transform.translation.y = p_body_W.y();
+        tf.transform.translation.z = p_body_W.z();
+        const Eigen::Quaterniond q(R_WB);
+        tf.transform.rotation.x = q.x();
+        tf.transform.rotation.y = q.y();
+        tf.transform.rotation.z = q.z();
+        tf.transform.rotation.w = q.w();
+        tf_broadcaster_->sendTransform(tf);
+    }
+
+    // --- Joint states, for robot_state_publisher to pose the URDF.
+    // joint_angles[] is in FL, FR, RL, RR order with hip/thigh/calf within each
+    // leg, which is exactly the URDF's joint order, so this is a direct copy.
+    {
+        static const std::array<const char*, 12> kJointNames = {
+            "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
+            "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
+            "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint",
+            "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"};
+
+        sensor_msgs::msg::JointState js;
+        js.header.stamp = stamp;
+        js.name.assign(kJointNames.begin(), kJointNames.end());
+        js.position.resize(12);
+        for (int i = 0; i < 12; ++i) js.position[i] = joint_angles[i];
+        joint_state_pub_->publish(js);
+    }
+
+    // --- The gait plan itself.
+    convex_mpc_msgs::msg::SwingPlanArray msg;
+    msg.stamp = stamp;
+    msg.controller_time_s = now_s;
+
+    msg.body_pose.position.x = p_body_W.x();
+    msg.body_pose.position.y = p_body_W.y();
+    msg.body_pose.position.z = p_body_W.z();
+    const Eigen::Quaterniond q_body(R_WB);
+    msg.body_pose.orientation.x = q_body.x();
+    msg.body_pose.orientation.y = q_body.y();
+    msg.body_pose.orientation.z = q_body.z();
+    msg.body_pose.orientation.w = q_body.w();
+
+    msg.body_velocity.x = p_dot[0];
+    msg.body_velocity.y = p_dot[1];
+    msg.body_velocity.z = p_dot[2];
+
+    // Reference, to see commanded against measured in the same picture.
+    msg.reference_position.x = X_ref(IDX_X);
+    msg.reference_position.y = X_ref(IDX_X + 1);
+    msg.reference_position.z = X_ref(IDX_X + 2);
+    msg.reference_velocity.x = X_ref(IDX_Xd);
+    msg.reference_velocity.y = X_ref(IDX_Xd + 1);
+    msg.reference_velocity.z = X_ref(IDX_Xd + 2);
+    msg.reference_yaw = X_ref(IDX_Y);
+
+    // Both foot sources, so their disagreement is visible rather than inferred.
+    // FK is body axes about the CoM, so it needs the same conversion the planner
+    // uses; sportmode already carries world-frame values despite its field name.
+    msg.feet_from_fk.resize(4);
+    msg.feet_from_sportmode.resize(4);
+    msg.stance.resize(4);
+    const auto contact = gait_planner->get_contact_state();
+    for (int leg = 0; leg < 4; ++leg)
+    {
+        const Eigen::Vector3d fk_W =
+            p_body_W + R_WB * (foot_positions_meas.col(leg) + com_offset_B);
+        msg.feet_from_fk[leg].x = fk_W.x();
+        msg.feet_from_fk[leg].y = fk_W.y();
+        msg.feet_from_fk[leg].z = fk_W.z();
+
+        msg.feet_from_sportmode[leg].x = foot_pos[3 * leg + 0];
+        msg.feet_from_sportmode[leg].y = foot_pos[3 * leg + 1];
+        msg.feet_from_sportmode[leg].z = foot_pos[3 * leg + 2];
+
+        const std::string& name = quadruped_params->LEG_INDEX_TO_NAME.at(leg);
+        const auto it = contact.find(name);
+        msg.stance[leg] = (it != contact.end()) && (it->second != 0);
+    }
+
+    // Sample each planned spline. Sampling here rather than in the viz node keeps
+    // the spline maths in one place -- a visualiser that re-derived the curve
+    // could draw something the swing controller never actually tracked.
+    constexpr int kSamplesPerSwing = 20;
+    for (const auto& [leg, trajectories] : plans)
+    {
+        for (const auto& traj : trajectories)
+        {
+            convex_mpc_msgs::msg::SwingPlan plan;
+            plan.leg = leg;
+            plan.start_time_s = traj.get_start_time();
+            plan.end_time_s = traj.get_end_time();
+            plan.swing_height_m = traj.get_swing_height();
+
+            const Eigen::Vector3d p0 = traj.get_start_position();
+            const Eigen::Vector3d p2 = traj.get_end_position();
+            plan.start_position.x = p0.x();
+            plan.start_position.y = p0.y();
+            plan.start_position.z = p0.z();
+            plan.end_position.x = p2.x();
+            plan.end_position.y = p2.y();
+            plan.end_position.z = p2.z();
+
+            const double t0 = traj.get_start_time();
+            const double t2 = traj.get_end_time();
+            plan.sampled_points.resize(kSamplesPerSwing);
+            for (int i = 0; i < kSamplesPerSwing; ++i)
+            {
+                const double t = t0 + (t2 - t0) * static_cast<double>(i) /
+                                          static_cast<double>(kSamplesPerSwing - 1);
+                Eigen::Vector3d p, v, a;
+                traj.evaluate(t, p, v, a);
+                plan.sampled_points[i].x = p.x();
+                plan.sampled_points[i].y = p.y();
+                plan.sampled_points[i].z = p.z();
+            }
+
+            // Where the reference wants the foot right now versus where it is.
+            // These two being far apart IS the swing tracking error -- the thing
+            // that reads as swing_perr in the health line, made visible.
+            plan.in_flight = (now_s > t0) && (now_s < t2);
+            Eigen::Vector3d p_ref_now, v_ref_now, a_ref_now;
+            traj.evaluate(plan.in_flight ? now_s : t0, p_ref_now, v_ref_now, a_ref_now);
+            plan.reference_position.x = p_ref_now.x();
+            plan.reference_position.y = p_ref_now.y();
+            plan.reference_position.z = p_ref_now.z();
+
+            const int leg_index = quadruped_params->LEG_NAME_TO_INDEX.at(leg);
+            const Eigen::Vector3d meas_W =
+                p_body_W + R_WB * (foot_positions_meas.col(leg_index) + com_offset_B);
+            plan.measured_position.x = meas_W.x();
+            plan.measured_position.y = meas_W.y();
+            plan.measured_position.z = meas_W.z();
+
+            msg.plans.push_back(plan);
+        }
+    }
+
+    swing_plan_pub_->publish(msg);
 }

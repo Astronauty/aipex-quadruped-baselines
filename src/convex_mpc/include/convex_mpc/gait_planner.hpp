@@ -101,6 +101,12 @@ class GaitPlanner
          * @param current_foot_positions Measured foot positions in the WORLD frame, keyed
          *        "FL"/"FR"/"RL"/"RR". These become the lift-off points of first swings, and
          *        must share a frame with the Raibert touchdown targets, which are world frame.
+         *
+         * X_ref slot 0 is expected to hold the MEASURED state, so that the footstep
+         * touching down now is planned from the state estimate and later ones from
+         * the reference -- Cheetah 3 eq. (33): "The state estimator is used to
+         * determine these values for the current time step, and the reference
+         * trajectory is used for future values."
          */
         std::unordered_map<std::string, std::deque<SwingLegTrajectory>> update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, const MPCParams& mpc_params, const unordered_map<string, Vector3d> &current_foot_positions);
  
@@ -203,24 +209,33 @@ class GaitPlanner
         // 0.23 m above the ground and 0.49 m forward, driving 39-45% torque
         // saturation.
         //
-        // Values are from get_foot_positions_body() at the nominal stance joint
-        // angles -- the same numbers FKCHECK and the stance-hold targets print:
-        //   X 0.1982 0.1982 -0.1886 -0.1886 | Y 0.1403 -0.1437 0.1403 -0.1437
-        // The y asymmetry (0.1403 vs -0.1437) is real and comes from the CoM
-        // offset the body frame is referenced to, so it is kept rather than
-        // averaged. z is left at 0: the footstep target is projected to the
-        // ground plane, so only the horizontal components of this offset are used.
-        // How far the Raibert touchdown target must move before an in-flight
-        // swing is rebuilt. A rebuild re-derives the apex from the remaining
-        // window, so doing it for sub-centimetre target jitter corrupts the arc.
-        static constexpr double kRetargetDeadbandM = 0.02;
+        // Expressed about the BASE ORIGIN Bo, in base axes B (monogram p_BoH_B, H the
+        // nominal foothold beneath each hip), because compute_desired_footstep_position()
+        // adds them to the body position x[IDX_X], which is Bo since /sportmodestate
+        // is shifted from the IMU site to Bo.
+        //
+        // These previously came from get_foot_positions_body(), which is about the
+        // CoM: X 0.1982/-0.1886, Y 0.1403/-0.1437. That is the URDF geometry
+        // shifted by the CoM offset (-4.8, +1.7) mm, and added to Bo it placed every
+        // foothold 4.8 mm forward and 1.7 mm toward -y -- the "real" y asymmetry
+        // noted here before was that offset, not geometry. Values now come straight
+        // from the URDF: hip joint (+/-0.1934, +/-0.0465) plus thigh +/-0.0955 in y,
+        // which matches FK of the feet at the home keyframe to the millimetre.
+        // z is 0: the target is projected to the ground plane.
+        // UNUSED: footholds are now frozen at lift-off, so no in-flight rebuild
+        // happens at any target excursion. Kept only to document the attempt --
+        // this threshold was sized for a target driven by the COMMANDED velocity
+        // and became ineffective once the heuristic read the MEASURED velocity,
+        // whose within-stride swing moves the target ~130 mm. See the rationale in
+        // GaitPlanner::update_swing_leg_trajectories().
+        [[maybe_unused]] static constexpr double kRetargetDeadbandM = 0.02;
 
-        const std::unordered_map<std::string, Eigen::Vector3d> HIP_POSITIONS = {
-            {"FL", Eigen::Vector3d(0.1982, 0.1403, 0.0)},   // Front Left
-            {"FR", Eigen::Vector3d(0.1982, -0.1437, 0.0)},  // Front Right
-            {"RL", Eigen::Vector3d(-0.1886, 0.1403, 0.0)},  // Rear Left
-            {"RR", Eigen::Vector3d(-0.1886, -0.1437, 0.0)}  // Rear Right
-        }; // TODO: parse from URDF / derive from FK at the nominal stance
+        const std::unordered_map<std::string, Eigen::Vector3d> p_BoH_B_ = {
+            {"FL", Eigen::Vector3d(0.1934, 0.1420, 0.0)},   // Front Left
+            {"FR", Eigen::Vector3d(0.1934, -0.1420, 0.0)},  // Front Right
+            {"RL", Eigen::Vector3d(-0.1934, 0.1420, 0.0)},  // Rear Left
+            {"RR", Eigen::Vector3d(-0.1934, -0.1420, 0.0)}  // Rear Right
+        }; // TODO: parse from URDF
         
         /**
          * @brief Set the phase offsets for each leg based on the selected gait type.
@@ -230,6 +245,13 @@ class GaitPlanner
         void set_phase_offsets(); // Defines gaits based on their phase offsets
 
 
+        /**
+         * @brief Raibert/Cheetah-3 eq. (33) footstep target: p_des = p_hip + v * dt/2.
+         * @param x State supplying BOTH the body pose the hip is projected from and the
+         *        velocity to sweep by. Slot 0 of the trajectory holds the measured
+         *        state, so a step touching down now is planned from the estimate and
+         *        later steps from the reference, with no branch needed here.
+         */
         Eigen::Vector3d compute_desired_footstep_position(const Eigen::VectorXd& x, const string& foot_index);
 
         /**

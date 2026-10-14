@@ -21,6 +21,10 @@ set (
   std_msgs
   pinocchio
   sensor_msgs
+  convex_mpc_msgs
+  geometry_msgs
+  tf2_ros
+  tf2_geometry_msgs
 )
 
 # find dependencies
@@ -34,6 +38,10 @@ find_package(GUROBI REQUIRED)
 include_directories(${GUROBI_INCLUDE_DIRS})
 find_package(pinocchio REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(convex_mpc_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 
 message(STATUS "GUROBI_INCLUDE_DIRS: ${GUROBI_INCLUDE_DIRS}")
@@ -129,6 +137,13 @@ install(
 install(
   DIRECTORY config/
   DESTINATION share/${PROJECT_NAME}/config
+)
+
+# The URDF is installed so the visualisation launch file can find it through the
+# package share directory rather than a source-tree path.
+install(
+  DIRECTORY urdf/
+  DESTINATION share/${PROJECT_NAME}/urdf
 )
 
 ### Link Libraries for all executables ###

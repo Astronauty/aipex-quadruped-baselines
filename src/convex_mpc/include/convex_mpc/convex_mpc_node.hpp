@@ -1,4 +1,9 @@
 #pragma once
+#include <mutex>
+#include "convex_mpc_msgs/msg/swing_plan_array.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include "tf2_ros/transform_broadcaster.h"
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -79,6 +84,19 @@ class QuadConvexMPCNode : public rclcpp::Node
         // so releasing the stick holds wherever the robot ended up.
         double p_ref[2] = {0.0, 0.0};
 
+        // Latched yaw setpoint, integrated from the commanded yaw RATE, exactly
+        // as p_ref is integrated from the commanded linear velocity.
+        //
+        // This slot previously held current_yaw, i.e. the measurement, which made
+        // the yaw reference re-anchor to the robot's actual heading every cycle.
+        // Yaw error was then identically zero, Q[2] multiplied zero, and the MPC
+        // produced no restoring yaw moment at all -- yaw became an undamped
+        // free-floating mode that random-walked on contact asymmetries until the
+        // feet were misaligned enough to break the stance/swing contact overlap.
+        // Latching gives yaw a fixed setpoint to hold, which is what "go straight"
+        // means, while a nonzero wz still commands a turn through the rate slot.
+        double yaw_ref_ = 0.0;
+
         // Commanded horizontal body velocity, from the joystick. The swing
         // reference subtracts this rather than the measured body velocity, so a
         // body transient does not propagate into the foot target.
@@ -90,22 +108,13 @@ class QuadConvexMPCNode : public rclcpp::Node
         // instead of a guess: one parseable line per second covering attitude,
         // height, translation, heading, measured support, airborne fraction and
         // swing tracking.
-        // Scheduled vs actual touchdown tracking. foot_force is the simulator's
-        // measured contact normal force, so this compares the gait schedule
-        // against ground truth rather than against another copy of the schedule
-        // (which is what STANCESTALE does).
-        static constexpr double kContactForceThresholdN = 5.0;
-
-        static constexpr double kTouchdownEarlyWarnMs = 10.0;
-        std::array<bool, 4> td_sched_prev_{false, false, false, false};
-        std::array<bool, 4> td_contact_prev_{false, false, false, false};
-        std::array<double, 4> td_sched_time_{0.0, 0.0, 0.0, 0.0};
-        std::array<double, 4> td_contact_time_{0.0, 0.0, 0.0, 0.0};
-        std::array<double, 4> td_off_sum_{0.0, 0.0, 0.0, 0.0};
-        std::array<double, 4> td_off_absmax_{0.0, 0.0, 0.0, 0.0};
-        std::array<int64_t, 4> td_off_n_{0, 0, 0, 0};
-        std::array<int64_t, 4> td_early_n_{0, 0, 0, 0};
-
+        // The health accumulators are written from BOTH control threads --
+        // update_mpc_state() on the plan timer and publish_cmd() on the swing
+        // timer -- and reset from publish_cmd(). Unguarded, that race segfaulted
+        // the controller within seconds at full rate while running clean under
+        // gdb, which is what a race looks like. The critical sections are a few
+        // scalar updates, so the lock costs nothing at 200 Hz.
+        std::mutex health_mutex_;
         int64_t health_samples_ = 0;
         int64_t health_airborne_ = 0;
         double health_roll_sum_ = 0.0;
@@ -116,8 +125,13 @@ class QuadConvexMPCNode : public rclcpp::Node
         double health_fz_sum_ = 0.0;
         double health_fz_min_ = 1e9;
         double health_perr_sum_ = 0.0;
+        // perr is accumulated per swing-leg sample on the 200 Hz swing timer, so it
+        // needs its own count: dividing by health_samples_ (one per 40 Hz plan
+        // cycle) inflated swing_perr by ~(swing legs x 5), i.e. ~7x.
+        int64_t health_perr_n_ = 0;
         double health_tau_pk_ = 0.0;
         bool p_ref_latched = false;
+        bool yaw_ref_latched_ = false;
         // MPCParams mpc_params; // MPC parameters
 
         Matrix<double, 3, 4> foot_positions = Matrix<double, 3, 4>::Zero(); // Foot positions in x, y, z
@@ -133,6 +147,22 @@ class QuadConvexMPCNode : public rclcpp::Node
         rclcpp::CallbackGroup::SharedPtr state_cb_group_;   // Subscriptions
         rclcpp::TimerBase::SharedPtr publish_joint_torque_timer_; // Fast: swing PD feedback + publish
         rclcpp::TimerBase::SharedPtr update_plan_timer_;          // Slow: MPC solve + gait planning
+
+        // Visualisation publishers. All of this is OUTPUT only: the viz node does
+        // every marker computation, so the control path just serialises state it
+        // already has. Publishing happens on the plan timer at 40 Hz, never on the
+        // 200 Hz swing timer.
+        rclcpp::Publisher<convex_mpc_msgs::msg::SwingPlanArray>::SharedPtr swing_plan_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
+        std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+        bool publish_viz_ = true;
+        void publish_visualization(double now_s,
+                                   const std::unordered_map<std::string, std::deque<SwingLegTrajectory>>& plans,
+                                   const Eigen::Matrix<double, 3, 4>& foot_positions_meas,
+                                   const Eigen::Vector3d& p_body_W,
+                                   const Eigen::Matrix3d& R_WB,
+                                   const Eigen::Vector3d& com_offset_B,
+                                   const Eigen::VectorXd& X_ref);
 
         // Unitree sportmode vars
         rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr sport_mode_sub_;
@@ -161,7 +191,14 @@ class QuadConvexMPCNode : public rclcpp::Node
 
         // Joystick parsing
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+        // Joystick message. Written by joy_callback on the state thread and read by
+        // both control timers, so every access goes through joy_mutex_: assigning a
+        // shared_ptr is NOT atomic, and a reader that catches a half-updated control
+        // block segfaults. This crashed the node repeatedly (exit -11), including
+        // while physics was paused, which is what ruled out any gait-related cause.
         sensor_msgs::msg::Joy::SharedPtr joy_msg; // Joystick message
+        mutable std::mutex joy_mutex_;
+        sensor_msgs::msg::Joy::SharedPtr latest_joy_msg();
 
         void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg); 
         VectorXd reference_traj_from_joy(const sensor_msgs::msg::Joy::SharedPtr msg);
@@ -266,7 +303,18 @@ class QuadConvexMPCNode : public rclcpp::Node
         // the residual exceeded it. Roll and pitch settle inside ~2 s and were
         // never the binding condition. The gate is now purely the startup_stance_s
         // timer; fixing the convergence rate is the real remedy.
-        static constexpr double STANDING_HEIGHT_M = 0.312;
+        //
+        // Height of the BASE ORIGIN Bo above the ground. This was 0.312, which is
+        // the height of the IMU site Io at the "home" keyframe (Bo at 0.27 plus the
+        // site's +0.0423 z offset): it was tuned on /sportmodestate position before
+        // that was known to be Io rather than Bo. 0.27 is the same physical stance.
+        static constexpr double STANDING_HEIGHT_M = 0.27;
+
+        // Position of the IMU site origin Io relative to the base origin Bo,
+        // expressed in the base frame B. /sportmodestate reports Io's position and
+        // velocity, and sport_mode_callback() shifts them to Bo with this. The
+        // default is the MuJoCo go2.xml site; hardware may need a different value.
+        Eigen::Vector3d p_BoIo_B_{-0.02557, 0.0, 0.04232};
 
         // Swing torque saturation census, accumulated over every swing sample in
         // publish_cmd() and reported once a second. This is the measurement that

@@ -186,24 +186,40 @@ void GaitPlanner::start_gait(GaitType gait_type, double duty_factor, double star
 Vector3d GaitPlanner::compute_desired_footstep_position(const Eigen::VectorXd &x, const string &foot_index)
 {
     // Compute the desired footstep position based on the reference position, CoM velocity, and foot index
-    Eigen::Vector3d hip_position_B = HIP_POSITIONS.at(foot_index); // Hip position in body frame
+    const Eigen::Vector3d p_BoH_B = p_BoH_B_.at(foot_index); // nominal foothold H about Bo, in B
 
     double roll = x[IDX_R];
     double pitch = x[IDX_P];
     double yaw = x[IDX_Y];
-    Vector3d p_COM = x.segment<3>(IDX_X);  // CoM position in world frame
-    // Linear velocity lives at index 9 (IDX_Xd). This previously read index 6,
-    // which in the [rpy, p, omega, v, g] layout is the body angular rate -- the
-    // heuristic was adding an angular velocity to a position. Latent until now
-    // because GaitType::STAND means the function is never reached with motion.
-    Vector3d v_COM = x.segment<3>(IDX_Xd); // CoM velocity in world frame
+    // The body position slot is the base origin Bo (see p_BoH_B_), not the CoM.
+    const Vector3d p_WBo_W = x.segment<3>(IDX_X);
+    const Vector3d v_WBo_W = x.segment<3>(IDX_Xd);
+
+    // Both the pose and the velocity come from x, the trajectory passed in.
+    // Cheetah 3 eq. (33) wants the STATE ESTIMATE for the step touching down now
+    // and the reference for later steps -- that selection is made by seeding
+    // slot 0 of the trajectory with the measured state (see
+    // reference_traj_from_joy), so this function needs no branch: it simply reads
+    // whichever slot the touchdown time lands in.
+    //
+    // Both terms matter. Reading the reference VELOCITY made foot placement open
+    // loop in speed (a 0.15 m/s command reached 0.906 m/s before diverging), and
+    // reading the reference POSE projected the hip from where the robot was
+    // commanded to be rather than where it is, so a drifting robot aimed its feet
+    // sideways -- eq. (33)'s p_ref is "the location on the ground beneath the hip
+    // of the robot", the actual robot.
+    //
+    // Historical note: this used to read x.segment<3>(6), which in the
+    // [rpy, p, omega, v, g] layout is the body ANGULAR rate -- the heuristic was
+    // adding an angular velocity to a position. Latent because GaitType::STAND
+    // meant the function was never reached with motion.
 
     Matrix3d R_WB = (AngleAxisd(yaw, Vector3d::UnitZ()) *
                      AngleAxisd(pitch, Vector3d::UnitY()) *
                      AngleAxisd(roll, Vector3d::UnitX()))
                         .toRotationMatrix();
 
-    Vector3d hip_position_W = p_COM + R_WB * hip_position_B; // Hip position in world frame
+    const Vector3d p_WH_W = p_WBo_W + R_WB * p_BoH_B; // nominal foothold beneath the hip, world
 
     // Raibert heuristic: place the foot half a stance duration ahead along the
     // velocity vector. The stance duration is duty_factor * gait_duration_s --
@@ -211,16 +227,16 @@ Vector3d GaitPlanner::compute_desired_footstep_position(const Eigen::VectorXd &x
     // dimensionally wrong (m/s times a dimensionless ratio). It was masked only
     // because gait_duration_s happened to be hardcoded to 1.0.
     const double stance_duration_s = duty_factor_ * gait_duration_s_;
-    Vector3d p_des_W = hip_position_W + v_COM * stance_duration_s / 2.0;
+    Vector3d p_WF_W = p_WH_W + v_WBo_W * stance_duration_s / 2.0; // F: desired foothold
 
     // Project onto the ground plane. Without this the touchdown target sits at
     // roughly body height (~0.31 m) in the air and the robot cannot step at all,
     // despite the docs above having always claimed the projection was done.
     //
     // Flat-ground assumption; a terrain height lookup would replace this.
-    p_des_W.z() = 0.0;
+    p_WF_W.z() = 0.0;
 
-    return p_des_W;
+    return p_WF_W;
 }
 
 double GaitPlanner::time_to_phase(double current_time_s)
@@ -267,7 +283,7 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
             }
 
             VectorXd x = get_state_at_time_from_ref_traj(X_ref, mpc_params, current_time_s_, end_time); // End of swing corresponds to start of stance
-            Vector3d p_des_end = compute_desired_footstep_position(x, leg); // Compute desired footstep position based on reference traj and Raibert heuristic
+            Vector3d p_des_end = compute_desired_footstep_position(x, leg); // Cheetah 3 eq. (33)
 
             auto &leg_trajectories = swing_leg_trajectories_[leg];
 
@@ -299,10 +315,18 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
             // The planning horizon can hold several swings per leg, so back() is
             // the furthest-future swing, not necessarily the one this iteration
             // is about -- keying on end_time updates the right trajectory.
+            //
+            // The tolerance must be well above double resolution at the clock's
+            // magnitude. Times are absolute epoch seconds (~1.8e9), where one ULP is
+            // 2.4e-7 s, so the old 1e-9 never matched a window recomputed with
+            // different rounding: every leg carried a duplicate swing in ~36% of
+            // plan cycles, and the next lift-off chained off the copy. Swing
+            // windows are a gait half-period apart, so 1 ms cannot alias two.
+            constexpr double kSameWindowTolS = 1e-3;
             auto existing = std::find_if(
                 leg_trajectories.begin(), leg_trajectories.end(),
                 [end_time](const SwingLegTrajectory &traj) {
-                    return std::abs(traj.get_end_time() - end_time) < 1e-9;
+                    return std::abs(traj.get_end_time() - end_time) < kSameWindowTolS;
                 });
 
             if (existing != leg_trajectories.end())
@@ -328,38 +352,40 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
                     if (!in_flight)
                     {
                         // Not yet lifted off: free to rebuild, no continuity
-                        // constraint and no apex to preserve.
+                        // constraint and no apex to preserve. The target therefore
+                        // keeps tracking the latest command right up to lift-off.
                         existing->set_end_position(p_des_end);
                     }
-                    else if ((p_des_end - existing->get_end_position()).norm() >
-                             kRetargetDeadbandM)
-                    {
-                        // In flight AND the target actually moved. Retargeting is
-                        // continuous in position and velocity but NOT in the apex:
-                        // retarget() rebuilds via build3ClampedAutoMid, which puts a
-                        // fresh swing_height above the midpoint of the REMAINING,
-                        // shortened window. Doing that every planning cycle kept
-                        // inserting a new 0.08 m apex ahead of the foot and dragged
-                        // the reference back upward -- measured as ref z oscillating
-                        // -0.1288 / -0.1420 / -0.1175 / -0.1737 / -0.1742 on
-                        // consecutive 5 ms ticks late in the swing.
-                        //
-                        // At zero commanded velocity the Raibert target is
-                        // essentially static, so the deadband removes the rebuild
-                        // entirely while still allowing a genuine mid-swing
-                        // correction when the commanded velocity changes.
-                        Vector3d p_now, v_now, a_now;
-                        existing->evaluate(t_now, p_now, v_now, a_now);
-                        existing->retarget(t_now, p_now, v_now, p_des_end);
-                    }
-                    // Otherwise: in flight and the target has not moved. Leave the
-                    // trajectory alone -- the apex it was built with is the one the
-                    // swing is meant to follow.
+                    // Once airborne the foothold is FROZEN: the trajectory it lifted
+                    // off with is the one it flies. No mid-flight retargeting.
+                    //
+                    // Mid-flight retarget was tried with a 20 mm deadband and is
+                    // removed because retarget() cannot preserve the apex -- it
+                    // rebuilds via build3ClampedAutoMid, which places a fresh
+                    // swing_height above the midpoint of the REMAINING, shortened
+                    // window, dragging the reference upward late in the swing (ref z
+                    // measured oscillating -0.1288 / -0.1420 / -0.1175 / -0.1737 on
+                    // consecutive 5 ms ticks).
+                    //
+                    // The deadband was sized on the assumption that the target is
+                    // "essentially static at zero commanded velocity". That held
+                    // while the heuristic read the COMMANDED velocity, but it now
+                    // reads the MEASURED velocity (Cheetah 3 eq. 33), which swings
+                    // over ~0.54 m/s within a gait cycle as the body surges. Through
+                    // v * t_stance / 2 that is a ~130 mm target excursion against a
+                    // 20 mm deadband, so the rebuild fired almost every planning
+                    // cycle instead of rarely.
+                    //
+                    // Freezing is also what the fixed-timing schedule already
+                    // assumes: the MPC is given these footholds as the r_i it plans
+                    // forces about, so a foothold that moves mid-flight invalidates
+                    // the forces already committed to. A disturbance mid-swing is
+                    // corrected by the NEXT step, which replans from the measured
+                    // state anyway.
                 }
                 continue;
             }
 
-            // TEMP DIAG: spline endpoints as actually handed to the trajectory.
             leg_trajectories.emplace_back(start_time, end_time, p_des_start, p_des_end, swing_height_m_);
         }
     }

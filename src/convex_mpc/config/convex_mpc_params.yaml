@@ -116,14 +116,21 @@
     # Minimum time held in stance at startup before the gait begins. The robot
     # spawns with its legs collapsed (feet ~0.07 m below the CoM instead of the
     # nominal ~0.31 m), and a trot started from that pose rolls the body over
-    # within a few cycles -- there is no stance to push against yet. The handover
-    # additionally waits for roll, pitch and height to be within tolerance, so
-    # this is a floor on the wait, not the whole condition.
+    # within a few cycles -- there is no stance to push against yet.
     # Hold STAND until `ros2 topic pub --once /start_gait std_msgs/msg/Bool "{data: true}"`.
     # Lets an operator confirm the stance before the gait starts, without restarting
     # the controller -- a restart drops /lowcmd and the robot falls, so the gait would
-    # otherwise begin from a fallen pose.
+    # otherwise begin from a fallen pose. Set false for an unattended run: the gait
+    # then starts blindly startup_stance_s after the node is constructed, whether
+    # or not the robot is standing (or the sim is even running).
     wait_for_gait_trigger: true
+
+    # Position of the IMU site origin Io relative to the base origin Bo, expressed
+    # in the base frame B (Drake monogram). /sportmodestate reports Io, not Bo; the
+    # controller shifts position and velocity to Bo with this. MuJoCo go2.xml site
+    # "imu" is at (-0.02557, 0, 0.04232). On hardware, check against FK: at a still
+    # stance, FK feet minus SportModeState feet should be ~zero once this is right.
+    p_BoIo_B: [-0.02557, 0.0, 0.04232]
     startup_stance_s: 5.0 # Stand this long before switching to the gait. The body is
                           # still mid-rise at 2.0 s and settles ~4.5 s; trotting from
                           # the half-risen pose collapses onto two diagonal feet.
@@ -199,7 +206,16 @@
     # With Q[6]=0 the 2 rad/s roll rate that followed cost nothing until it had
     # already become angle. Penalising the rate makes the QP act on it while
     # correcting is still cheap.
-    Q_diag: [100.0, 100.0, 10.0, 500.0, 500.0, 500.0, 10.0, 10.0, 10.0, 50.0, 50.0, 500.0, 0.0]
+    #
+    # Q[3]/Q[4] (px, py) raised 500 -> 2000 on 2026-10-14, after the IMU-site and
+    # foothold-anchor fixes. At 500 the trot held a steady -1.0 cm x offset and,
+    # in an earlier run with the foothold bias still present, let y drift
+    # unresisted at ~4 mm/s to 6 cm before falling. At 2000, over 73 s of free-base
+    # trot: x offset -0.2 to -0.4 cm, y -0.2 cm, peak swing torque <= 6.7 Nm, zero
+    # STANCECLAMP. Unlike the pz 500 -> 2000 attempt above, there was no crowd-out:
+    # roll and pitch were identical to the 500 run (+0.006 / +0.029). One run per
+    # setting, so treat as strongly indicative rather than settled.
+    Q_diag: [100.0, 100.0, 10.0, 2000.0, 2000.0, 500.0, 10.0, 10.0, 10.0, 50.0, 50.0, 500.0, 0.0]
     Q_scale: 1.0 # Weighting factor where Q = Q_scale * diag(Q_diag) - matches MATLAB
     Q_n_scale: 1.0 # Weighting factor Q_N for final state in horizon - matches MATLAB
     # Control regularization, balancing tracking against control effort. Halved

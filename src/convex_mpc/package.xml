@@ -16,6 +16,10 @@
   <depend>rosbag2_cpp</depend>
   <depend>pinocchio</depend>
   <depend>sensor_msgs</depend>
+  <depend>convex_mpc_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
