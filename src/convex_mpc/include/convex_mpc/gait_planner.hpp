@@ -102,11 +102,10 @@ class GaitPlanner
          *        "FL"/"FR"/"RL"/"RR". These become the lift-off points of first swings, and
          *        must share a frame with the Raibert touchdown targets, which are world frame.
          *
-         * X_ref slot 0 is expected to hold the MEASURED state, so that the footstep
-         * touching down now is planned from the state estimate and later ones from
-         * the reference -- Cheetah 3 eq. (33): "The state estimator is used to
-         * determine these values for the current time step, and the reference
-         * trajectory is used for future values."
+         * X_ref is the latched reference in every slot. Touchdown targets are read
+         * from it at the touchdown time, so foot placement currently does NOT use the
+         * state estimate, which Cheetah 3 eq. (33) asks for on the current step. That
+         * feedback is still to be added here, at the point a target is frozen.
          */
         std::unordered_map<std::string, std::deque<SwingLegTrajectory>> update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, const MPCParams& mpc_params, const unordered_map<string, Vector3d> &current_foot_positions);
  
@@ -248,9 +247,8 @@ class GaitPlanner
         /**
          * @brief Raibert/Cheetah-3 eq. (33) footstep target: p_des = p_hip + v * dt/2.
          * @param x State supplying BOTH the body pose the hip is projected from and the
-         *        velocity to sweep by. Slot 0 of the trajectory holds the measured
-         *        state, so a step touching down now is planned from the estimate and
-         *        later steps from the reference, with no branch needed here.
+         *        velocity to sweep by. Today this is always a reference state (see
+         *        update_swing_leg_trajectories), so placement is open loop.
          */
         Eigen::Vector3d compute_desired_footstep_position(const Eigen::VectorXd& x, const string& foot_index);
 

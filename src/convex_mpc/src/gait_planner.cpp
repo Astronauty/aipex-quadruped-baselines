@@ -197,10 +197,11 @@ Vector3d GaitPlanner::compute_desired_footstep_position(const Eigen::VectorXd &x
 
     // Both the pose and the velocity come from x, the trajectory passed in.
     // Cheetah 3 eq. (33) wants the STATE ESTIMATE for the step touching down now
-    // and the reference for later steps -- that selection is made by seeding
-    // slot 0 of the trajectory with the measured state (see
-    // reference_traj_from_joy), so this function needs no branch: it simply reads
-    // whichever slot the touchdown time lands in.
+    // and the reference for later steps. That is NOT what happens today: x is
+    // always a latched reference state (X_ref no longer seeds slot 0 with the
+    // measurement, and even when it did, a target frozen at lift-off was read
+    // past the end of the horizon and never reached slot 0). The fix belongs in
+    // the caller, which should pass the measured state when it freezes a target.
     //
     // Both terms matter. Reading the reference VELOCITY made foot placement open
     // loop in speed (a 0.15 m/s command reached 0.906 m/s before diverging), and

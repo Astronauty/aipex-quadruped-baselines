@@ -989,28 +989,21 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
         ).finished();
     }
 
-    // Cheetah 3 eq. (33): "The state estimator is used to determine these values
-    // for the current time step, and the reference trajectory is used for future
-    // values." Seeding slot 0 with the measured pose and velocity makes the
-    // footstep that is touching down now plan from where the robot actually IS and
-    // how fast it is actually going, while later steps keep the reference. The
-    // heuristic then needs no special case -- it just reads whichever slot the
-    // touchdown time falls in.
+    // Every slot, including slot 0, holds the latched reference. Slot 0 used to be
+    // overwritten with the measured yaw, x, y, vx and vy, meant to feed Cheetah 3
+    // eq. (33) ("the state estimator is used ... for the current time step").
     //
-    // This does NOT perturb the MPC cost. The condensed QP costs
-    // err = A_qp*x0 - X_ref, whose slot 0 is A*x0 (the state one step AHEAD), not
-    // x0 itself; x0 was eliminated as a decision variable when the problem was
-    // condensed into U alone. So slot 0 is differenced against a predicted state,
-    // never against the measurement it now holds, and no tracking error is zeroed.
+    // It never did: a foothold is frozen at lift-off, ~0.32 s before touchdown and
+    // beyond the 0.25 s horizon, so get_state_at_time_from_ref_traj() extrapolates
+    // from the LAST slot and never reads slot 0. A bag showed the touchdown target
+    // fixed to 0.0000 m while the body drifted 5.5 cm.
     //
-    // Roll and pitch are deliberately left at the reference zero: the target is
-    // projected to the ground plane, and feeding measured roll/pitch in would let
-    // body oscillation at gait frequency swing the footstep target sideways.
-    X_ref(IDX_Y)  = theta[2];   // measured yaw
-    X_ref(IDX_X)  = p[0];       // measured x
-    X_ref(IDX_X + 1) = p[1];    // measured y
-    X_ref(IDX_Xd)     = p_dot[0]; // measured x velocity
-    X_ref(IDX_Xd + 1) = p_dot[1]; // measured y velocity
+    // What it did do was weaken tracking. The condensed QP costs
+    // err = A_qp*x0 - X_ref, whose slot 0 is the one-step prediction A*x0. With the
+    // measurement in slot 0 that term penalised one step of motion, not distance from
+    // the latched target, so one of the N_MPC steps exerted no pull on x, y or yaw.
+    // Feeding the state estimate into foot placement belongs in the footstep
+    // planner, at the moment a target is frozen, not in the MPC reference.
 
     return X_ref;
 }
