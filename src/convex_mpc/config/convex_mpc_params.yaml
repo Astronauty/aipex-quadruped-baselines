@@ -111,7 +111,14 @@
     # trajectory and stubs on touchdown, too stiff and it rings at the gait
     # frequency. These are untuned starting values.
     swing_Kp: [400.0, 400.0, 400.0] # reference impl, isotropic
-    swing_Kd: [75.0, 75.0, 75.0] # reference impl ratio
+    # Kd 75 -> 40 on 2026-10-14. At 75 the swing D term chattered: torque flipping
+    # sign every 5 ms tick, growing to 40-66 Nm, while position error stayed ~1 cm.
+    # The foot's apparent mass along the calf direction is ~0.26-0.28 kg including
+    # the sim's 0.01 armature, so Kd*T/m = 1.35-1.45 at 200 Hz -- under the
+    # zero-delay limit of 2 but past ~1, the limit with one tick of loop delay.
+    # Joint friction held it down until a disturbance kicked it. At 40 (~0.75) no
+    # chatter was seen, including under stick commands.
+    swing_Kd: [40.0, 40.0, 40.0]
 
     # Minimum time held in stance at startup before the gait begins. The robot
     # spawns with its legs collapsed (feet ~0.07 m below the CoM instead of the
@@ -131,6 +138,30 @@
     # "imu" is at (-0.02557, 0, 0.04232). On hardware, check against FK: at a still
     # stance, FK feet minus SportModeState feet should be ~zero once this is right.
     p_BoIo_B: [-0.02557, 0.0, 0.04232]
+
+    # Reference bounding (Cheetah-Software convexMPC style for xy).
+    # xy: the latched position integrates the commanded velocity and is clamped
+    # per axis to within ref_max_pos_error_m of the measured position (MIT uses
+    # max_pos_error = 0.1). A centred stick still holds a fixed point; a keyframe
+    # reset, push or estimator jump produces at most this much error. 0.04 rather
+    # than MIT's 0.1: with position weight 2000, a reference that drifted 5-7 cm
+    # from the body made the MPC chase it hard enough to saturate the stance legs.
+    # The scripted forward/backward runs that validated the force-bound fix used 0.04.
+    ref_max_pos_error_m: 0.04
+    # yaw: re-anchored to the measured heading while the yaw stick is outside
+    # yaw_stick_deadband (fraction of full scale); once it has been centred for
+    # yaw_latch_hold_s the measured heading is latched and held. Always clamped to
+    # within ref_max_yaw_error_rad of the measurement. (MIT never holds heading;
+    # holding it is what stopped the ~1 rad trot drift here.)
+    ref_max_yaw_error_rad: 0.1
+    yaw_stick_deadband: 0.05
+    yaw_latch_hold_s: 0.25
+
+    # Foot placement from the measured body state (Cheetah 3 eq. 33):
+    #   hip at touchdown = measured pose + commanded velocity * time to touchdown
+    #   foothold = hip + v_meas * T_stance/2 + footstep_velocity_gain * (v_meas - v_cmd)
+    # 0.03 is Cheetah-Software convexMPC's value.
+    footstep_velocity_gain: 0.03
     startup_stance_s: 5.0 # Stand this long before switching to the gait. The body is
                           # still mid-rise at 2.0 s and settles ~4.5 s; trotting from
                           # the half-risen pose collapses onto two diagonal feet.
@@ -223,7 +254,12 @@
     # and land further from the hips as the body turns away from it. At 100 (with
     # X_ref slot 0 latched rather than measured): -0.003 at ~100 s, -0.008 at
     # ~285 s, with roll/pitch/swing tracking unchanged, so no crowd-out.
-    Q_diag: [100.0, 100.0, 100.0, 2000.0, 2000.0, 500.0, 10.0, 10.0, 10.0, 50.0, 50.0, 500.0, 0.0]
+    #
+    # Q[9]/Q[10] (vx, vy) raised 50 -> 200 on 2026-10-14. With position at 2000 and
+    # velocity at 50 the MPC chased position: the reference ran up to 4.9 cm ahead
+    # during a forward command, and the body accelerated to 0.26 m/s on a 0.15 m/s
+    # command, then overshot the reference by 8.7 cm on release. Untested value.
+    Q_diag: [100.0, 100.0, 100.0, 2000.0, 2000.0, 500.0, 10.0, 10.0, 10.0, 200.0, 200.0, 500.0, 0.0]
     Q_scale: 1.0 # Weighting factor where Q = Q_scale * diag(Q_diag) - matches MATLAB
     Q_n_scale: 1.0 # Weighting factor Q_N for final state in horizon - matches MATLAB
     # Control regularization, balancing tracking against control effort. Halved

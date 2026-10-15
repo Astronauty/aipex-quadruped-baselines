@@ -217,6 +217,12 @@ class ConvexMPC
         Vector3d get_com_offset_body() const { return com_B_; }
 
         /**
+         * @brief First-step ground reaction forces from the most recent solve, world
+         *        frame, N. Columns are feet FL, FR, RL, RR; rows x, y, z.
+         */
+        const Matrix<double, 3, 4>& get_last_grf_world() const { return last_grf_W_; }
+
+        /**
          * @brief Swing-leg Cartesian PD gains, shared by every leg.
          */
         void set_swing_gains(const Matrix3d& Kp_swing, const Matrix3d& Kd_swing);
@@ -249,6 +255,7 @@ class ConvexMPC
         VectorXd X_ref; // Desired rigid body pose of the quadruped, size N_STATES * N_MPC
         // Vector<double, 12> u;  // GRFs for the 4 feet of the quadruped robot, represented as a vector of 12 elements (3 for each foot: x, y, z)
         Matrix<double, 3, 4> ground_reaction_forces; // GRFs for the 4 feet of the quadruped robot, rows are x, y, z forces, columns are feet 0, 1, 2, 3
+        Matrix<double, 3, 4> last_grf_W_ = Matrix<double, 3, 4>::Zero(); // see get_last_grf_world()
 
         MatrixXd A_qp;
         MatrixXd B_qp;

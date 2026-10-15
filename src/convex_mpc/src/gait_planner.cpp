@@ -240,6 +240,41 @@ Vector3d GaitPlanner::compute_desired_footstep_position(const Eigen::VectorXd &x
     return p_WF_W;
 }
 
+Vector3d GaitPlanner::compute_desired_footstep_position_measured(const Vector3d &v_cmd_W,
+                                                                double t_to_touchdown_s,
+                                                                const string &foot_index)
+{
+    const Vector3d p_BoH_B = p_BoH_B_.at(foot_index); // nominal foothold H about Bo, in B
+
+    // Heading only: roll and pitch oscillate at gait frequency, and the target is
+    // projected to the ground plane anyway.
+    const Matrix3d R_WB_yaw = AngleAxisd(yaw_meas_, Vector3d::UnitZ()).toRotationMatrix();
+
+    // Horizontal velocities only.
+    const Vector3d v_meas_W(v_WBo_W_meas_.x(), v_WBo_W_meas_.y(), 0.0);
+    const Vector3d v_cmd_xy_W(v_cmd_W.x(), v_cmd_W.y(), 0.0);
+
+    // Where the hip will be at touchdown: measured now, carried forward at the
+    // commanded velocity for the time remaining.
+    const Vector3d p_WH_W = p_WBo_W_meas_ + R_WB_yaw * p_BoH_B
+                          + v_cmd_xy_W * std::max(t_to_touchdown_s, 0.0);
+
+    // Raibert term on the measured velocity, plus velocity-error feedback. The
+    // offset is bounded so a velocity spike cannot throw a foot across the body
+    // (Cheetah-Software clamps the same terms at 0.3 m; ours is a smaller robot
+    // at lower speeds).
+    constexpr double kMaxFootholdOffsetM = 0.15;
+    const double stance_duration_s = duty_factor_ * gait_duration_s_;
+    Vector3d offset_W = v_meas_W * stance_duration_s / 2.0
+                      + k_v_footstep_ * (v_meas_W - v_cmd_xy_W);
+    offset_W.x() = std::clamp(offset_W.x(), -kMaxFootholdOffsetM, kMaxFootholdOffsetM);
+    offset_W.y() = std::clamp(offset_W.y(), -kMaxFootholdOffsetM, kMaxFootholdOffsetM);
+
+    Vector3d p_WF_W = p_WH_W + offset_W; // F: desired foothold
+    p_WF_W.z() = 0.0; // flat ground, as in compute_desired_footstep_position()
+    return p_WF_W;
+}
+
 double GaitPlanner::time_to_phase(double current_time_s)
 {
     return get_phase(current_time_s);
@@ -283,8 +318,24 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
                 cout << "\nLeg: " << leg << ", Swing start time: " << start_time - current_time_s_ << ", Swing end time: " << end_time - current_time_s_ << endl;
             }
 
-            VectorXd x = get_state_at_time_from_ref_traj(X_ref, mpc_params, current_time_s_, end_time); // End of swing corresponds to start of stance
-            Vector3d p_des_end = compute_desired_footstep_position(x, leg); // Cheetah 3 eq. (33)
+            // Cheetah 3 eq. (33) from the MEASURED state when available. The reference
+            // supplies only the commanded velocity (its slot-0 velocity). Reading the
+            // reference POSE instead pinned every touchdown to the latched position:
+            // in a forward-command run the body overshot that position by 8.7 cm and
+            // the front feet landed 0.11 m ahead of the body, BEHIND the 0.193 m hips,
+            // so the robot could not brake and tipped.
+            Vector3d p_des_end;
+            if (have_measured_state_)
+            {
+                const Vector3d v_cmd_W = X_ref.segment<3>(IDX_Xd);
+                p_des_end = compute_desired_footstep_position_measured(
+                    v_cmd_W, end_time - current_time_s_, leg);
+            }
+            else
+            {
+                VectorXd x = get_state_at_time_from_ref_traj(X_ref, mpc_params, current_time_s_, end_time); // End of swing corresponds to start of stance
+                p_des_end = compute_desired_footstep_position(x, leg); // reference fallback
+            }
 
             auto &leg_trajectories = swing_leg_trajectories_[leg];
 

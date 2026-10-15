@@ -97,6 +97,29 @@ class QuadConvexMPCNode : public rclcpp::Node
         // means, while a nonzero wz still commands a turn through the rate slot.
         double yaw_ref_ = 0.0;
 
+        // Reference bounding and yaw re-anchoring (see reference_traj_from_joy()).
+        //
+        // xy follows Cheetah-Software's trot: the latched position integrates the
+        // commanded velocity and is clamped per axis to within ref_max_pos_error_m_
+        // of the measurement (their max_pos_error = 0.1), so a keyframe reset, a
+        // push or an estimator jump yields a bounded error instead of a huge one.
+        //
+        // yaw re-anchors to the measurement while the yaw stick is deflected, then
+        // latches the measured heading once the stick has been inside the deadband
+        // for yaw_latch_hold_s_, and is always clamped to ref_max_yaw_error_rad_.
+        double ref_max_pos_error_m_ = 0.1;
+        double ref_max_yaw_error_rad_ = 0.1;
+        double yaw_stick_deadband_ = 0.05;   // fraction of full stick
+        double yaw_latch_hold_s_ = 0.25;
+        double yaw_centred_since_s_ = -1.0;  // <0 while the yaw stick is deflected
+
+        // The reference built once per plan cycle. Building it twice per cycle (once
+        // in update_mpc_state() for the MPC, once in update_plan() for the swing
+        // planner) advanced p_ref and yaw_ref_ twice, so the position reference ran
+        // at 2x the commanded velocity and the planner saw a reference one step
+        // ahead of the MPC's.
+        Eigen::VectorXd X_ref_cycle_;
+
         // Commanded horizontal body velocity, from the joystick. The swing
         // reference subtracts this rather than the measured body velocity, so a
         // body transient does not propagate into the foot target.

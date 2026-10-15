@@ -68,6 +68,19 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
         U = model->addVars(mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1), GRB_CONTINUOUS);
         cout << "Number of Decision Variables:" << mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1) << endl;
 
+        // Gurobi's addVars(count, type) creates variables with lb = 0, ub = +inf.
+        // Left at that default, every force component was constrained >= 0, so the
+        // solver could only ever push the body +x and +y in world: it could not
+        // brake, walk backward, or correct a drift toward -x/-y. A bag of 7,736
+        // solves showed fx and fy never negative on any foot, and exactly zero
+        // 82-87% of the time. The bounds that should apply are all explicit
+        // constraints in set_contact_constraints(): the two-sided friction pyramid
+        // |fx|, |fy| <= mu*fz, min/max fz in stance, and zero force in swing.
+        for (int i = 0; i < mpc_params.N_CONTROLS * (mpc_params.N_MPC - 1); i++)
+        {
+            U[i].set(GRB_DoubleAttr_LB, -GRB_INFINITY);
+        }
+
         Q_bar = compute_Q_bar(); // Diagonal block matrix of quadratic state cost for N_MPC steps
         R_bar = compute_R_bar(); // Diagonal block matrix of quadratic control cost for N_MPC steps
 
@@ -801,6 +814,7 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
     // Extract ground reaction forces from Gurobi solution
     vector<Matrix<double, 3, 4>> grf_vec(mpc_params.N_MPC - 1, Matrix<double, 3, 4>::Zero());
     grf_vec = grf_from_mpc_solution();
+    last_grf_W_ = grf_vec[0]; // exposed for logging; see get_last_grf_world()
 
     // Commanded vertical force against the weight it has to support, to locate the
     // standing height bias. At rest the first horizon step should sum to mg; a

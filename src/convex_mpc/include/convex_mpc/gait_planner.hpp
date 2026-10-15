@@ -102,10 +102,10 @@ class GaitPlanner
          *        "FL"/"FR"/"RL"/"RR". These become the lift-off points of first swings, and
          *        must share a frame with the Raibert touchdown targets, which are world frame.
          *
-         * X_ref is the latched reference in every slot. Touchdown targets are read
-         * from it at the touchdown time, so foot placement currently does NOT use the
-         * state estimate, which Cheetah 3 eq. (33) asks for on the current step. That
-         * feedback is still to be added here, at the point a target is frozen.
+         * X_ref is the latched reference in every slot; only its commanded velocity is
+         * used here. Touchdown targets come from the measured body state set with
+         * set_measured_body_state() (Cheetah 3 eq. 33), recomputed every cycle until
+         * the swing lifts off and frozen after that.
          */
         std::unordered_map<std::string, std::deque<SwingLegTrajectory>> update_swing_leg_trajectories(const Eigen::VectorXd& X_ref, const MPCParams& mpc_params, const unordered_map<string, Vector3d> &current_foot_positions);
  
@@ -164,11 +164,40 @@ class GaitPlanner
          */
         void set_step_in_place(bool step_in_place) { step_in_place_ = step_in_place; }
 
+        /**
+         * @brief Measured body state for foot placement.
+         *
+         * Cheetah 3 eq. (33) uses the state estimate for the step being committed.
+         * Call this every cycle before update_swing_leg_trajectories(); until it has
+         * been called, placement falls back to the reference trajectory.
+         * @param p_WBo_W Measured base-origin position, world frame.
+         * @param yaw     Measured heading, rad.
+         * @param v_WBo_W Measured base-origin velocity, world frame.
+         */
+        void set_measured_body_state(const Eigen::Vector3d& p_WBo_W, double yaw,
+                                     const Eigen::Vector3d& v_WBo_W)
+        {
+            p_WBo_W_meas_ = p_WBo_W;
+            yaw_meas_ = yaw;
+            v_WBo_W_meas_ = v_WBo_W;
+            have_measured_state_ = true;
+        }
+
+        /// Gain k on the velocity-error term k * (v_meas - v_cmd) in foot placement.
+        void set_footstep_velocity_gain(double k) { k_v_footstep_ = k; }
+
 
 
     private:
         bool verbose_ = false; // Gates the per-cycle diagnostic printing
         bool step_in_place_ = false; // Diagnostic: hold touchdown at lift-off
+
+        // Measured body state for foot placement; see set_measured_body_state().
+        Eigen::Vector3d p_WBo_W_meas_ = Eigen::Vector3d::Zero();
+        Eigen::Vector3d v_WBo_W_meas_ = Eigen::Vector3d::Zero();
+        double yaw_meas_ = 0.0;
+        bool have_measured_state_ = false;
+        double k_v_footstep_ = 0.03; // Cheetah-Software convexMPC uses 0.03
 
         double start_time_s_; // Start time of the gait planning in seconds
         double current_time_s_; // Current time in seconds
@@ -247,10 +276,26 @@ class GaitPlanner
         /**
          * @brief Raibert/Cheetah-3 eq. (33) footstep target: p_des = p_hip + v * dt/2.
          * @param x State supplying BOTH the body pose the hip is projected from and the
-         *        velocity to sweep by. Today this is always a reference state (see
-         *        update_swing_leg_trajectories), so placement is open loop.
+         *        velocity to sweep by. Reference-based fallback, used only until
+         *        set_measured_body_state() has been called; see
+         *        compute_desired_footstep_position_measured().
          */
         Eigen::Vector3d compute_desired_footstep_position(const Eigen::VectorXd& x, const string& foot_index);
+
+        /**
+         * @brief Footstep target from the MEASURED body state (Cheetah 3 eq. 33, in the
+         *        form Cheetah-Software's convexMPC implements):
+         *
+         *   p_WH_W = p_WBo_W_meas + R_z(yaw_meas) p_BoH_B + v_cmd * t_to_touchdown
+         *   p_WF_W = p_WH_W + v_meas * T_stance / 2 + k * (v_meas - v_cmd)
+         *
+         * The first line predicts where the hip will be at touchdown; the second is
+         * the Raibert term plus velocity feedback, so a body moving faster than
+         * commanded steps further ahead and brakes.
+         */
+        Eigen::Vector3d compute_desired_footstep_position_measured(const Eigen::Vector3d& v_cmd_W,
+                                                                   double t_to_touchdown_s,
+                                                                   const string& foot_index);
 
         /**
          * @brief Update the swing leg trajectories based on the current time and footstep positions.

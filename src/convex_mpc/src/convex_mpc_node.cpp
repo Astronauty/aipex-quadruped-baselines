@@ -363,6 +363,12 @@ QuadConvexMPCNode::QuadConvexMPCNode()
         throw std::invalid_argument("p_BoIo_B must have 3 elements");
     }
     p_BoIo_B_ = Eigen::Vector3d(p_BoIo_B[0], p_BoIo_B[1], p_BoIo_B[2]);
+
+    // Reference bounding and yaw latch. See ref_max_pos_error_m_ in the header.
+    ref_max_pos_error_m_   = this->declare_parameter("ref_max_pos_error_m", ref_max_pos_error_m_);
+    ref_max_yaw_error_rad_ = this->declare_parameter("ref_max_yaw_error_rad", ref_max_yaw_error_rad_);
+    yaw_stick_deadband_    = this->declare_parameter("yaw_stick_deadband", yaw_stick_deadband_);
+    yaw_latch_hold_s_      = this->declare_parameter("yaw_latch_hold_s", yaw_latch_hold_s_);
     RCLCPP_INFO(this->get_logger(),
         "Body position: /sportmodestate reports Io; shifting to Bo by p_BoIo_B [%.5f %.5f %.5f]",
         p_BoIo_B_[0], p_BoIo_B_[1], p_BoIo_B_[2]);
@@ -430,6 +436,10 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     this->declare_parameter("step_in_place", false);
     const bool step_in_place = this->get_parameter("step_in_place").as_bool();
     gait_planner->set_step_in_place(step_in_place);
+
+    // Velocity-error gain in measured-state foot placement: k * (v_meas - v_cmd).
+    gait_planner->set_footstep_velocity_gain(
+        this->declare_parameter("footstep_velocity_gain", 0.03));
 
     if (step_in_place) {
         RCLCPP_WARN(this->get_logger(),
@@ -937,6 +947,17 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
         p_ref[1] += vy * mpc_params->dt;
     }
 
+    // Keep the latched position within ref_max_pos_error_m_ of the measurement,
+    // per axis, as Cheetah-Software does. Inside the box nothing changes, so a
+    // centred stick still holds a fixed point; outside it the reference is dragged
+    // along, bounding the error after a reset, a push or an estimator jump.
+    for (int i = 0; i < 2; i++)
+    {
+        p_ref[i] = std::clamp(p_ref[i],
+                              static_cast<double>(p[i]) - ref_max_pos_error_m_,
+                              static_cast<double>(p[i]) + ref_max_pos_error_m_);
+    }
+
     // Cache the commanded horizontal velocity for the swing reference, which
     // subtracts the COMMANDED body velocity rather than the measured one. See
     // the frame discussion in publish_cmd().
@@ -955,7 +976,34 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     }
     else
     {
-        yaw_ref_ += wz * mpc_params->dt;
+        // Re-anchor while turning, latch once the stick has settled at centre.
+        // Integrating wz into a latch let the heading reference run ahead of a
+        // body that turns slowly; re-anchoring tracks the commanded rate from
+        // wherever the body actually points. Holding the measured heading while
+        // the stick is still settling avoids latching mid-turn.
+        const double yaw_stick = axes_double[controller_axis_indices["yaw"]];
+        const double now_s = this->now().seconds();
+        if (std::abs(yaw_stick) > yaw_stick_deadband_)
+        {
+            yaw_centred_since_s_ = -1.0;
+            yaw_ref_ = current_yaw + wz * mpc_params->dt;
+        }
+        else
+        {
+            if (yaw_centred_since_s_ < 0.0) yaw_centred_since_s_ = now_s;
+            if (now_s - yaw_centred_since_s_ < yaw_latch_hold_s_)
+            {
+                yaw_ref_ = current_yaw; // settling: follow, then latch where it stops
+            }
+            // else: latched, hold yaw_ref_
+        }
+    }
+
+    // Bound the heading error the same way as position. Wrapped so a reference
+    // near +pi and a measurement near -pi are treated as close.
+    {
+        const double yaw_err = std::remainder(yaw_ref_ - current_yaw, 2.0 * M_PI);
+        yaw_ref_ = current_yaw + std::clamp(yaw_err, -ref_max_yaw_error_rad_, ref_max_yaw_error_rad_);
     }
 
     // KNOWN LIMITATION: the yaw reference sweeps across the horizon (wz * k * dt)
@@ -1100,7 +1148,11 @@ void QuadConvexMPCNode::update_mpc_state()
         X_ref.segment<13>(i * 13) = X_ref_single;
     }
 
-    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(latest_joy_msg()); // Get the reference trajectory from joystick input
+    // Built once per plan cycle and cached: update_plan() reuses it for the swing
+    // planner rather than calling reference_traj_from_joy() a second time, which
+    // advanced the latched reference twice per cycle. See X_ref_cycle_.
+    X_ref_cycle_ = reference_traj_from_joy(latest_joy_msg());
+    const Eigen::VectorXd& X_ref_joy = X_ref_cycle_;
     if (mpc_params->verbose_diagnostics) {
         RCLCPP_INFO(this->get_logger(), "Reference trajectory from joystick: [%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f]",
             X_ref_joy[0], X_ref_joy[1], X_ref_joy[2], X_ref_joy[3], X_ref_joy[4], X_ref_joy[5],
@@ -1225,7 +1277,12 @@ void QuadConvexMPCNode::update_plan()
             p_body_W + R_WB * (foot_positions_meas.col(leg_index) + com_offset_B);
     }
 
-    Eigen::VectorXd X_ref_joy = reference_traj_from_joy(latest_joy_msg()); // Get the reference trajectory from joystick input
+    // Same reference the MPC was given this cycle (built in update_mpc_state()).
+    if (X_ref_cycle_.size() == 0) return;
+    const Eigen::VectorXd& X_ref_joy = X_ref_cycle_;
+    // Foot placement reads the measured body state (Cheetah 3 eq. 33).
+    gait_planner->set_measured_body_state(
+        p_body_W, theta[2], Vector3d(p_dot[0], p_dot[1], p_dot[2]));
     const auto swing_plans = gait_planner->update_swing_leg_trajectories(X_ref_joy, *mpc_params, foot_positions_map);
 
     // Visualisation, from the plan that was just built so the picture and the
@@ -2033,6 +2090,17 @@ void QuadConvexMPCNode::publish_visualization(
     // Both foot sources, so their disagreement is visible rather than inferred.
     // FK is body axes about the CoM, so it needs the same conversion the planner
     // uses; sportmode already carries world-frame values despite its field name.
+    // Solved ground reaction forces (previous cycle's solve), for the bag.
+    {
+        const auto& grf_W = convex_mpc->get_last_grf_world();
+        msg.grf_world.resize(4);
+        for (int leg = 0; leg < 4; leg++)
+        {
+            msg.grf_world[leg].x = grf_W(0, leg);
+            msg.grf_world[leg].y = grf_W(1, leg);
+            msg.grf_world[leg].z = grf_W(2, leg);
+        }
+    }
     msg.feet_from_fk.resize(4);
     msg.feet_from_sportmode.resize(4);
     msg.stance.resize(4);
