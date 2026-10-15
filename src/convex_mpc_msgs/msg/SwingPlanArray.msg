@@ -24,3 +24,9 @@ geometry_msgs/Point[] feet_from_fk          # FL, FR, RL, RR
 
 # Which feet the gait schedule believes are in stance, same order.
 bool[] stance
+
+# MPC-solved ground reaction force per foot for the first horizon step, world
+# frame, N (FL, FR, RL, RR). From the PREVIOUS plan cycle's solve (<= one plan
+# period old), since this message is published before the solve. Lets a bag show
+# whether the MPC asked for horizontal force, not just vertical.
+geometry_msgs/Vector3[] grf_world
