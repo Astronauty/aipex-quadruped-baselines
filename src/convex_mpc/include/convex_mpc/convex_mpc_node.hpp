@@ -108,6 +108,13 @@ class QuadConvexMPCNode : public rclcpp::Node
         // latches the measured heading once the stick has been inside the deadband
         // for yaw_latch_hold_s_, and is always clamped to ref_max_yaw_error_rad_.
         double ref_max_pos_error_m_ = 0.1;
+        // Command shaping (see reference_traj_from_joy()): stick velocity commands
+        // are rate-limited to these accelerations before entering the reference.
+        double cmd_max_accel_mps2_ = 0.5;
+        double cmd_max_yaw_accel_radps2_ = 1.0;
+        double cmd_vx_body_shaped_ = 0.0;
+        double cmd_vy_body_shaped_ = 0.0;
+        double cmd_wz_shaped_ = 0.0;
         double ref_max_yaw_error_rad_ = 0.1;
         double yaw_stick_deadband_ = 0.05;   // fraction of full stick
         double yaw_latch_hold_s_ = 0.25;
@@ -281,6 +288,9 @@ class QuadConvexMPCNode : public rclcpp::Node
         // MPC's GRFs, isolating the swing controller from the GRF-to-torque mapping.
         // Only valid with a welded base -- see the parameter declaration.
         bool freeze_stance_legs_ = false;
+        // Swing references taken relative to the measured body x/y (height stays
+        // commanded) instead of the commanded body. See publish_cmd().
+        bool swing_ref_body_xy_measured_ = false;
         double stance_hold_Kp_ = 80.0;
         double stance_hold_Kd_ = 4.0;
         std::array<double, 12> stance_hold_q_{};  // Posture latched at gait start

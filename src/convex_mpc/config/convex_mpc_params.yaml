@@ -53,7 +53,19 @@
     # holding the body roughly 4 cm above the commanded height regardless of how
     # Q[5] was weighted. On hardware this should be the measured robot mass,
     # including any payload.
-    mass: 15.2064 # Mass in kg of quadruped
+    #
+    # Trimmed to 14.2 (2026-10-19), BELOW the true 15.2064. The MPC models the
+    # legs as massless, but stance torques -J^T f leave the real legs' own weight
+    # uncompensated, and that adds roughly +10 N of unplanned vertical support
+    # (J^-T g_leg summed over the stance feet). With the true mass the trot rode
+    # 0.29-0.32 m against 0.27; swing references are built about the COMMANDED
+    # body height, so every foot flew ~4 cm above its spline and landed late.
+    # At 14.2 the hands-off trot holds 0.276 m and full-speed (0.15 m/s) walking
+    # passed 4 of 5 headless runs, against 2 of 5 at 15.2064. Cost: a four-foot
+    # stand sits ~2.6 cm low (0.244 m), since the leak depends on how many feet
+    # are down. A stopgap -- leg gravity compensation or integral height action
+    # would fix it for every gait and pose.
+    mass: 14.2 # Mass in kg used by the MPC model (true sim mass 15.2064; see above)
     JOINT_TORQUE_PUBLISH_RATE_MS: 25 # Rate in ms to publish joint torques, reusing previous MPC solutions.
     MPC_STATE_UPDATE_RATE_MS: 25
     # Swing PD feedback + torque publish rate, decoupled from the MPC solve above.
@@ -96,8 +108,14 @@
     # ctrlrange (23.7 Nm abduction/thigh, 45.43 knee -- MuJoCo enforces these
     # itself, so raising our clamp would only hide the saturation, not deliver the
     # force). 0.8 s gives a 0.40 s stance, cutting that demand to ~39%.
-    gait_duration_s: 0.8 # Gait period. 0.4-0.5 s is typical for a trot, but see above:
-                         # at 0.5 s this robot cannot make the stance torque.
+    # Back to 0.5 s (2026-10-15). The 0.8 s slowdown above predates three fixes --
+    # duty 0.6, the IMU-site/base correction and the two-sided force bound -- and at
+    # 0.5 s none of them clips stance torque now (0 STANCECLAMP in every run). At
+    # 0.8 s a full-stick 0.15 m/s command grew a lateral sway at gait frequency
+    # (vy -0.12 -> +0.30 -> -0.53 m/s) and rolled over every time: each diagonal
+    # stood alone too long for a 0.25 s MPC horizon to catch. At 0.5 s the same
+    # command tracked 0.595 of 0.596 m with roll <= 0.022, forward and backward.
+    gait_duration_s: 0.5 # Gait period
     swing_height_m: 0.08 # Peak foot clearance above the lift-off/touchdown chord
     # Must reach at least one gait period ahead so swings are planned before
     # lift-off. This may exceed the MPC horizon (N_MPC * mpc_dt); the reference
@@ -156,6 +174,12 @@
     ref_max_yaw_error_rad: 0.1
     yaw_stick_deadband: 0.05
     yaw_latch_hold_s: 0.25
+
+    # Command shaping: stick commands are rate-limited to these accelerations
+    # before entering the reference. A full-stick step otherwise made the MPC slam
+    # ~125 N of horizontal force and roll the robot over.
+    cmd_max_accel_mps2: 0.5
+    cmd_max_yaw_accel_radps2: 1.0
 
     # Foot placement from the measured body state (Cheetah 3 eq. 33):
     #   hip at touchdown = measured pose + commanded velocity * time to touchdown

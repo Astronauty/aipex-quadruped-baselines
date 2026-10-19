@@ -265,7 +265,13 @@ Vector3d GaitPlanner::compute_desired_footstep_position_measured(const Vector3d 
     // at lower speeds).
     constexpr double kMaxFootholdOffsetM = 0.15;
     const double stance_duration_s = duty_factor_ * gait_duration_s_;
-    Vector3d offset_W = v_meas_W * stance_duration_s / 2.0
+    // Raibert term, scaled separately along and across the heading. Cheetah-Software's
+    // lateral term carries an extra dtMPC factor, so in practice it barely uses one;
+    // raibert_scale_ lets the two axes be tested apart.
+    const Vector3d v_meas_H = R_WB_yaw.transpose() * v_meas_W;
+    const Vector3d raibert_H(raibert_scale_.x() * v_meas_H.x(),
+                             raibert_scale_.y() * v_meas_H.y(), 0.0);
+    Vector3d offset_W = R_WB_yaw * raibert_H * stance_duration_s / 2.0
                       + k_v_footstep_ * (v_meas_W - v_cmd_xy_W);
     offset_W.x() = std::clamp(offset_W.x(), -kMaxFootholdOffsetM, kMaxFootholdOffsetM);
     offset_W.y() = std::clamp(offset_W.y(), -kMaxFootholdOffsetM, kMaxFootholdOffsetM);
@@ -406,6 +412,28 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
                         // Not yet lifted off: free to rebuild, no continuity
                         // constraint and no apex to preserve. The target therefore
                         // keeps tracking the latest command right up to lift-off.
+                        //
+                        // The lift-off point is refreshed too. It used to be copied
+                        // once, when the swing was first planned ~1 s ahead, from the
+                        // previous swing's touchdown target -- but that target kept
+                        // moving until ITS lift-off, and the copy did not. At steady
+                        // speed the two agree to 2-3 mm; after a 0.15 m/s command
+                        // the spline started 8-9 cm behind the planted foot, the
+                        // swing PD yanked the foot backwards at lift-off (tracking
+                        // error 22 -> 98 mm) and the following touchdowns missed
+                        // laterally until the robot rolled over.
+                        //
+                        // The next swing to fly lifts off from the measured foot,
+                        // which is planted (as Cheetah-Software's setInitialPosition).
+                        // Later swings chain off the current target of the one
+                        // before. Only x,y are re-anchored; the start height keeps
+                        // the touchdown height it was chained from.
+                        Vector3d p_start = existing->get_start_position();
+                        if (existing == leg_trajectories.begin())
+                            p_start.head<2>() = current_foot_positions.at(leg).head<2>();
+                        else
+                            p_start.head<2>() = std::prev(existing)->get_end_position().head<2>();
+                        existing->set_start_position(p_start);
                         existing->set_end_position(p_des_end);
                     }
                     // Once airborne the foothold is FROZEN: the trajectory it lifted

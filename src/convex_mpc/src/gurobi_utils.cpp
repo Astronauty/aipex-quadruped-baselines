@@ -8,7 +8,12 @@ using namespace Eigen;
 using namespace std;
 
 /**
- * @brief Create a quadratic objective function for gurobi of the form J = (x-x_ref)'P(x-x_ref).
+ * @brief Create the quadratic objective J = 1/2 x'Px for gurobi.
+ *
+ * The 1/2 matters: the MPC builds P = 2(B'QB + R) and q = 2B'Q(Ax0 - X_ref), the
+ * convention for min 1/2 x'Px + q'x. Without it the objective was x'Px + q'x, whose
+ * minimiser is exactly half the intended one -- every tracking correction and the
+ * gravity compensation were halved.
  * @param Q Quadratic cost matrix, expressed as a Eigen MatrixXd.
  * @param x Decision variable, expressed as a pointer to a GRBVar vector.
  */
@@ -41,13 +46,13 @@ GRBQuadExpr create_quad_obj(const GRBVar* x, const MatrixXd& P, int n) // Necess
     for (int i = 0; i < n; i++)
     {
         if (P(i, i) != 0.0) {
-            coeffs.push_back(P(i, i));
+            coeffs.push_back(0.5 * P(i, i));
             vars1.push_back(x[i]);
             vars2.push_back(x[i]);
         }
         for (int j = i + 1; j < n; j++)
         {
-            const double c = P(i, j) + P(j, i); // symmetric pair
+            const double c = 0.5 * (P(i, j) + P(j, i)); // symmetric pair, with the 1/2
             if (c != 0.0) {
                 coeffs.push_back(c);
                 vars1.push_back(x[i]);

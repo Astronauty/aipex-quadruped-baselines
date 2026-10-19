@@ -186,6 +186,9 @@ class GaitPlanner
         /// Gain k on the velocity-error term k * (v_meas - v_cmd) in foot placement.
         void set_footstep_velocity_gain(double k) { k_v_footstep_ = k; }
 
+        /// Scale on the Raibert v*T/2 term along (x) and across (y) the heading.
+        void set_raibert_scale(double sx, double sy) { raibert_scale_ = Eigen::Vector2d(sx, sy); }
+
 
 
     private:
@@ -198,6 +201,7 @@ class GaitPlanner
         double yaw_meas_ = 0.0;
         bool have_measured_state_ = false;
         double k_v_footstep_ = 0.03; // Cheetah-Software convexMPC uses 0.03
+        Eigen::Vector2d raibert_scale_ = Eigen::Vector2d(1.0, 1.0);
 
         double start_time_s_; // Start time of the gait planning in seconds
         double current_time_s_; // Current time in seconds

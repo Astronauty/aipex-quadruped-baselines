@@ -396,9 +396,20 @@ tuple<MatrixXd, MatrixXd> ConvexMPC::create_state_space_prediction_matrices(cons
         A_pow_B.push_back(A_pow[k] * quad_dss.B);
     }
 
+    // Row block i is x_{i+1} = A^{i+1} x0 + sum_{j=0..i} A^{i-j} B u_j.
+    //
+    // The j = i term (B u_i: each force's effect on the state at the end of its own
+    // interval) used to be missing -- the loop ran j < i. The first predicted state
+    // then ignored the applied force entirely, so u_0 had to cancel two steps of
+    // gravity on its own and the unconstrained plan at rest was ~2 mg. A missing
+    // 1/2 in the objective (create_quad_obj) halved every solution, so the two
+    // errors cancelled to ~mg at rest and hid each other, while every correction
+    // ran at half strength and the plan for steps >= 1 sat at mg/2. There are
+    // N_MPC-1 controls, so the last state's own-interval term has no control (j
+    // stops at N_MPC-2).
     for (int i = 0; i < mpc_params.N_MPC; i++)
     {
-        for (int j = 0; j < i; j++)
+        for (int j = 0; j <= i && j < mpc_params.N_MPC - 1; j++)
         {
             B_qp.block(i * N_STATES, j * N_CONTROLS, N_STATES, N_CONTROLS) = A_pow_B[i - j];
         }
@@ -520,8 +531,8 @@ MatrixXd ConvexMPC::compute_P(const MatrixXd& R_bar, const MatrixXd& Q_bar, cons
     MatrixXd BtQB = MatrixXd::Zero(B_qp.cols(), B_qp.cols());
     for (int k = 0; k < N_MPC; ++k)
     {
-        const int n_active = std::min<int>(B_qp.cols(), k * mpc_params.N_CONTROLS);
-        if (n_active == 0) continue; // Row block 0 of B_qp is all zeros
+        // Row block k depends on controls 0..k (see create_state_space_prediction_matrices).
+        const int n_active = std::min<int>(B_qp.cols(), (k + 1) * mpc_params.N_CONTROLS);
 
         const auto Bk = B_qp.block(k * NS, 0, NS, n_active);        // NS x n_active
         const auto wk = q_diag.segment(k * NS, NS);                 // Diagonal of Qk

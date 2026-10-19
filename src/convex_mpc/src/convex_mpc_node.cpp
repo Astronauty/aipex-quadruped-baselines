@@ -366,6 +366,8 @@ QuadConvexMPCNode::QuadConvexMPCNode()
 
     // Reference bounding and yaw latch. See ref_max_pos_error_m_ in the header.
     ref_max_pos_error_m_   = this->declare_parameter("ref_max_pos_error_m", ref_max_pos_error_m_);
+    cmd_max_accel_mps2_       = this->declare_parameter("cmd_max_accel_mps2", cmd_max_accel_mps2_);
+    cmd_max_yaw_accel_radps2_ = this->declare_parameter("cmd_max_yaw_accel_radps2", cmd_max_yaw_accel_radps2_);
     ref_max_yaw_error_rad_ = this->declare_parameter("ref_max_yaw_error_rad", ref_max_yaw_error_rad_);
     yaw_stick_deadband_    = this->declare_parameter("yaw_stick_deadband", yaw_stick_deadband_);
     yaw_latch_hold_s_      = this->declare_parameter("yaw_latch_hold_s", yaw_latch_hold_s_);
@@ -440,6 +442,11 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // Velocity-error gain in measured-state foot placement: k * (v_meas - v_cmd).
     gait_planner->set_footstep_velocity_gain(
         this->declare_parameter("footstep_velocity_gain", 0.03));
+    {
+        const auto rs = this->declare_parameter("footstep_raibert_scale", std::vector<double>{1.0, 1.0});
+        if (rs.size() != 2) throw std::invalid_argument("footstep_raibert_scale must have 2 elements");
+        gait_planner->set_raibert_scale(rs[0], rs[1]);
+    }
 
     if (step_in_place) {
         RCLCPP_WARN(this->get_logger(),
@@ -460,6 +467,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // stance path; if it is bad here too, it is in the swing path.
     this->declare_parameter("freeze_stance_legs", false);
     freeze_stance_legs_ = this->get_parameter("freeze_stance_legs").as_bool();
+    swing_ref_body_xy_measured_ = this->declare_parameter("swing_ref_body_xy_measured", false);
 
     // Diagnostic: hold stance feet with the swing legs' own Cartesian PD instead of
     // applying the MPC's GRFs, so all twelve joints run one control law and the GRF
@@ -917,9 +925,26 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
     // yaw = 90 deg pushing the stick forward drives the robot sideways, and at
     // 180 deg it drives backwards. Only the yaw term matters here: roll and pitch
     // are regulated to zero and a velocity command has no vertical component.
-    const double vx_body = max_translation_vel * axes_double[controller_axis_indices["x"]];
-    const double vy_body = max_translation_vel * axes_double[controller_axis_indices["y"]];
-    double wz = max_yaw_vel * axes_double[controller_axis_indices["yaw"]]; // Yaw rotation
+    // Command shaping: the stick is rate-limited before it reaches the reference.
+    // A full-stick step (0 -> 0.15 m/s in one plan cycle) made the MPC slam up to
+    // ~125 N of horizontal force, overshoot to 0.26-0.28 m/s and roll over, forward
+    // and backward alike. Limiting the commanded acceleration bounds the force the
+    // step can demand (0.5 m/s^2 on ~15 kg is ~7.5 N). Cheetah-Software smooths the
+    // same input with a first-order filter. Called once per plan cycle, so dt is
+    // the plan period.
+    const double vx_body_raw = max_translation_vel * axes_double[controller_axis_indices["x"]];
+    const double vy_body_raw = max_translation_vel * axes_double[controller_axis_indices["y"]];
+    const double wz_raw = max_yaw_vel * axes_double[controller_axis_indices["yaw"]];
+    {
+        const double dv = cmd_max_accel_mps2_ * mpc_params->dt;
+        const double dw = cmd_max_yaw_accel_radps2_ * mpc_params->dt;
+        cmd_vx_body_shaped_ += std::clamp(vx_body_raw - cmd_vx_body_shaped_, -dv, dv);
+        cmd_vy_body_shaped_ += std::clamp(vy_body_raw - cmd_vy_body_shaped_, -dv, dv);
+        cmd_wz_shaped_      += std::clamp(wz_raw - cmd_wz_shaped_, -dw, dw);
+    }
+    const double vx_body = cmd_vx_body_shaped_;
+    const double vy_body = cmd_vy_body_shaped_;
+    double wz = cmd_wz_shaped_; // Yaw rotation
 
     const double cy = std::cos(current_yaw);
     const double sy = std::sin(current_yaw);
@@ -1705,7 +1730,14 @@ void QuadConvexMPCNode::publish_cmd()
         //
         // Attitude still uses the measured R_WB: the legs do have to be aimed at
         // the real ground, and roll/pitch are regulated far better than height.
-        const Vector3d p_body_cmd_W(p_ref[0], p_ref[1], STANDING_HEIGHT_M);
+        // Option: horizontal body reference from the MEASURED body. At speed the
+        // body trails the commanded one by up to the reference clamp (4 cm), and
+        // referencing swing to the commanded body then steers every foot that far
+        // from its world target. Height stays commanded either way -- that is the
+        // part that broke the height feedback loop described above.
+        const Vector3d p_body_cmd_W = swing_ref_body_xy_measured_
+            ? Vector3d(p[0], p[1], STANDING_HEIGHT_M)
+            : Vector3d(p_ref[0], p_ref[1], STANDING_HEIGHT_M);
         const Vector3d p_ref_B =
             R_WB.transpose() * (target->second.p - p_body_cmd_W) - com_offset_B;
         const Vector3d p_ref = p_ref_B;
@@ -1717,7 +1749,9 @@ void QuadConvexMPCNode::publish_cmd()
         // with zero vertical component -- a standing or trotting-in-place body is
         // not meant to be moving vertically, and feeding the measured vz in is the
         // velocity-domain half of the same feedback loop.
-        const Vector3d v_body_cmd_W(cmd_vx_, cmd_vy_, 0.0);
+        const Vector3d v_body_cmd_W = swing_ref_body_xy_measured_
+            ? Vector3d(p_dot[0], p_dot[1], 0.0)
+            : Vector3d(cmd_vx_, cmd_vy_, 0.0);
         const Vector3d v_ref =
             R_WB.transpose() * (target->second.v - v_body_cmd_W);
 
