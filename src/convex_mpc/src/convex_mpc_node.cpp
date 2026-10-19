@@ -396,6 +396,10 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     // mechanism a high-level gait command should eventually drive.
     this->declare_parameter("wait_for_gait_trigger", false);
     wait_for_gait_trigger_ = this->get_parameter("wait_for_gait_trigger").as_bool();
+    joy_start_button_ = this->declare_parameter("joy_start_button", joy_start_button_);
+    joy_l2_axis_ = this->declare_parameter("joy_l2_axis", joy_l2_axis_);
+    joy_damping_button_ = this->declare_parameter("joy_damping_button", joy_damping_button_);
+    damping_kd_ = this->declare_parameter("damping_kd", damping_kd_);
 
     start_gait_sub_ = this->create_subscription<std_msgs::msg::Bool>(
         "start_gait", 1,
@@ -468,6 +472,8 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     this->declare_parameter("freeze_stance_legs", false);
     freeze_stance_legs_ = this->get_parameter("freeze_stance_legs").as_bool();
     swing_ref_body_xy_measured_ = this->declare_parameter("swing_ref_body_xy_measured", false);
+    swing_ref_body_measured_ = this->declare_parameter("swing_ref_body_measured", false);
+    swing_ref_meas_max_dev_m_ = this->declare_parameter("swing_ref_meas_max_dev_m", 0.06);
 
     // Diagnostic: hold stance feet with the swing legs' own Cartesian PD instead of
     // applying the MPC's GRFs, so all twelve joints run one control law and the GRF
@@ -843,8 +849,46 @@ void QuadConvexMPCNode::log_sport_mode_state(const unitree_go::msg::SportModeSta
 
 void QuadConvexMPCNode::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
-    std::lock_guard<std::mutex> jlock(joy_mutex_);
-    this->joy_msg = msg; // Store the joystick message
+    {
+        std::lock_guard<std::mutex> jlock(joy_mutex_);
+        this->joy_msg = msg; // Store the joystick message
+    }
+
+    // START releases the stance hold, the same as /start_gait. This follows the
+    // Unitree remote, where START is "unlock / default gait". Rising edge only, so
+    // holding the button does nothing more. joy_start_button is 7 for an
+    // XInput pad such as the F710 in X mode; -1 disables it.
+    const int b = joy_start_button_;
+    const bool pressed = b >= 0 && b < static_cast<int>(msg->buttons.size()) && msg->buttons[b];
+    if (pressed && !joy_start_prev_)
+    {
+        if (gait_started_)
+            RCLCPP_INFO(this->get_logger(), "START ignored: gait already running.");
+        else
+        {
+            gait_trigger_received_ = true;
+            RCLCPP_INFO(this->get_logger(), "START pressed - releasing stance hold.");
+        }
+    }
+    joy_start_prev_ = pressed;
+
+    // L2 held + B pressed: damping, the Unitree remote's emergency stop. Every
+    // joint goes to zero torque with only joint damping, so the robot sinks to the
+    // ground instead of being driven. Latched until the controller restarts. On the
+    // F710 (X mode) L2 is an analog axis that rests at +1 and reads -1 when fully
+    // pressed; "held" is anything below 0.
+    const int l2 = joy_l2_axis_;
+    const int bb = joy_damping_button_;
+    const bool l2_held = l2 >= 0 && l2 < static_cast<int>(msg->axes.size()) && msg->axes[l2] < 0.0f;
+    const bool b_pressed = bb >= 0 && bb < static_cast<int>(msg->buttons.size()) && msg->buttons[bb];
+    if (l2_held && b_pressed && !joy_damping_prev_ && !damping_active_)
+    {
+        damping_active_ = true;
+        RCLCPP_WARN(this->get_logger(),
+            "L2+B - DAMPING: zero torque, joint kd %.2f on all joints. Restart the controller to recover.",
+            damping_kd_);
+    }
+    joy_damping_prev_ = b_pressed;
 }
 
 // Hand back a stable reference to the latest joystick message. Copying the
@@ -1244,7 +1288,7 @@ void QuadConvexMPCNode::update_plan()
     // The pose at handover is logged so a failed gait can be read against the
     // stance it started from.
     const bool stance_time_elapsed = (now_s - start_time_s) >= startup_stance_s_;
-    const bool release_gait = wait_for_gait_trigger_ ? gait_trigger_received_
+    const bool release_gait = wait_for_gait_trigger_ ? gait_trigger_received_.load()
                                                      : stance_time_elapsed;
     if (!gait_started_ && release_gait)
     {
@@ -1738,8 +1782,25 @@ void QuadConvexMPCNode::publish_cmd()
         const Vector3d p_body_cmd_W = swing_ref_body_xy_measured_
             ? Vector3d(p[0], p[1], STANDING_HEIGHT_M)
             : Vector3d(p_ref[0], p_ref[1], STANDING_HEIGHT_M);
-        const Vector3d p_ref_B =
+        Vector3d p_ref_B =
             R_WB.transpose() * (target->second.p - p_body_cmd_W) - com_offset_B;
+
+        // Option: the MEASURED body in all three axes, as Cheetah-Software does
+        // (pDesLeg = rBody * (pDesFootWorld - seResult.position)). The foot then
+        // tracks the world spline itself instead of the spline shifted by the
+        // body's error: with the commanded body, a body riding 4 cm high flew every
+        // foot ~4 cm above its spline (correlation 0.7-0.85) and landed it late.
+        // The 10-09 loop above came from a body at 0.406 m, before the IMU-site,
+        // mass and QP fixes. As a guard against it, the reference may differ from
+        // the commanded-body one by at most swing_ref_meas_max_dev_m per axis.
+        if (swing_ref_body_measured_)
+        {
+            const Vector3d p_ref_meas_B =
+                R_WB.transpose() * (target->second.p - Vector3d(p[0], p[1], p[2])) - com_offset_B;
+            const Vector3d dev = (p_ref_meas_B - p_ref_B)
+                .cwiseMax(-swing_ref_meas_max_dev_m_).cwiseMin(swing_ref_meas_max_dev_m_);
+            p_ref_B += dev;
+        }
         const Vector3d p_ref = p_ref_B;
 
         // Likewise for velocity, against the COMMANDED body velocity. v_meas is
@@ -1749,7 +1810,11 @@ void QuadConvexMPCNode::publish_cmd()
         // with zero vertical component -- a standing or trotting-in-place body is
         // not meant to be moving vertically, and feeding the measured vz in is the
         // velocity-domain half of the same feedback loop.
-        const Vector3d v_body_cmd_W = swing_ref_body_xy_measured_
+        // With swing_ref_body_measured, the full measured body velocity, as
+        // Cheetah-Software's vDesLeg = rBody * (vDesFootWorld - seResult.vWorld).
+        const Vector3d v_body_cmd_W = swing_ref_body_measured_
+            ? Vector3d(p_dot[0], p_dot[1], p_dot[2])
+            : swing_ref_body_xy_measured_
             ? Vector3d(p_dot[0], p_dot[1], 0.0)
             : Vector3d(cmd_vx_, cmd_vy_, 0.0);
         const Vector3d v_ref =
@@ -1962,6 +2027,19 @@ void QuadConvexMPCNode::publish_cmd()
         low_cmd.motor_cmd[3 + i].tau = joint_torques[0 + i];
         low_cmd.motor_cmd[6 + i].tau = joint_torques[9 + i];
         low_cmd.motor_cmd[9 + i].tau = joint_torques[6 + i];
+    }
+
+    // Damping (L2+B, see joy_callback) overrides every joint command.
+    if (damping_active_)
+    {
+        for (int i = 0; i < 12; i++)
+        {
+            low_cmd.motor_cmd[i].q = 0;
+            low_cmd.motor_cmd[i].kp = 0;
+            low_cmd.motor_cmd[i].dq = 0;
+            low_cmd.motor_cmd[i].kd = damping_kd_;
+            low_cmd.motor_cmd[i].tau = 0;
+        }
     }
 
     joint_torque_pub_->publish(low_cmd);

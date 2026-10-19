@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <mutex>
 #include "convex_mpc_msgs/msg/swing_plan_array.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -281,7 +282,16 @@ class QuadConvexMPCNode : public rclcpp::Node
         // (a restart drops /lowcmd, the robot falls, and the gait then begins from
         // a fallen pose).
         bool wait_for_gait_trigger_ = false;
-        bool gait_trigger_received_ = false;
+        // Set from the /start_gait and /joy callbacks, read by the plan loop.
+        std::atomic<bool> gait_trigger_received_{false};
+        int joy_start_button_ = 7; // see joy_callback()
+        bool joy_start_prev_ = false;
+        // Damping (L2+B): see joy_callback(). F710 in X mode: L2 = axis 2, B = button 1.
+        int joy_l2_axis_ = 2;
+        int joy_damping_button_ = 1;
+        bool joy_damping_prev_ = false;
+        double damping_kd_ = 2.0; // joint damping, Nm s/rad
+        std::atomic<bool> damping_active_{false};
         rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr start_gait_sub_;
 
         // Diagnostic: hold stance legs with a joint-space PD instead of applying the
@@ -291,6 +301,12 @@ class QuadConvexMPCNode : public rclcpp::Node
         // Swing references taken relative to the measured body x/y (height stays
         // commanded) instead of the commanded body. See publish_cmd().
         bool swing_ref_body_xy_measured_ = false;
+        // Swing references relative to the measured body in x, y, z and velocity,
+        // as Cheetah-Software does. Overrides the xy option above. The result may
+        // differ from the commanded-body reference by at most
+        // swing_ref_meas_max_dev_m_ per axis (guard against the 10-09 bounce loop).
+        bool swing_ref_body_measured_ = false;
+        double swing_ref_meas_max_dev_m_ = 0.06;
         double stance_hold_Kp_ = 80.0;
         double stance_hold_Kd_ = 4.0;
         std::array<double, 12> stance_hold_q_{};  // Posture latched at gait start
