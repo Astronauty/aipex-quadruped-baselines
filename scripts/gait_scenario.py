@@ -14,6 +14,9 @@ takes to click Run. Default timeline:
   physics + start_delay           -> release the trot
   release + cmd_delay             -> forward command for cmd_duration
   then                            -> stick centred
+With --cycles N the command instead alternates forward and backward N times:
++vx for cmd_duration, centred for --pause, -vx for cmd_duration, centred for
+--pause, and so on, then the tail.
 
 Do not run alongside joy_node: its idle stream would overwrite these commands.
 
@@ -57,6 +60,23 @@ class GaitScenario(Node):
                  f'vx {args.vx:+.3f} m/s (stick {stick:+.2f}) {args.cmd_delay:.1f} s later '
                  f'for {args.cmd_duration:.1f} s')
 
+    def command_span(self):
+        if self.args.cycles <= 0:
+            return self.args.cmd_duration
+        return 2 * self.args.cycles * (self.args.cmd_duration + self.args.pause)
+
+    def stick_at(self, t):
+        """Stick x at t seconds after the command starts."""
+        if t < 0 or t >= self.command_span():
+            return 0.0
+        if self.args.cycles <= 0:
+            return self.stick_cmd
+        leg = self.args.cmd_duration + self.args.pause  # one move plus its pause
+        k, within = divmod(t, leg)
+        if within >= self.args.cmd_duration:
+            return 0.0
+        return self.stick_cmd if int(k) % 2 == 0 else -self.stick_cmd
+
     def log(self, text):
         self.get_logger().info(text)
 
@@ -77,12 +97,11 @@ class GaitScenario(Node):
                 self.log('released trot (/start_gait)')
             if self.t_release is not None:
                 t = now - self.t_release
-                active = self.args.cmd_delay <= t < self.args.cmd_delay + self.args.cmd_duration
-                stick = self.stick_cmd if active else 0.0
+                stick = self.stick_at(t - self.args.cmd_delay)
                 if stick != self.stick_x:
                     self.log(f'stick x {stick:+.2f} (vx {stick * MAX_TRANSLATION_VEL:+.3f} m/s)')
                     self.stick_x = stick
-                if t >= self.args.cmd_delay + self.args.cmd_duration + self.args.tail:
+                if t >= self.args.cmd_delay + self.command_span() + self.args.tail:
                     self.done = True
 
         # Publish continuously, as joy_node does, so the controller always has a
@@ -102,6 +121,8 @@ def main():
     p.add_argument('--vx', type=float, default=0.05, help='forward command, m/s (cap 0.15)')
     p.add_argument('--cmd-duration', type=float, default=3.0, help='s the command is held')
     p.add_argument('--tail', type=float, default=10.0, help='s of centred stick before exiting')
+    p.add_argument('--cycles', type=int, default=0, help='forward/backward cycles (0: one forward command)')
+    p.add_argument('--pause', type=float, default=2.0, help='s of centred stick between moves with --cycles')
     p.add_argument('--rate', type=float, default=20.0, help='/joy publish rate, Hz')
     args = p.parse_args()
 

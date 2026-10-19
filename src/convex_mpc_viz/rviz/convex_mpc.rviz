@@ -5,9 +5,13 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /RobotModel1
+        - /TF1/Frames1
         - /SwingPlanMarkers1
+        - /SwingPlanMarkers1/Topic1
+        - /SwingPlanMarkers1/Namespaces1
       Splitter Ratio: 0.5
-    Tree Height: 700
+    Tree Height: 497
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
@@ -22,7 +26,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.03
+        Line Width: 0.029999999329447746
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -34,7 +38,7 @@ Visualization Manager:
       Plane Cell Count: 20
       Reference Frame: world
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
       Description File: ""
@@ -46,31 +50,420 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /robot_description
       Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        FL_calf:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FL_calf_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        FL_calflower:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FL_calflower1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FL_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FL_hip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FL_hip_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        FL_thigh:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FL_thigh_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        FR_calf:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FR_calf_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        FR_calflower:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FR_calflower1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FR_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FR_hip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FR_hip_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        FR_thigh:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        FR_thigh_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        Head_lower:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        Head_upper:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        Link Tree Style: Links in Alphabetic Order
+        RL_calf:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RL_calf_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        RL_calflower:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RL_calflower1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RL_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RL_hip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RL_hip_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        RL_thigh:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RL_thigh_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        RR_calf:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RR_calf_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        RR_calflower:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RR_calflower1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RR_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RR_hip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RR_hip_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        RR_thigh:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RR_thigh_rotor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        radar:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
       Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
       Visual Enabled: true
     - Class: rviz_default_plugins/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        world:
-          Value: true
+        FL_calf:
+          Value: false
+        FL_calf_rotor:
+          Value: false
+        FL_calflower:
+          Value: false
+        FL_calflower1:
+          Value: false
+        FL_foot:
+          Value: false
+        FL_hip:
+          Value: false
+        FL_hip_rotor:
+          Value: false
+        FL_thigh:
+          Value: false
+        FL_thigh_rotor:
+          Value: false
+        FR_calf:
+          Value: false
+        FR_calf_rotor:
+          Value: false
+        FR_calflower:
+          Value: false
+        FR_calflower1:
+          Value: false
+        FR_foot:
+          Value: false
+        FR_hip:
+          Value: false
+        FR_hip_rotor:
+          Value: false
+        FR_thigh:
+          Value: false
+        FR_thigh_rotor:
+          Value: false
+        Head_lower:
+          Value: false
+        Head_upper:
+          Value: false
+        RL_calf:
+          Value: false
+        RL_calf_rotor:
+          Value: false
+        RL_calflower:
+          Value: false
+        RL_calflower1:
+          Value: false
+        RL_foot:
+          Value: false
+        RL_hip:
+          Value: false
+        RL_hip_rotor:
+          Value: false
+        RL_thigh:
+          Value: false
+        RL_thigh_rotor:
+          Value: false
+        RR_calf:
+          Value: false
+        RR_calf_rotor:
+          Value: false
+        RR_calflower:
+          Value: false
+        RR_calflower1:
+          Value: false
+        RR_foot:
+          Value: false
+        RR_hip:
+          Value: false
+        RR_hip_rotor:
+          Value: false
+        RR_thigh:
+          Value: false
+        RR_thigh_rotor:
+          Value: false
         base:
           Value: true
-      Marker Scale: 0.3
+        front_camera:
+          Value: false
+        imu:
+          Value: true
+        radar:
+          Value: false
+        world:
+          Value: true
+      Marker Scale: 0.30000001192092896
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: true
+      Tree:
+        world:
+          base:
+            FL_hip:
+              FL_thigh:
+                FL_calf:
+                  FL_calflower:
+                    FL_calflower1:
+                      {}
+                  FL_foot:
+                    {}
+                FL_calf_rotor:
+                  {}
+              FL_thigh_rotor:
+                {}
+            FL_hip_rotor:
+              {}
+            FR_hip:
+              FR_thigh:
+                FR_calf:
+                  FR_calflower:
+                    FR_calflower1:
+                      {}
+                  FR_foot:
+                    {}
+                FR_calf_rotor:
+                  {}
+              FR_thigh_rotor:
+                {}
+            FR_hip_rotor:
+              {}
+            Head_upper:
+              Head_lower:
+                {}
+            RL_hip:
+              RL_thigh:
+                RL_calf:
+                  RL_calflower:
+                    RL_calflower1:
+                      {}
+                  RL_foot:
+                    {}
+                RL_calf_rotor:
+                  {}
+              RL_thigh_rotor:
+                {}
+            RL_hip_rotor:
+              {}
+            RR_hip:
+              RR_thigh:
+                RR_calf:
+                  RR_calflower:
+                    RR_calflower1:
+                      {}
+                  RR_foot:
+                    {}
+                RR_calf_rotor:
+                  {}
+              RR_thigh_rotor:
+                {}
+            RR_hip_rotor:
+              {}
+            front_camera:
+              {}
+            imu:
+              {}
+            radar:
+              {}
+      Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: SwingPlanMarkers
       Namespaces:
-        {}
+        body_error: false
+        body_measured: false
+        body_reference: false
+        cmd_velocity: false
+        foot_fk_FL: false
+        foot_fk_FR: true
+        foot_fk_RL: false
+        foot_fk_RR: false
+        foot_sportmode_FL: false
+        foot_sportmode_FR: true
+        foot_sportmode_RL: false
+        foot_sportmode_RR: false
+        liftoff_FL: false
+        liftoff_FR: true
+        liftoff_RL: false
+        liftoff_RR: false
+        swing_error_FL: false
+        swing_error_FR: false
+        swing_error_RL: false
+        swing_error_RR: false
+        swing_ref_FL: false
+        swing_ref_FR: true
+        swing_ref_RL: false
+        swing_ref_RR: false
+        swing_spline_FL: false
+        swing_spline_FR: true
+        swing_spline_RL: false
+        swing_spline_RR: false
+        touchdown_FL: false
+        touchdown_FR: true
+        touchdown_RL: false
+        touchdown_RR: false
       Topic:
         Depth: 1
-        Durability Policy: Volatile
+        Durability Policy: System Default
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /swing_plan_markers
@@ -91,26 +484,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.2
+      Distance: 1.0047383308410645
       Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0.2
+        X: 0.1946679651737213
+        Y: 0.08678865432739258
+        Z: -0.26303377747535706
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.01
-      Pitch: 0.33
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.2897963523864746
       Target Frame: base
       Value: Orbit (rviz)
-      Yaw: 2.4
+      Yaw: 0.9731650352478027
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1000
+  Height: 1016
   Hide Left Dock: false
   Hide Right Dock: false
-  Width: 1600
-  X: 60
-  Y: 60
+  QMainWindow State: 000000ff00000000fd0000000100000000000001cb0000039efc0200000002fb000000100044006900730070006c006100790073010000003d0000022e000000c900fffffffb0000000a0056006900650077007301000002710000016a000000a400ffffff000005690000039e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 1850
+  X: 70
+  Y: 27
