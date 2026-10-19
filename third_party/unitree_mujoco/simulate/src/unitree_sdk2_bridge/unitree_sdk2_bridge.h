@@ -1,4 +1,5 @@
 #include <mutex>
+#include <atomic>
 #ifndef UNITREE_SDK2_BRIDGE_H
 #define UNITREE_SDK2_BRIDGE_H
 
@@ -135,7 +136,15 @@ public:
     xRockerBtnDataStruct wireless_remote_ = {};
 
     JoystickId js_id_;
-    Joystick *js_;
+    // Published by SetupJoystick() only after the device is open and js_id_ and
+    // max_value_ are filled in. The 500 Hz publisher threads start in the
+    // constructor, before SetupJoystick() runs, and test this pointer -- it used
+    // to be uninitialised, so they could dereference garbage.
+    std::atomic<Joystick *> js_{nullptr};
+    // getState() reads the device into the shared Joystick::event_ and writes
+    // button_/axis_. Two threads call it (lowstate -> GetWirelessRemote, and
+    // wirelesscontroller), so every joystick read holds this.
+    std::mutex js_mtx_;
     int max_value_ = (1 << 15); // 16 bits joystick
 
     mjData *mj_data_;

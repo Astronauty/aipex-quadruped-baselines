@@ -63,11 +63,15 @@ void Joystick::getState()
 {
   if (sample(&event_))
   {
-    if (event_.isButton())
+    // Bounds-checked: axis_ is the last member of a heap object, so an
+    // out-of-range number wrote straight into the next heap chunk.
+    constexpr unsigned kButtons = sizeof(button_) / sizeof(button_[0]);
+    constexpr unsigned kAxes = sizeof(axis_) / sizeof(axis_[0]);
+    if (event_.isButton() && event_.number < kButtons)
     {
       button_[event_.number] = event_.value;
     }
-    else if (event_.isAxis())
+    else if (event_.isAxis() && event_.number < kAxes)
     {
       axis_[event_.number] = event_.value;
     }
