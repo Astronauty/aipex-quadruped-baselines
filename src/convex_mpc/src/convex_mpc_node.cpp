@@ -473,6 +473,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     freeze_stance_legs_ = this->get_parameter("freeze_stance_legs").as_bool();
     swing_ref_body_xy_measured_ = this->declare_parameter("swing_ref_body_xy_measured", false);
     swing_ref_body_measured_ = this->declare_parameter("swing_ref_body_measured", false);
+    mpc_omega_world_frame_ = this->declare_parameter("mpc_omega_world_frame", true);
     swing_ref_meas_max_dev_m_ = this->declare_parameter("swing_ref_meas_max_dev_m", 0.06);
 
     // Diagnostic: hold stance feet with the swing legs' own Cartesian PD instead of
@@ -1138,9 +1139,22 @@ void QuadConvexMPCNode::update_mpc_state()
 
     Eigen::Vector<double, 13> x0;
 
+    // The gyro measures w_WB in body axes (MuJoCo's gyro sensor is in the imu
+    // site frame, which is unrotated from B; the Go2's IMU likewise). The MPC
+    // model integrates omega as a WORLD-frame vector: theta_dot = R_z^T w_W and
+    // w_W_dot = I_W^-1 (r x f). Fed the body-frame rate, the MPC saw roll and pitch
+    // rates rotated by the heading psi -- negligible at psi ~ 0, which is where
+    // stance and the heading-latched trot spend their time, but a 10-20% roll/pitch
+    // cross-coupling at the 0.1-0.2 rad a turn reaches.
+    const Eigen::Vector3d w_WB_B(omega[0], omega[1], omega[2]);
+    const Eigen::Matrix3d R_WB = (Eigen::AngleAxisd(theta[2], Eigen::Vector3d::UnitZ()) *
+                                  Eigen::AngleAxisd(theta[1], Eigen::Vector3d::UnitY()) *
+                                  Eigen::AngleAxisd(theta[0], Eigen::Vector3d::UnitX())).toRotationMatrix();
+    const Eigen::Vector3d w_WB_mpc = mpc_omega_world_frame_ ? Eigen::Vector3d(R_WB * w_WB_B) : w_WB_B;
+
     x0 <<   theta[0], theta[1], theta[2], // Orientation in roll, pitch, yaw
             p[0], p[1], p[2], // Position in x, y, z
-            omega[0], omega[1], omega[2], // Angular velocity in roll, pitch, yaw
+            w_WB_mpc(0), w_WB_mpc(1), w_WB_mpc(2), // Angular velocity w_WB, world axes (see above)
             p_dot[0], p_dot[1], p_dot[2], // Velocity in x, y, z
             g; // Gravity state
 

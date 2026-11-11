@@ -306,6 +306,10 @@ class QuadConvexMPCNode : public rclcpp::Node
         // differ from the commanded-body reference by at most
         // swing_ref_meas_max_dev_m_ per axis (guard against the 10-09 bounce loop).
         bool swing_ref_body_measured_ = false;
+        // Rotate the gyro's body-frame rate into world axes before it enters the
+        // MPC state. The model (simplified_quad_dynamics.cpp) integrates omega as a
+        // world-frame vector, as in Cheetah 3 / MIT (seResult.omegaWorld).
+        bool mpc_omega_world_frame_ = true;
         double swing_ref_meas_max_dev_m_ = 0.06;
         double stance_hold_Kp_ = 80.0;
         double stance_hold_Kd_ = 4.0;
