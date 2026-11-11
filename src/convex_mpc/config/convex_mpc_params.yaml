@@ -75,7 +75,13 @@
     # peak torque from 61 Nm to 9 Nm and removed all saturation (the instability
     # sets in around Kd*dt ~ 1, i.e. Kd=40 at 25ms). 5ms = 200Hz.
     SWING_CONTROL_RATE_MS: 5
-    mu_static_friction: 0.6
+    # Coulomb friction coefficient of the foot-ground contact (the cone, not the
+    # pyramid -- the QP inscribes its pyramid inside this, see set_contact_constraints).
+    # 0.4 is the sim's: go2.xml foot geoms have priority="1" friction="0.4 0.02 0.01"
+    # with cone="elliptic", so the floor's own friction never applies. Was 0.6, which
+    # with the old per-axis bound allowed |f_xy|/f_z up to 0.849. On hardware, use a
+    # measured value for the actual floor.
+    mu_static_friction: 0.4
     # Per-joint torque limits [hip, thigh, calf], from the MuJoCo actuator
     # ctrlranges in go2.xml: abduction and thigh motors are +/-23.7 Nm, only the
     # knee reaches +/-45.43. The previous single torque_limit of 45.0 applied the

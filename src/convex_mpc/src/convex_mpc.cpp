@@ -2,6 +2,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include <chrono>
 #include <algorithm>
+#include <cmath>
 
 #include "convex_mpc/convex_mpc.hpp"
 
@@ -1480,19 +1481,26 @@ void ConvexMPC::set_contact_constraints(const std::vector<std::array<bool, 4>>& 
 
             if (in_stance) // If the leg is in stance, add friction cone constraints
             {
-                // Friction cone constraints
+                // Friction pyramid INSCRIBED in the circular cone |f_xy| <= mu f_z:
+                // each axis is bounded by mu/sqrt(2), so even the pyramid's corner
+                // (|fx| = |fy| = bound) stays inside the cone. Bounding each axis by
+                // mu itself, as before, let the corner reach sqrt(2)*mu -- with the
+                // old mu 0.6 the QP planned |f_xy|/f_z = 0.849 in every failed run,
+                // over twice what the sim's feet (elliptic cone, mu 0.4) can hold.
+                // Conservative along a pure axis (0.71 mu), never infeasible.
+                const double mu_axis = quad_params.mu / std::sqrt(2.0);
                 contact_constraints_.push_back(
-                    model->addConstr(U[k*12 +3*i] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                    model->addConstr(U[k*12 +3*i] <= mu_axis * U[k*12 +3*i + 2])
                 );
                 contact_constraints_.push_back(
-                    model->addConstr(U[k*12 +3*i] >= -quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                    model->addConstr(U[k*12 +3*i] >= -mu_axis * U[k*12 +3*i + 2])
                 );
 
                 contact_constraints_.push_back(
-                    model->addConstr(U[k*12 +3*i + 1] <= quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                    model->addConstr(U[k*12 +3*i + 1] <= mu_axis * U[k*12 +3*i + 2])
                 );
                 contact_constraints_.push_back(
-                    model->addConstr(U[k*12 +3*i + 1] >= -quad_params.mu * U[k*12 +3*i + 2]) // Ensure the horizontal force is within the friction cone
+                    model->addConstr(U[k*12 +3*i + 1] >= -mu_axis * U[k*12 +3*i + 2])
                 );
 
                 // Minimum vertical GRF constraint - critical for standing
