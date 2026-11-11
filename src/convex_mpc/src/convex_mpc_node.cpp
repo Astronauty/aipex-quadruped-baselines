@@ -452,6 +452,8 @@ QuadConvexMPCNode::QuadConvexMPCNode()
         if (rs.size() != 2) throw std::invalid_argument("footstep_raibert_scale must have 2 elements");
         gait_planner->set_raibert_scale(rs[0], rs[1]);
     }
+    gait_planner->set_yaw_rate_correction(
+        this->declare_parameter("footstep_yaw_rate_correction", false));
 
     if (step_in_place) {
         RCLCPP_WARN(this->get_logger(),

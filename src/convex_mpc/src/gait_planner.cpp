@@ -241,6 +241,7 @@ Vector3d GaitPlanner::compute_desired_footstep_position(const Eigen::VectorXd &x
 }
 
 Vector3d GaitPlanner::compute_desired_footstep_position_measured(const Vector3d &v_cmd_W,
+                                                                double wz_cmd,
                                                                 double t_to_touchdown_s,
                                                                 const string &foot_index)
 {
@@ -256,15 +257,31 @@ Vector3d GaitPlanner::compute_desired_footstep_position_measured(const Vector3d 
 
     // Where the hip will be at touchdown: measured now, carried forward at the
     // commanded velocity for the time remaining.
-    const Vector3d p_WH_W = p_WBo_W_meas_ + R_WB_yaw * p_BoH_B
-                          + v_cmd_xy_W * std::max(t_to_touchdown_s, 0.0);
+    //
+    // With yaw_rate_correction_, the hip offset is also rotated by the heading the
+    // body will have reached by MID-STANCE at the commanded yaw rate:
+    // wz_cmd * (t_to_touchdown + T_stance / 2). This is the rotational counterpart
+    // of the two linear terms (v_cmd * t_to_touchdown here, v * T_stance / 2
+    // below). Without it every hip is placed at the CURRENT heading, so a turning
+    // body lands each foot ~0.1 rad behind the turn (0.3 rad/s).
+    // Cheetah-Software applies only the T_stance / 2 part (pYawCorrected).
+    // Off by default (footstep_yaw_rate_correction): it made no measurable
+    // difference to the turn rate. The slow turn it was aimed at (0.12 of 0.3
+    // rad/s) turned out to be the re-anchored yaw reference; see
+    // yaw_ref_integrate in convex_mpc_params.yaml.
+    const double stance_duration_s = duty_factor_ * gait_duration_s_;
+    const double t_td = std::max(t_to_touchdown_s, 0.0);
+    const Matrix3d R_WH_yaw = yaw_rate_correction_
+        ? Matrix3d(AngleAxisd(yaw_meas_ + wz_cmd * (t_td + stance_duration_s / 2.0),
+                              Vector3d::UnitZ()))
+        : R_WB_yaw;
+    const Vector3d p_WH_W = p_WBo_W_meas_ + R_WH_yaw * p_BoH_B + v_cmd_xy_W * t_td;
 
     // Raibert term on the measured velocity, plus velocity-error feedback. The
     // offset is bounded so a velocity spike cannot throw a foot across the body
     // (Cheetah-Software clamps the same terms at 0.3 m; ours is a smaller robot
     // at lower speeds).
     constexpr double kMaxFootholdOffsetM = 0.15;
-    const double stance_duration_s = duty_factor_ * gait_duration_s_;
     // Raibert term, scaled separately along and across the heading. Cheetah-Software's
     // lateral term carries an extra dtMPC factor, so in practice it barely uses one;
     // raibert_scale_ lets the two axes be tested apart.
@@ -334,8 +351,9 @@ std::unordered_map<std::string, std::deque<SwingLegTrajectory>> GaitPlanner::upd
             if (have_measured_state_)
             {
                 const Vector3d v_cmd_W = X_ref.segment<3>(IDX_Xd);
+                const double wz_cmd = X_ref(IDX_Yd);
                 p_des_end = compute_desired_footstep_position_measured(
-                    v_cmd_W, end_time - current_time_s_, leg);
+                    v_cmd_W, wz_cmd, end_time - current_time_s_, leg);
             }
             else
             {

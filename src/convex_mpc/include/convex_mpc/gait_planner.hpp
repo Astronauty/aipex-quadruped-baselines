@@ -189,6 +189,9 @@ class GaitPlanner
         /// Scale on the Raibert v*T/2 term along (x) and across (y) the heading.
         void set_raibert_scale(double sx, double sy) { raibert_scale_ = Eigen::Vector2d(sx, sy); }
 
+        /// Rotate the hip offset by the commanded yaw rate up to mid-stance when placing feet.
+        void set_yaw_rate_correction(bool on) { yaw_rate_correction_ = on; }
+
 
 
     private:
@@ -202,6 +205,7 @@ class GaitPlanner
         bool have_measured_state_ = false;
         double k_v_footstep_ = 0.03; // Cheetah-Software convexMPC uses 0.03
         Eigen::Vector2d raibert_scale_ = Eigen::Vector2d(1.0, 1.0);
+        bool yaw_rate_correction_ = false;
 
         double start_time_s_; // Start time of the gait planning in seconds
         double current_time_s_; // Current time in seconds
@@ -290,7 +294,8 @@ class GaitPlanner
          * @brief Footstep target from the MEASURED body state (Cheetah 3 eq. 33, in the
          *        form Cheetah-Software's convexMPC implements):
          *
-         *   p_WH_W = p_WBo_W_meas + R_z(yaw_meas) p_BoH_B + v_cmd * t_to_touchdown
+         *   p_WH_W = p_WBo_W_meas + R_z(yaw_meas [+ wz_cmd (t_td + T_stance/2)]) p_BoH_B
+         *            + v_cmd * t_to_touchdown   (bracket: set_yaw_rate_correction)
          *   p_WF_W = p_WH_W + v_meas * T_stance / 2 + k * (v_meas - v_cmd)
          *
          * The first line predicts where the hip will be at touchdown; the second is
@@ -298,6 +303,7 @@ class GaitPlanner
          * commanded steps further ahead and brakes.
          */
         Eigen::Vector3d compute_desired_footstep_position_measured(const Eigen::Vector3d& v_cmd_W,
+                                                                   double wz_cmd,
                                                                    double t_to_touchdown_s,
                                                                    const string& foot_index);
 
