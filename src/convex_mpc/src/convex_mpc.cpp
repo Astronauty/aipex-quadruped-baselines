@@ -39,6 +39,14 @@ ConvexMPC::ConvexMPC(MPCParams mpc_params, QuadrupedParams quad_params, const rc
 
         model->set(GRB_DoubleParam_FeasibilityTol, 1E-8);
         model->set(GRB_DoubleParam_OptimalityTol, 1E-8);
+        // Single-threaded dual simplex. On this ~108-variable QP the default
+        // (concurrent/barrier, all cores) took ~12 ms per solve; dual simplex on
+        // one thread takes ~2.4 ms (measured 2026-11-11). Solve time is loop delay
+        // here -- forces from a solve are applied only once it returns -- and that
+        // delay was enough to destabilise the roll loop (a 7-10 Hz left/right fz
+        // oscillation) whenever the joints' stiction was not damping it.
+        model->set(GRB_IntParam_Threads, 1);
+        model->set(GRB_IntParam_Method, 1);
 
         // Initialize robot state
         x0 = VectorXd::Zero(mpc_params.N_STATES); // Initial state of the robot

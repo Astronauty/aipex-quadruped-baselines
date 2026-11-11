@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
 project(convex_mpc)
 
+# Default to an optimised build. colcon passes no build type unless asked, and at
+# -O0 the Eigen/Pinocchio work in each MPC cycle took ~9.6 ms instead of ~0.3 ms
+# (measured 2026-11-11) -- the bulk of a 23 ms plan, i.e. ~40% of the loop delay.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 option(CXX "enable C++ compilation" ON)
 if(CXX)
   enable_language(CXX)
