@@ -934,38 +934,21 @@ Vector<double, 12> ConvexMPC::solve_joint_torques()
 
     for (int foot = 0; foot < 4; foot++)
     {
-        // FRAME NOTE, left deliberately unresolved. tau = J^T f needs J and f in
-        // the same frame, and by measurement they are not:
-        //   - JACCHECK validates the Jacobian against a finite difference of
-        //     get_foot_positions_body(), which is BASE frame, to 1.4e-07. So J's
-        //     axes are the base's.
-        //   - The model is fixed-base (asserted nq=12, nv=12), so q carries no body
-        //     orientation and J structurally cannot encode R_WB.
-        //   - The QP solves in WORLD frame (simplified_quad_dynamics.cpp has
-        //     B[9:12] = I/mass with no rotation; convex_mpc.cpp rotates the moment
-        //     arms out with r_W = R_WB * p_B).
-        // So f is world, J is base, and the paper's tau_i = J_i^T R_i f_i (eq. 4)
-        // has an R for exactly this reason.
+        // FRAME NOTE. tau = J^T f needs J and f in the same frame. J is BASE axes
+        // (fixed-base Pinocchio model, nq=nv=12; JACCHECK validates it against
+        // base-frame FK to 1.4e-07), while the QP solves f in WORLD axes. So f is
+        // rotated by R_WB^T first (stance_grf_rotation), as in the paper's
+        // tau_i = J_i^T R_i^T f_i.
         //
-        // Inserting R_WB^T here was TRIED AND REVERTED on 2026-10-09. It is very
-        // likely correct, but it measurably degraded STAND -- roll 0.0062 -> 0.0190,
-        // pitch 0.0270 -> 0.0573, with the GRF shifting rearward (front 33.2 -> 31.6
-        // N, rear 36.7 -> 38.0 N), a coherent pitch-axis redistribution rather than
-        // noise. A correct fix should not make standing attitude 2-3x worse, so
-        // something else is inconsistent with it and that was not identified.
-        //
-        // Omitting it is a small-angle approximation. Error on a 37.3 N vertical
-        // GRF: 2.8% at the standing attitude, 15.2% at roll 0.152, 70.5% at roll
-        // 0.720. Harmless where the robot actually operates, which is why STAND has
-        // always been solid.
-        //
-        // Do not re-apply this until the trot is robust. The gait is currently
-        // marginally stable (two runs from initial conditions matching to 4 decimal
-        // places diverged at t~1.07 s, one surviving 25.6 s and one inverting), so a
-        // single run cannot evaluate a 3% correction. The established root cause is
-        // elsewhere: the Raibert heuristic reads COMMANDED velocity, never measured,
-        // so the gait is open-loop in horizontal velocity.
+        // Reverted once (2026-10-09) because it raised the standing roll offset
+        // 0.005 -> 0.017 rad, which is still unexplained. Re-enabled 2026-11-11:
+        // without it the horizontal forces are applied rotated by the heading,
+        // and a full-stick trot turn stalled at yaw ~1.2 rad and fell at ~1.3.
         Vector3d foot_grf = grf_vec[0].col(foot); // Extract the grf for the current foot (world frame)
+        if (stance_grf_rotation_)
+        {
+            foot_grf = R_WB.transpose() * foot_grf; // world -> base axes, matching J
+        }
 
         Vector3d foot_joint_torques = foot_jacobians[foot].transpose()* (-foot_grf); // Compute joint torques for the current foot (correpsonding to its 3 actuators)
         joint_torques.segment<3>(foot * 3) = foot_joint_torques; // Store the joint torques in the joint_torques vector

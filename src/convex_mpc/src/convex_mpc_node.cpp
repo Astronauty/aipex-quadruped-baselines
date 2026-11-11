@@ -371,6 +371,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
     ref_max_yaw_error_rad_ = this->declare_parameter("ref_max_yaw_error_rad", ref_max_yaw_error_rad_);
     yaw_stick_deadband_    = this->declare_parameter("yaw_stick_deadband", yaw_stick_deadband_);
     yaw_latch_hold_s_      = this->declare_parameter("yaw_latch_hold_s", yaw_latch_hold_s_);
+    yaw_ref_integrate_     = this->declare_parameter("yaw_ref_integrate", yaw_ref_integrate_);
     RCLCPP_INFO(this->get_logger(),
         "Body position: /sportmodestate reports Io; shifting to Bo by p_BoIo_B [%.5f %.5f %.5f]",
         p_BoIo_B_[0], p_BoIo_B_[1], p_BoIo_B_[2]);
@@ -598,6 +599,7 @@ QuadConvexMPCNode::QuadConvexMPCNode()
         throw std::invalid_argument("swing_Kp and swing_Kd must each have 3 elements");
     }
 
+    convex_mpc->set_stance_grf_rotation(this->declare_parameter("stance_grf_rotation", false));
     convex_mpc->set_swing_gains(
         Vector3d(swing_Kp[0], swing_Kp[1], swing_Kp[2]).asDiagonal(),
         Vector3d(swing_Kd[0], swing_Kd[1], swing_Kd[2]).asDiagonal());
@@ -1056,7 +1058,16 @@ VectorXd QuadConvexMPCNode::reference_traj_from_joy(const sensor_msgs::msg::Joy:
         if (std::abs(yaw_stick) > yaw_stick_deadband_)
         {
             yaw_centred_since_s_ = -1.0;
-            yaw_ref_ = current_yaw + wz * mpc_params->dt;
+            // yaw_ref_integrate: advance the reference by wz each cycle instead of
+            // re-anchoring it to the measurement. Re-anchoring keeps the heading
+            // error at wz*dt (~0.008 rad), so all turning effort comes from the
+            // rate error, which the MPC closes dead-beat regardless of Q -- and a
+            // constant resisting torque (the sim's foot torsional friction absorbs
+            // ~3.7 Nm in a trot turn) then leaves the turn at ~0.11 of 0.3 rad/s
+            // with no Q able to change it. Integrating lets the heading error build
+            // (up to ref_max_yaw_error_rad, below) and act as integral action.
+            yaw_ref_ = yaw_ref_integrate_ ? yaw_ref_ + wz * mpc_params->dt
+                                          : current_yaw + wz * mpc_params->dt;
         }
         else
         {

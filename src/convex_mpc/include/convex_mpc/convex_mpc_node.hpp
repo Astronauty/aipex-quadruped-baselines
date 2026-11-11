@@ -117,6 +117,7 @@ class QuadConvexMPCNode : public rclcpp::Node
         double cmd_vy_body_shaped_ = 0.0;
         double cmd_wz_shaped_ = 0.0;
         double ref_max_yaw_error_rad_ = 0.1;
+        bool yaw_ref_integrate_ = false; // see reference_traj_from_joy
         double yaw_stick_deadband_ = 0.05;   // fraction of full stick
         double yaw_latch_hold_s_ = 0.25;
         double yaw_centred_since_s_ = -1.0;  // <0 while the yaw stick is deflected

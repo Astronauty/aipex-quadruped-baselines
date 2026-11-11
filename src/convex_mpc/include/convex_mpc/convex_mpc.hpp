@@ -226,6 +226,10 @@ class ConvexMPC
          * @brief Swing-leg Cartesian PD gains, shared by every leg.
          */
         void set_swing_gains(const Matrix3d& Kp_swing, const Matrix3d& Kd_swing);
+        // Rotate each world-frame stance GRF into base axes (R_WB^T) before J^T,
+        // as in the paper's tau_i = J_i^T R_i^T f_i. See the FRAME NOTE in
+        // the stance torque loop.
+        void set_stance_grf_rotation(bool on) { stance_grf_rotation_ = on; }
 
     private:
         MPCParams mpc_params;
@@ -294,6 +298,7 @@ class ConvexMPC
         // Fixed by the massless-leg assumption; see get_foot_positions_body().
         Vector3d com_B_ = Vector3d::Zero();
         bool foot_kinematics_dirty_ = true;
+        bool stance_grf_rotation_ = false;
         void resolve_model_indices();
         void update_kinematics();
 
